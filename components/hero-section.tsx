@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useEffect } from "react"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, ExternalLink } from "lucide-react"
@@ -8,6 +8,25 @@ import Link from "next/link"
 
 export default function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // Seamless loop - restart video before it ends to avoid black frame
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    const handleTimeUpdate = () => {
+      // If video is within 0.3 seconds of ending, restart it
+      if (video.duration - video.currentTime < 0.3) {
+        video.currentTime = 0
+        video.play()
+      }
+    }
+
+    video.addEventListener("timeupdate", handleTimeUpdate)
+    return () => video.removeEventListener("timeupdate", handleTimeUpdate)
+  }, [])
+
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"],
@@ -23,18 +42,18 @@ export default function HeroSection() {
     >
       <div className="absolute inset-0 grid-pattern opacity-100" />
 
-      {/* Video Background */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black z-10" />
+      {/* Video Background with Blur Effect */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black z-10" />
         <video
+          ref={videoRef}
           autoPlay
-          loop
           muted
           playsInline
-          className="w-full h-full object-cover opacity-30"
+          className="w-full h-full object-cover opacity-50 scale-110 blur-sm"
           poster="/kinetic-products-abstract.jpg"
         >
-          <source src="/kinetic-products-motion.jpg" type="video/mp4" />
+          <source src="/bg.mp4" type="video/mp4" />
         </video>
       </div>
 
