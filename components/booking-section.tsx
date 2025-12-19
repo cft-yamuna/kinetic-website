@@ -37,8 +37,36 @@ export default function BookingSection() {
   }
 
   return (
-    <section id="booking" className="py-24 md:py-32 bg-muted/30">
-      <div className="container mx-auto px-4">
+    <section id="booking" className="py-24 md:py-32 bg-muted/30 relative overflow-hidden">
+      {/* Grid Pattern - Block style */}
+      <div className="absolute inset-0 opacity-[0.03]">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, currentColor 1px, transparent 1px),
+              linear-gradient(to bottom, currentColor 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px'
+          }}
+        />
+      </div>
+
+      {/* Intersecting Lines */}
+      <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-sunbeam/20 to-transparent" />
+      <div className="absolute top-0 right-1/3 w-px h-full bg-gradient-to-b from-transparent via-amber/10 to-transparent" />
+      <div className="absolute top-1/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-sunbeam/15 to-transparent" />
+      <div className="absolute bottom-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber/10 to-transparent" />
+
+      {/* Corner Accents */}
+      <div className="absolute top-0 left-0 w-32 h-32 border-l-2 border-t-2 border-sunbeam/10" />
+      <div className="absolute bottom-0 right-0 w-32 h-32 border-r-2 border-b-2 border-sunbeam/10" />
+
+      {/* Decorative Blurs */}
+      <div className="absolute top-20 right-10 w-64 h-64 bg-sunbeam/5 rounded-full blur-[100px]" />
+      <div className="absolute bottom-20 left-10 w-80 h-80 bg-amber/5 rounded-full blur-[120px]" />
+
+      <div className="container mx-auto px-4 relative z-10">
         <motion.div
           className="text-center mb-16"
           initial={{ opacity: 0, y: 30 }}
