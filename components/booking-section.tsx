@@ -47,7 +47,7 @@ export default function BookingSection() {
           viewport={{ once: true }}
         >
           <p className="text-sm uppercase tracking-wider text-amber mb-4 font-semibold">Transform Your Space</p>
-          <h2 className="text-4xl md:text-6xl font-bold text-balance mb-6">Ready to Transform?</h2>
+          <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold text-balance mb-6">Ready to Transform?</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
             If you can imagine the experience, Craftech 360 is the partner that engineers it. Book a visit to see our
             kinetic installations in action.
@@ -57,18 +57,18 @@ export default function BookingSection() {
         <div className="max-w-4xl mx-auto">
           {step === "select" && (
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-              <Card className="p-8 bg-card">
-                <div className="flex items-center gap-2 mb-6">
+              <Card className="p-4 sm:p-6 md:p-8 bg-card">
+                <div className="flex items-center gap-2 mb-4 sm:mb-6">
                   <Calendar className="h-5 w-5 text-sunbeam" />
-                  <h3 className="text-xl font-bold">Select a Time Slot</h3>
+                  <h3 className="text-lg sm:text-xl font-bold">Select a Time Slot</h3>
                 </div>
-                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
                   {availableSlots.map((slot, index) => (
                     <motion.button
                       key={index}
                       onClick={() => slot.available && handleSlotSelect(slot.date, slot.time)}
                       disabled={!slot.available}
-                      className={`p-4 rounded-xl border-2 text-left transition-all ${
+                      className={`p-3 sm:p-4 rounded-xl border-2 text-left transition-all ${
                         slot.available
                           ? "border-border hover:border-sunbeam hover:shadow-lg bg-background"
                           : "border-border bg-muted/50 opacity-50 cursor-not-allowed"
@@ -76,12 +76,12 @@ export default function BookingSection() {
                       whileHover={slot.available ? { scale: 1.03 } : {}}
                       whileTap={slot.available ? { scale: 0.98 } : {}}
                     >
-                      <p className="font-semibold mb-1">{slot.date}</p>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <p className="font-semibold text-sm sm:text-base mb-1">{slot.date}</p>
+                      <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
                         <Clock className="h-3 w-3" />
                         {slot.time}
                       </div>
-                      {!slot.available && <p className="text-xs text-destructive mt-2">Unavailable</p>}
+                      {!slot.available && <p className="text-xs text-destructive mt-1 sm:mt-2">Unavailable</p>}
                     </motion.button>
                   ))}
                 </div>
@@ -91,7 +91,7 @@ export default function BookingSection() {
 
           {step === "form" && selectedSlot && (
             <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
-              <Card className="p-8 bg-card">
+              <Card className="p-4 sm:p-6 md:p-8 bg-card">
                 <div className="mb-6">
                   <button
                     onClick={() => setStep("select")}
@@ -170,24 +170,24 @@ export default function BookingSection() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6 }}
             >
-              <Card className="p-12 bg-card text-center">
+              <Card className="p-6 sm:p-8 md:p-12 bg-card text-center">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                  className="mb-6 flex justify-center"
+                  className="mb-4 sm:mb-6 flex justify-center"
                 >
-                  <div className="bg-sunbeam/20 rounded-full p-4">
-                    <CheckCircle2 className="h-16 w-16 text-sunbeam" />
+                  <div className="bg-sunbeam/20 rounded-full p-3 sm:p-4">
+                    <CheckCircle2 className="h-12 w-12 sm:h-16 sm:w-16 text-sunbeam" />
                   </div>
                 </motion.div>
 
-                <h3 className="text-3xl font-bold mb-4">Booking Confirmed!</h3>
-                <p className="text-lg text-muted-foreground mb-8">
+                <h3 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Booking Confirmed!</h3>
+                <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
                   We've sent a confirmation email to <strong>{formData.email}</strong>
                 </p>
 
-                <div className="bg-sunbeam/10 rounded-2xl p-6 mb-8 max-w-md mx-auto border border-sunbeam/20">
+                <div className="bg-sunbeam/10 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 max-w-md mx-auto border border-sunbeam/20">
                   <div className="grid gap-3 text-left">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Date:</span>

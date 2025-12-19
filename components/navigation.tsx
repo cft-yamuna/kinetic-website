@@ -22,7 +22,6 @@ export default function Navigation() {
 
   const navLinks = [
     { href: "#products", label: "Products" },
-    { href: "#about", label: "About" },
     { href: "#booking", label: "Book Demo" },
   ]
 

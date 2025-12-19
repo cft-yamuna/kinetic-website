@@ -28,14 +28,6 @@ const products = [
     description: "Touch-responsive displays for immersive storytelling",
     stats: "Award Winning",
   },
-  {
-    id: 4,
-    title: "Immersive Environment",
-    category: "Permanent Installations",
-    image: "/4.png",
-    description: "360° experiences that transform entire spaces",
-    stats: "5 Countries",
-  },
 ]
 
 function FeaturedCard({ product }: { product: typeof products[0] }) {
@@ -43,7 +35,7 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
 
   return (
     <motion.div
-      className="relative group cursor-pointer col-span-full lg:col-span-7 row-span-2"
+      className="relative group cursor-pointer col-span-full lg:col-span-8 row-span-2"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
@@ -86,7 +78,7 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
 
   return (
     <motion.div
-      className="relative group cursor-pointer"
+      className="relative group cursor-pointer lg:flex-1"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, delay: index * 0.1, ease: [0.25, 0.1, 0.25, 1] }}
@@ -94,7 +86,7 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="relative h-[155px] rounded-xl overflow-hidden">
+      <div className="relative h-[200px] sm:h-[180px] lg:h-full lg:min-h-[240px] rounded-xl overflow-hidden">
         {/* Image */}
         <motion.img
           src={product.image}
@@ -180,7 +172,7 @@ export default function ProductShowcase() {
           <FeaturedCard product={products[0]} />
 
           {/* Right Column - Stacked Cards */}
-          <div className="lg:col-span-5 grid gap-6">
+          <div className="lg:col-span-4 grid grid-cols-2 lg:flex lg:flex-col gap-4 lg:gap-6">
             {products.slice(1).map((product, index) => (
               <SmallCard key={product.id} product={product} index={index} />
             ))}
