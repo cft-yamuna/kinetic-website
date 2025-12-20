@@ -10,7 +10,10 @@ export default function FloatingCTA() {
   const [isMobile, setIsMobile] = useState(false)
   const [isBookingSectionVisible, setIsBookingSectionVisible] = useState(false)
 
+  const [hasMounted, setHasMounted] = useState(false)
+
   useEffect(() => {
+    setHasMounted(true)
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
     }
@@ -52,6 +55,38 @@ export default function FloatingCTA() {
   // Hide button when booking section is visible
   const showButton = isVisible && !isBookingSectionVisible
 
+  // Mobile version - simple CSS animations only (after hydration)
+  if (hasMounted && isMobile) {
+    return (
+      <>
+        {showButton && (
+          <div
+            className="fixed bottom-6 right-6 z-50 mobile-scale-in"
+          >
+            <Link href="#booking">
+              <div className="relative">
+                {/* Simple glow background - CSS only */}
+                <div
+                  className="absolute inset-0 rounded-full bg-sunbeam/30 blur-xl animate-pulse"
+                  style={{ animationDuration: '2s' }}
+                />
+
+                {/* Main button - no animations */}
+                <button
+                  className="relative flex items-center justify-center bg-gradient-to-r from-sunbeam via-amber to-solar text-black font-bold p-4 rounded-full shadow-lg"
+                  style={{ boxShadow: '0 0 25px rgba(255, 193, 7, 0.5)' }}
+                >
+                  <Sparkles className="h-5 w-5" />
+                </button>
+              </div>
+            </Link>
+          </div>
+        )}
+      </>
+    )
+  }
+
+  // Desktop version with full animations
   return (
     <AnimatePresence>
       {showButton && (
@@ -165,7 +200,7 @@ export default function FloatingCTA() {
                 >
                   <Sparkles className="h-5 w-5" />
                 </motion.div>
-                <span className={isMobile ? "sr-only" : "relative"}>Book Now</span>
+                <span className="relative">Book Now</span>
 
                 {/* Star burst on text */}
                 <motion.span

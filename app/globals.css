@@ -163,3 +163,122 @@
     transform-origin: center center;
   }
 }
+
+/* Mobile-optimized CSS animations - GPU accelerated */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-33.33%);
+  }
+}
+
+/* Mobile animation classes */
+@media (max-width: 767px) {
+  .mobile-fade-in-up {
+    animation: fadeInUp 0.5s ease-out forwards;
+    will-change: transform, opacity;
+  }
+
+  .mobile-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+    will-change: opacity;
+  }
+
+  .mobile-scale-in {
+    animation: scaleIn 0.5s ease-out forwards;
+    will-change: transform, opacity;
+  }
+
+  .mobile-slide-right {
+    animation: slideInRight 0.5s ease-out forwards;
+    will-change: transform, opacity;
+  }
+
+  .mobile-slide-left {
+    animation: slideInLeft 0.5s ease-out forwards;
+    will-change: transform, opacity;
+  }
+
+  /* Staggered delays for mobile */
+  .mobile-delay-1 { animation-delay: 0.1s; opacity: 0; }
+  .mobile-delay-2 { animation-delay: 0.2s; opacity: 0; }
+  .mobile-delay-3 { animation-delay: 0.3s; opacity: 0; }
+  .mobile-delay-4 { animation-delay: 0.4s; opacity: 0; }
+  .mobile-delay-5 { animation-delay: 0.5s; opacity: 0; }
+  .mobile-delay-6 { animation-delay: 0.6s; opacity: 0; }
+}
+
+/* Intersection observer based animations for mobile - triggered when in view */
+.mobile-animate-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.mobile-animate-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Static card styles for mobile */
+@media (max-width: 767px) {
+  .mobile-card-static {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
