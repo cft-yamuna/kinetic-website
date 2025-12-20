@@ -22,16 +22,16 @@ export default function Footer() {
             spaces into immersive stories.
           </p>
           <div className="flex gap-5">
-            <a href="#" className="hover:text-sunbeam transition-colors" aria-label="Facebook">
+            <a href="https://www.facebook.com/profile.php?id=61579177028158" target="_blank" rel="noopener noreferrer" className="hover:text-sunbeam transition-colors" aria-label="Facebook">
               <Facebook className="h-5 w-5" />
             </a>
-            <a href="#" className="hover:text-sunbeam transition-colors" aria-label="Twitter">
+            <a href="https://twitter.com/craftech360" target="_blank" rel="noopener noreferrer" className="hover:text-sunbeam transition-colors" aria-label="Twitter">
               <Twitter className="h-5 w-5" />
             </a>
-            <a href="#" className="hover:text-sunbeam transition-colors" aria-label="Instagram">
+            <a href="https://instagram.com/craftech360" target="_blank" rel="noopener noreferrer" className="hover:text-sunbeam transition-colors" aria-label="Instagram">
               <Instagram className="h-5 w-5" />
             </a>
-            <a href="#" className="hover:text-sunbeam transition-colors" aria-label="LinkedIn">
+            <a href="https://www.linkedin.com/company/craftech360/" target="_blank" rel="noopener noreferrer" className="hover:text-sunbeam transition-colors" aria-label="LinkedIn">
               <Linkedin className="h-5 w-5" />
             </a>
           </div>

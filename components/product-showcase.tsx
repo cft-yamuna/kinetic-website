@@ -30,6 +30,7 @@ const products = [
     category: "Retail & Events",
     image: "/product1.png",
     youtubeId: "gAQQzblPFl8",
+    mobileYoutubeId: "tTeHFSndnP0",
     isPortrait: false,
     description: "360-degree rotating screens that follow your audience",
     stats: "3M+ Views",
@@ -74,9 +75,33 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
   // All hooks must be called unconditionally at the top
   const [isLoaded, setIsLoaded] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
   const cardRef = useRef(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
   const isInView = useInView(cardRef, { once: true, margin: "-100px" })
   const isMobile = useIsMobile()
+
+  // Listen for YouTube player state changes on mobile
+  useEffect(() => {
+    if (!isMobile || !isPlaying) return
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== "https://www.youtube.com") return
+
+      try {
+        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data
+        // State 0 means video ended
+        if (data.event === "onStateChange" && data.info === 0) {
+          setIsPlaying(false)
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+
+    window.addEventListener("message", handleMessage)
+    return () => window.removeEventListener("message", handleMessage)
+  }, [isMobile, isPlaying])
 
   const handleMouseEnter = () => {
     setIsHovered(true)
@@ -86,43 +111,69 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
     setIsHovered(false)
   }
 
-  // Mobile version - static card
+  const handleClick = () => {
+    // Only toggle play on mobile
+    if (isMobile) {
+      setIsPlaying(!isPlaying)
+    }
+  }
+
+  // Mobile version - click to play (preloaded)
   if (isMobile) {
     return (
       <div
         ref={cardRef}
         className="relative group cursor-pointer"
+        onClick={handleClick}
       >
         <div className="relative h-[400px] md:h-[450px] lg:h-full lg:min-h-[500px] rounded-2xl overflow-hidden">
-          <div className={`absolute inset-0 bg-neutral-900 transition-opacity duration-500 ${isLoaded ? 'opacity-0' : 'opacity-100'}`} />
+          {/* Image - always visible underneath */}
           <div className="absolute inset-0">
             <Image
               src={product.image}
               alt={product.title}
               fill
               className="object-cover"
-              loading="lazy"
+              loading="eager"
               onLoad={() => setIsLoaded(true)}
               sizes="(max-width: 768px) 100vw, 66vw"
             />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-6">
+          {/* YouTube video - preloaded, fades in on play */}
+          <div
+            className={`absolute inset-0 overflow-hidden transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <iframe
+              ref={iframeRef}
+              src={`https://www.youtube.com/embed/${product.mobileYoutubeId || product.youtubeId}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+              className={product.mobileYoutubeId
+                ? "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[180%]"
+                : product.isPortrait
+                  ? "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-[300%]"
+                  : "w-full h-full"
+              }
+              style={{ border: 'none', pointerEvents: 'none' }}
+              allow="autoplay; encrypted-media"
+              loading="eager"
+            />
+          </div>
+          <div className={`absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent transition-opacity duration-500 ${isPlaying ? 'opacity-0' : 'opacity-100'}`} />
+          <div className={`absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent transition-opacity duration-500 ${isPlaying ? 'opacity-0' : 'opacity-100'}`} />
+          <div className={`absolute bottom-0 left-0 right-0 p-6 transition-opacity duration-500 ${isPlaying ? 'opacity-0' : 'opacity-100'}`}>
             <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
               {product.title}
             </h3>
-            <p className="text-white/70 text-sm md:text-base mb-4 max-w-md">
+            <p className="text-white/70 text-sm md:text-base max-w-md">
               {product.description}
             </p>
           </div>
-          <div className="absolute inset-0 rounded-2xl border border-white/10 pointer-events-none" />
+          <div className={`absolute inset-0 rounded-2xl pointer-events-none transition-all duration-500 ${isPlaying ? 'border-2 border-sunbeam/50' : 'border border-white/10'}`} />
         </div>
       </div>
     )
   }
 
-  // Desktop version with animations
+  // Desktop version with animations - play on hover
   return (
     <motion.div
       ref={cardRef}
@@ -134,7 +185,7 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
       onMouseLeave={handleMouseLeave}
     >
       <div className="relative h-[400px] md:h-[450px] lg:h-full lg:min-h-[550px] rounded-2xl overflow-hidden">
-        <div className={`absolute inset-0 bg-neutral-900 transition-opacity duration-700 ${isLoaded ? 'opacity-0' : 'opacity-100'}`} />
+        <div className={`absolute inset-0 bg-neutral-900 transition-opacity duration-700 ${isLoaded || isHovered ? 'opacity-0' : 'opacity-100'}`} />
         <motion.div
           className="absolute inset-0"
           initial={{ opacity: 0, scale: 1.1 }}
@@ -157,7 +208,7 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
             sizes="(max-width: 768px) 100vw, 66vw"
           />
         </motion.div>
-        {/* Preloaded YouTube video - always in DOM, shown on hover */}
+        {/* YouTube video - preloaded, shown on hover */}
         <motion.div
           className="absolute inset-0 overflow-hidden"
           initial={{ opacity: 0 }}
@@ -165,7 +216,7 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
           transition={{ duration: 0.3 }}
         >
           <iframe
-            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&start=0`}
+            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=1`}
             className={product.isPortrait
               ? "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-[300%]"
               : "w-full h-full"
@@ -173,14 +224,24 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
             style={{ border: 'none', pointerEvents: 'none' }}
             allow="autoplay; encrypted-media"
             loading="eager"
-            allowFullScreen
           />
         </motion.div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent"
+          animate={{ opacity: isHovered ? 0 : 1 }}
+          transition={{ duration: 0.3 }}
+        />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent"
+          animate={{ opacity: isHovered ? 0 : 1 }}
+          transition={{ duration: 0.3 }}
+        />
         <motion.div
           className="absolute bottom-0 left-0 right-0 p-6"
-          animate={{ y: isHovered ? -10 : 0 }}
+          animate={{
+            y: isHovered ? -10 : 0,
+            opacity: isHovered ? 0 : 1
+          }}
           transition={{ duration: 0.3 }}
         >
           <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
@@ -208,9 +269,32 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
   // All hooks must be called unconditionally at the top
   const [isLoaded, setIsLoaded] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
   const cardRef = useRef(null)
   const isInView = useInView(cardRef, { once: true, margin: "-50px" })
   const isMobile = useIsMobile()
+
+  // Listen for YouTube player state changes on mobile
+  useEffect(() => {
+    if (!isMobile || !isPlaying) return
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== "https://www.youtube.com") return
+
+      try {
+        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data
+        // State 0 means video ended
+        if (data.event === "onStateChange" && data.info === 0) {
+          setIsPlaying(false)
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+
+    window.addEventListener("message", handleMessage)
+    return () => window.removeEventListener("message", handleMessage)
+  }, [isMobile, isPlaying])
 
   const handleMouseEnter = () => {
     setIsHovered(true)
@@ -220,39 +304,59 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
     setIsHovered(false)
   }
 
-  // Mobile version - static card
+  const handleClick = () => {
+    // Only toggle play on mobile
+    if (isMobile) {
+      setIsPlaying(!isPlaying)
+    }
+  }
+
+  // Mobile version - click to play (preloaded)
   if (isMobile) {
     return (
       <div
         ref={cardRef}
         className="relative group cursor-pointer"
+        onClick={handleClick}
       >
         <div className="relative h-[200px] sm:h-[180px] rounded-xl overflow-hidden">
-          <div className={`absolute inset-0 bg-neutral-900 transition-opacity duration-500 ${isLoaded ? 'opacity-0' : 'opacity-100'}`} />
+          {/* Image - always visible underneath */}
           <div className="absolute inset-0">
             <Image
               src={product.image}
               alt={product.title}
               fill
               className="object-cover"
-              loading="lazy"
+              loading="eager"
               onLoad={() => setIsLoaded(true)}
               sizes="(max-width: 768px) 50vw, 33vw"
             />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-4">
+          {/* YouTube video - preloaded, fades in on play */}
+          <div
+            className={`absolute inset-0 overflow-hidden transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <iframe
+              src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[180%]"
+              style={{ border: 'none', pointerEvents: 'none' }}
+              allow="autoplay; encrypted-media"
+              loading="eager"
+            />
+          </div>
+          <div className={`absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent transition-opacity duration-500 ${isPlaying ? 'opacity-0' : 'opacity-100'}`} />
+          <div className={`absolute bottom-0 left-0 right-0 p-4 transition-opacity duration-500 ${isPlaying ? 'opacity-0' : 'opacity-100'}`}>
             <h3 className="text-sm md:text-base font-bold text-white">
               {product.title}
             </h3>
           </div>
-          <div className="absolute inset-0 rounded-xl border border-white/10 pointer-events-none" />
+          <div className={`absolute inset-0 rounded-xl pointer-events-none transition-all duration-500 ${isPlaying ? 'border-2 border-sunbeam/50' : 'border border-white/10'}`} />
         </div>
       </div>
     )
   }
 
-  // Desktop version with animations - portrait optimized
+  // Desktop version with animations - play on hover
   return (
     <motion.div
       ref={cardRef}
@@ -265,7 +369,7 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
     >
       <div className="relative h-[200px] sm:h-[180px] lg:h-auto rounded-xl overflow-hidden aspect-auto lg:aspect-[4/5]">
         {/* Loading Placeholder */}
-        <div className={`absolute inset-0 bg-neutral-900 transition-opacity duration-700 ${isLoaded ? 'opacity-0' : 'opacity-100'}`} />
+        <div className={`absolute inset-0 bg-neutral-900 transition-opacity duration-700 ${isLoaded || isHovered ? 'opacity-0' : 'opacity-100'}`} />
 
         {/* Image */}
         <motion.div
@@ -291,7 +395,7 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
           />
         </motion.div>
 
-        {/* Preloaded YouTube video - portrait optimized */}
+        {/* YouTube video - preloaded, shown on hover */}
         <motion.div
           className="absolute inset-0 overflow-hidden"
           initial={{ opacity: 0 }}
@@ -299,22 +403,28 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
           transition={{ duration: 0.3 }}
         >
           <iframe
-            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&start=0`}
+            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=1`}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[180%]"
             style={{ border: 'none', pointerEvents: 'none' }}
             allow="autoplay; encrypted-media"
             loading="eager"
-            allowFullScreen
           />
         </motion.div>
 
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent"
+          animate={{ opacity: isHovered ? 0 : 1 }}
+          transition={{ duration: 0.3 }}
+        />
 
         {/* Content overlay */}
         <motion.div
           className="absolute bottom-0 left-0 right-0 p-4"
-          animate={{ y: isHovered ? -5 : 0 }}
+          animate={{
+            y: isHovered ? -5 : 0,
+            opacity: isHovered ? 0 : 1
+          }}
         >
           <h3 className="text-sm md:text-base font-bold text-white">
             {product.title}
@@ -326,7 +436,7 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
           className="absolute inset-0 rounded-xl pointer-events-none"
           animate={{
             boxShadow: isHovered
-              ? "inset 0 0 0 2px rgba(254, 204, 0, 0.7), 0 20px 40px rgba(0,0,0,0.3)"
+              ? "inset 0 0 0 2px rgba(254, 204, 0, 0.8), 0 20px 40px rgba(0,0,0,0.3)"
               : "inset 0 0 0 1px rgba(255, 255, 255, 0.08)",
           }}
           transition={{ duration: 0.4, ease: "easeOut" }}
@@ -356,7 +466,7 @@ function LandscapeCard({ product }: { product: typeof products[0] }) {
     return null
   }
 
-  // Desktop version with animations - landscape optimized
+  // Desktop version with animations - play on hover
   return (
     <motion.div
       ref={cardRef}
@@ -369,7 +479,7 @@ function LandscapeCard({ product }: { product: typeof products[0] }) {
     >
       <div className="relative h-full min-h-[239px] rounded-xl overflow-hidden">
         {/* Loading Placeholder */}
-        <div className={`absolute inset-0 bg-neutral-900 transition-opacity duration-700 ${isLoaded ? 'opacity-0' : 'opacity-100'}`} />
+        <div className={`absolute inset-0 bg-neutral-900 transition-opacity duration-700 ${isLoaded || isHovered ? 'opacity-0' : 'opacity-100'}`} />
 
         {/* Image */}
         <motion.div
@@ -395,7 +505,7 @@ function LandscapeCard({ product }: { product: typeof products[0] }) {
           />
         </motion.div>
 
-        {/* Preloaded YouTube video - landscape optimized */}
+        {/* YouTube video - preloaded, shown on hover */}
         <motion.div
           className="absolute inset-0 overflow-hidden"
           initial={{ opacity: 0 }}
@@ -403,22 +513,28 @@ function LandscapeCard({ product }: { product: typeof products[0] }) {
           transition={{ duration: 0.3 }}
         >
           <iframe
-            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&start=0`}
+            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=1`}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180%] h-[180%]"
             style={{ border: 'none', pointerEvents: 'none' }}
             allow="autoplay; encrypted-media"
             loading="eager"
-            allowFullScreen
           />
         </motion.div>
 
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"
+          animate={{ opacity: isHovered ? 0 : 1 }}
+          transition={{ duration: 0.3 }}
+        />
 
         {/* Content overlay */}
         <motion.div
           className="absolute bottom-0 left-0 right-0 p-4"
-          animate={{ y: isHovered ? -5 : 0 }}
+          animate={{
+            y: isHovered ? -5 : 0,
+            opacity: isHovered ? 0 : 1
+          }}
         >
           <h3 className="text-sm md:text-base font-bold text-white">
             {product.title}
@@ -430,7 +546,7 @@ function LandscapeCard({ product }: { product: typeof products[0] }) {
           className="absolute inset-0 rounded-xl pointer-events-none"
           animate={{
             boxShadow: isHovered
-              ? "inset 0 0 0 2px rgba(254, 204, 0, 0.7), 0 20px 40px rgba(0,0,0,0.3)"
+              ? "inset 0 0 0 2px rgba(254, 204, 0, 0.8), 0 20px 40px rgba(0,0,0,0.3)"
               : "inset 0 0 0 1px rgba(255, 255, 255, 0.08)",
           }}
           transition={{ duration: 0.4, ease: "easeOut" }}

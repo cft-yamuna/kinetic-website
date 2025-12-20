@@ -39,7 +39,7 @@ export default function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen flex items-center overflow-hidden bg-black pt-20 md:pt-12"
+      className="relative min-h-screen flex items-center overflow-hidden bg-black pt-28 md:pt-12"
     >
       {/* Background elements */}
       <div className="absolute inset-0 bg-gradient-to-br from-black via-neutral-950 to-black" />
@@ -164,26 +164,26 @@ export default function HeroSection() {
 
             {/* CTA Buttons */}
             {useMobileOptimizations ? (
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mobile-fade-in-up mobile-delay-6">
+              <div className="flex flex-row items-center justify-center lg:justify-start gap-3 mobile-fade-in-up mobile-delay-6">
                 <Link href="#booking">
                   <Button
-                    size="lg"
-                    className="rounded-full text-base px-8 h-14 bg-gradient-to-r from-sunbeam to-amber text-black font-bold"
+                    size="sm"
+                    className="rounded-full text-sm px-5 h-10 bg-gradient-to-r from-sunbeam to-amber text-black font-bold"
                   >
                     <span className="flex items-center">
-                      Book a Live Demo
-                      <ArrowRight className="ml-2 h-5 w-5" />
+                      Book Demo
+                      <ArrowRight className="ml-1.5 h-4 w-4" />
                     </span>
                   </Button>
                 </Link>
                 <Link href="#products">
                   <Button
-                    size="lg"
+                    size="sm"
                     variant="outline"
-                    className="rounded-full text-base px-8 h-14 bg-white/5 border-white/20 text-white"
+                    className="rounded-full text-sm px-5 h-10 bg-white/5 border-white/20 text-white"
                   >
-                    <Play className="mr-2 h-5 w-5" />
-                    See Products
+                    <Play className="mr-1.5 h-4 w-4" />
+                    Products
                   </Button>
                 </Link>
               </div>
