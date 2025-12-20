@@ -135,9 +135,9 @@ export default function BookingSection() {
       <div className="container mx-auto px-4 relative z-10">
         {/* Header Section */}
         {isMobile ? (
-          <div className="text-center mb-16">
+          <div className="text-center mb-8">
             {/* Urgency badge - static on mobile */}
-            <div className="inline-flex items-center gap-2 bg-sunbeam/10 border border-sunbeam/30 rounded-full px-4 py-1.5 mb-6">
+            <div className="inline-flex items-center gap-2 bg-sunbeam/10 border border-sunbeam/30 rounded-full px-4 py-1.5 mb-4">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sunbeam opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-sunbeam"></span>
@@ -145,28 +145,12 @@ export default function BookingSection() {
               <span className="text-sm font-medium text-sunbeam">Limited slots available this week</span>
             </div>
 
-            <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold text-balance mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold text-balance mb-4">
               See It <span className="text-transparent bg-clip-text bg-gradient-to-r from-sunbeam via-amber to-solar">Moving</span> In Person
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto text-balance">
               Words and videos can only show so much. Book a live demo to experience the full impact of kinetic LED displays.
             </p>
-
-            {/* Value props */}
-            <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-sunbeam" />
-                <span>No obligation</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-sunbeam" />
-                <span>30-min session</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-sunbeam" />
-                <span>Custom solutions discussed</span>
-              </div>
-            </div>
           </div>
         ) : (
           <motion.div
