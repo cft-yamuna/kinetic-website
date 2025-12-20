@@ -11,12 +11,16 @@ const stats = [
 ]
 
 const clients = [
-  "Premium Brands",
-  "Museums",
-  "Exhibitions",
-  "Corporate HQs",
-  "Retail Flagships",
-  "Events",
+  "Dell",
+  "PhonePe",
+  "Salesforce",
+  "LLE",
+  "Tata Motors",
+  "LAM",
+  "KPMG",
+  "OnePlus",
+  "Toyota",
+  "SBER"
 ]
 
 function AnimatedCounter({ value, suffix }: { value: string; suffix: string }) {

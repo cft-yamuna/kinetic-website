@@ -61,12 +61,12 @@ export default function Navigation() {
       {isMobile ? (
         <nav
           className={`fixed left-0 right-0 z-40 transition-all duration-300 ${
-            bannerVisible ? "top-[44px]" : "top-0"
+            bannerVisible ? "top-[36px]" : "top-0"
           } ${
             isScrolled ? "bg-background/95 backdrop-blur-lg border-b border-border" : "bg-transparent"
           }`}
         >
-          <div className="container mx-auto px-4 py-4">
+          <div className="container mx-auto px-4 py-2">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center">
                 <Image
@@ -101,7 +101,7 @@ export default function Navigation() {
           animate={{ y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="container mx-auto px-4 py-4">
+          <div className="container mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center">
                 <Image
@@ -109,7 +109,7 @@ export default function Navigation() {
                   alt="Craftech 360"
                   width={180}
                   height={50}
-                  className="h-10 w-auto transition-opacity duration-300"
+                  className="h-9 w-auto transition-opacity duration-300"
                   priority
                 />
               </Link>

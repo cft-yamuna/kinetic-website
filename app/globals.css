@@ -1,6 +1,31 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Custom Fonts */
+@font-face {
+  font-family: 'PolySans Bulky';
+  src: url('/fonts/PolySans Bulky.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PolySans Median';
+  src: url('/fonts/PolySans Median.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/fonts/Helvetica.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /* Updated color system to match Craftech 360 brand palette */
@@ -127,6 +152,16 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Helvetica', Arial, sans-serif;
+  }
+  h1, h2, h3 {
+    font-family: 'PolySans Bulky', sans-serif;
+  }
+  h4, h5, h6 {
+    font-family: 'PolySans Median', sans-serif;
+  }
+  p, span, a, li, label, input, textarea, button {
+    font-family: 'Helvetica', Arial, sans-serif;
   }
 }
 

@@ -39,7 +39,7 @@ export default function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen flex items-center overflow-hidden bg-black pt-28 md:pt-12"
+      className="relative min-h-screen flex items-center overflow-hidden bg-black pt-20 md:pt-12"
     >
       {/* Background elements */}
       <div className="absolute inset-0 bg-gradient-to-br from-black via-neutral-950 to-black" />
@@ -244,11 +244,6 @@ export default function HeroSection() {
                     priority
                   />
                   <div className="absolute inset-0 border-2 border-sunbeam/50 rounded-2xl" />
-                  <div className="absolute bottom-4 left-4 z-20">
-                    <span className="bg-sunbeam text-black text-xs font-bold px-3 py-1 rounded-full">
-                      Full Rotation
-                    </span>
-                  </div>
                 </div>
               </div>
             ) : (
@@ -280,16 +275,6 @@ export default function HeroSection() {
                     animate={{ opacity: [0.5, 1, 0.5] }}
                     transition={{ duration: 2, repeat: Infinity, delay: 3.5 }}
                   />
-                  <motion.div
-                    className="absolute bottom-4 left-4 z-20"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 3.6, duration: 0.3 }}
-                  >
-                    <span className="bg-sunbeam text-black text-xs font-bold px-3 py-1 rounded-full">
-                      Full Rotation
-                    </span>
-                  </motion.div>
                 </motion.div>
               </motion.div>
             )}
@@ -309,11 +294,6 @@ export default function HeroSection() {
                     className="w-full h-auto object-cover max-h-[175px] md:max-h-[280px]"
                   />
                   <div className="absolute inset-0 border border-amber/40 rounded-xl" />
-                  <div className="absolute bottom-2 left-2 z-20">
-                    <span className="bg-amber text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      180° Flip
-                    </span>
-                  </div>
                 </div>
               </div>
             ) : (
@@ -342,16 +322,6 @@ export default function HeroSection() {
                     animate={{ opacity: [0.3, 0.7, 0.3] }}
                     transition={{ duration: 2.5, repeat: Infinity, delay: 3.8 }}
                   />
-                  <motion.div
-                    className="absolute bottom-2 left-2 z-20"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 3.8, duration: 0.3 }}
-                  >
-                    <span className="bg-amber text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      180° Flip
-                    </span>
-                  </motion.div>
                 </motion.div>
               </motion.div>
             )}
@@ -371,11 +341,6 @@ export default function HeroSection() {
                     className="w-full h-auto object-cover max-h-[155px] md:max-h-[320px]"
                   />
                   <div className="absolute inset-0 border border-solar/40 rounded-xl" />
-                  <div className="absolute bottom-2 left-2 z-20">
-                    <span className="bg-solar text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      Wave Motion
-                    </span>
-                  </div>
                 </div>
               </div>
             ) : (
@@ -404,16 +369,6 @@ export default function HeroSection() {
                     animate={{ opacity: [0.3, 0.7, 0.3] }}
                     transition={{ duration: 2, repeat: Infinity, delay: 4 }}
                   />
-                  <motion.div
-                    className="absolute bottom-2 left-2 z-20"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 4, duration: 0.3 }}
-                  >
-                    <span className="bg-solar text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      Wave Motion
-                    </span>
-                  </motion.div>
                 </motion.div>
               </motion.div>
             )}
@@ -490,7 +445,7 @@ export default function HeroSection() {
       </motion.div>
 
       {/* Scroll indicator - hidden on mobile for cleaner look */}
-      {!useMobileOptimizations && (
+      {/* {!useMobileOptimizations && (
         <motion.div
           className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20"
           initial={{ opacity: 0, y: 20 }}
@@ -509,7 +464,7 @@ export default function HeroSection() {
             />
           </motion.div>
         </motion.div>
-      )}
+      )} */}
     </section>
   )
 }

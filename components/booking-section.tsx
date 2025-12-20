@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Calendar, Clock, CheckCircle2 } from "lucide-react"
+import { Calendar, Clock, CheckCircle2, Loader2 } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false)
@@ -27,10 +28,10 @@ function useIsMobile() {
 }
 
 const availableSlots = [
-  { date: "2025-01-15", time: "10:00 AM", available: true, popular: true },
+  { date: "2025-01-15", time: "10:00 AM", available: true, popular: false },
   { date: "2025-01-15", time: "2:00 PM", available: true, popular: false },
   { date: "2025-01-16", time: "9:00 AM", available: false, popular: false },
-  { date: "2025-01-16", time: "11:00 AM", available: true, popular: true },
+  { date: "2025-01-16", time: "11:00 AM", available: true, popular: false },
   { date: "2025-01-16", time: "3:00 PM", available: true, popular: false },
   { date: "2025-01-17", time: "10:00 AM", available: true, popular: false },
   { date: "2025-01-17", time: "1:00 PM", available: true, popular: false },
@@ -41,6 +42,8 @@ export default function BookingSection() {
   const [step, setStep] = useState<"select" | "form" | "confirmation">("select")
   const [selectedSlot, setSelectedSlot] = useState<{ date: string; time: string } | null>(null)
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", purpose: "" })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [phoneError, setPhoneError] = useState("")
   const isMobile = useIsMobile()
 
   const handleSlotSelect = (date: string, time: string) => {
@@ -48,9 +51,55 @@ export default function BookingSection() {
     setStep("form")
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "") // Remove non-digits
+    if (value.length <= 10) {
+      setFormData({ ...formData, phone: value })
+      if (value.length === 10) {
+        setPhoneError("")
+      } else if (value.length > 0) {
+        setPhoneError("Phone number must be 10 digits")
+      } else {
+        setPhoneError("")
+      }
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setStep("confirmation")
+
+    // Validate phone number
+    if (formData.phone.length !== 10) {
+      setPhoneError("Phone number must be 10 digits")
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const { error } = await supabase
+        .from("kinetic-data")
+        .insert({
+          name: formData.name,
+          phone_num: parseInt(formData.phone, 10),
+          email: formData.email,
+          work: formData.purpose
+        })
+
+      if (error) {
+        console.error("Error saving to Supabase:", error)
+        alert("Failed to save booking. Please try again.")
+        setIsSubmitting(false)
+        return
+      }
+
+      setStep("confirmation")
+    } catch (err) {
+      console.error("Error:", err)
+      alert("Failed to save booking. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -304,9 +353,11 @@ export default function BookingSection() {
                         type="tel"
                         required
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+1 (555) 000-0000"
+                        onChange={handlePhoneChange}
+                        placeholder="10-digit phone number"
+                        maxLength={10}
                       />
+                      {phoneError && <p className="text-sm text-destructive">{phoneError}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -323,9 +374,17 @@ export default function BookingSection() {
                     <Button
                       type="submit"
                       size="lg"
+                      disabled={isSubmitting}
                       className="w-full rounded-full bg-gradient-to-r from-sunbeam to-amber text-black font-bold hover:shadow-[0_0_30px_rgba(255,204,1,0.4)] transition-all"
                     >
-                      Confirm My Demo Slot
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        "Confirm My Demo Slot"
+                      )}
                     </Button>
                   </form>
                 </Card>
@@ -381,9 +440,11 @@ export default function BookingSection() {
                         type="tel"
                         required
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+1 (555) 000-0000"
+                        onChange={handlePhoneChange}
+                        placeholder="10-digit phone number"
+                        maxLength={10}
                       />
+                      {phoneError && <p className="text-sm text-destructive">{phoneError}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -400,14 +461,24 @@ export default function BookingSection() {
                     <Button
                       type="submit"
                       size="lg"
+                      disabled={isSubmitting}
                       className="w-full rounded-full bg-gradient-to-r from-sunbeam to-amber text-black font-bold hover:shadow-[0_0_30px_rgba(255,204,1,0.4)] transition-all relative overflow-hidden"
                     >
-                      <motion.span
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                        animate={{ x: ["-100%", "200%"] }}
-                        transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-                      />
-                      <span className="relative">Confirm My Demo Slot</span>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <motion.span
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                            animate={{ x: ["-100%", "200%"] }}
+                            transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                          />
+                          <span className="relative">Confirm My Demo Slot</span>
+                        </>
+                      )}
                     </Button>
                   </form>
                 </Card>
@@ -427,7 +498,7 @@ export default function BookingSection() {
 
                   <h3 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Booking Confirmed!</h3>
                   <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
-                    We've sent a confirmation email to <strong>{formData.email}</strong>
+                    We'll get in touch with you soon.
                   </p>
 
                   <div className="bg-sunbeam/10 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 max-w-md mx-auto border border-sunbeam/20">
@@ -480,7 +551,7 @@ export default function BookingSection() {
 
                   <h3 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Booking Confirmed!</h3>
                   <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
-                    We've sent a confirmation email to <strong>{formData.email}</strong>
+                    We'll get in touch with you soon.
                   </p>
 
                   <div className="bg-sunbeam/10 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 max-w-md mx-auto border border-sunbeam/20">

@@ -28,7 +28,7 @@ const products = [
     id: 1,
     title: "Rotating LED Panels",
     category: "Retail & Events",
-    image: "/1.png",
+    image: "/product1.png",
     youtubeId: "gAQQzblPFl8",
     isPortrait: false,
     description: "360-degree rotating screens that follow your audience",
@@ -39,7 +39,7 @@ const products = [
     id: 2,
     title: "Flip Display System",
     category: "Corporate Lobbies",
-    image: "/2.png",
+    image: "/product2.png",
     youtubeId: "i7nf18eXCiA",
     isPortrait: true,
     description: "Synchronized flip mechanism for dramatic reveals",
@@ -50,7 +50,7 @@ const products = [
     id: 3,
     title: "Wave Motion Wall",
     category: "Museums & Galleries",
-    image: "/3.png",
+    image: "/product3.png",
     youtubeId: "_NJCho098f4",
     isPortrait: true,
     description: "Undulating LED panels creating mesmerizing patterns",
@@ -61,7 +61,7 @@ const products = [
     id: 4,
     title: "Sliding Panel Display",
     category: "Exhibitions & Trade Shows",
-    image: "/4.png",
+    image: "/product4.png",
     youtubeId: "Vu8zXUpS1Bg",
     isPortrait: false,
     description: "Dynamic sliding panels that reveal and transform content",
@@ -165,7 +165,7 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
           transition={{ duration: 0.3 }}
         >
           <iframe
-            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`}
+            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&start=0`}
             className={product.isPortrait
               ? "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-[300%]"
               : "w-full h-full"
@@ -299,7 +299,7 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
           transition={{ duration: 0.3 }}
         >
           <iframe
-            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`}
+            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&start=0`}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[180%]"
             style={{ border: 'none', pointerEvents: 'none' }}
             allow="autoplay; encrypted-media"
@@ -403,7 +403,7 @@ function LandscapeCard({ product }: { product: typeof products[0] }) {
           transition={{ duration: 0.3 }}
         >
           <iframe
-            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`}
+            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&start=0`}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180%] h-[180%]"
             style={{ border: 'none', pointerEvents: 'none' }}
             allow="autoplay; encrypted-media"
@@ -454,7 +454,7 @@ export default function ProductShowcase() {
     <section
       id="products"
       ref={sectionRef}
-      className="relative py-24 md:py-32 bg-black overflow-hidden"
+      className="relative py-10 md:py-16 bg-black overflow-hidden"
     >
       {/* Animated Background - static on mobile */}
       {isMobile ? (
@@ -490,23 +490,19 @@ export default function ProductShowcase() {
         {/* Section Header */}
         <div className="mb-10">
           {isMobile ? (
-            <div className="flex items-center gap-3">
-              <span className="text-xs uppercase tracking-[0.2em] text-sunbeam font-bold">Live</span>
-              <span className="text-white/40">•</span>
-              <span className="text-xs uppercase tracking-[0.2em] text-white/70">3 Demo</span>
-            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-white">
+              Experience <span className="text-transparent bg-clip-text bg-gradient-to-r from-sunbeam via-amber to-solar">Motion</span>
+            </h2>
           ) : (
-            <motion.div
-              className="flex items-center gap-3"
+            <motion.h2
+              className="text-3xl md:text-4xl lg:text-5xl font-bold text-white"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <span className="text-xs uppercase tracking-[0.2em] text-sunbeam font-bold">Live</span>
-              <span className="text-white/40">•</span>
-              <span className="text-xs uppercase tracking-[0.2em] text-white/70">3 Demo</span>
-            </motion.div>
+              Experience <span className="text-transparent bg-clip-text bg-gradient-to-r from-sunbeam via-amber to-solar">Motion</span>
+            </motion.h2>
           )}
         </div>
 
