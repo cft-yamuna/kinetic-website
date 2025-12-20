@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react"
 import { motion, useScroll, useTransform, useInView } from "framer-motion"
 import Image from "next/image"
-import { Play, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 // Global mobile state hook with hydration safety
@@ -57,6 +57,17 @@ const products = [
     stats: "Award Winning",
     motion: "Wave Pattern",
   },
+  {
+    id: 4,
+    title: "Sliding Panel Display",
+    category: "Exhibitions & Trade Shows",
+    image: "/4.png",
+    youtubeId: "Vu8zXUpS1Bg",
+    isPortrait: false,
+    description: "Dynamic sliding panels that reveal and transform content",
+    stats: "Interactive",
+    motion: "Slide Motion",
+  },
 ]
 
 function FeaturedCard({ product }: { product: typeof products[0] }) {
@@ -80,7 +91,7 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
     return (
       <div
         ref={cardRef}
-        className="relative group cursor-pointer col-span-full lg:col-span-8 row-span-2"
+        className="relative group cursor-pointer"
       >
         <div className="relative h-[400px] md:h-[450px] lg:h-full lg:min-h-[500px] rounded-2xl overflow-hidden">
           <div className={`absolute inset-0 bg-neutral-900 transition-opacity duration-500 ${isLoaded ? 'opacity-0' : 'opacity-100'}`} />
@@ -97,16 +108,7 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
-          <div className="absolute top-4 right-4 bg-black/50 rounded-full p-2">
-            <Play className="h-4 w-4 text-white fill-white" />
-          </div>
-          <div className="absolute top-4 left-4 bg-sunbeam text-black text-xs font-bold px-3 py-1 rounded-full">
-            {product.motion}
-          </div>
           <div className="absolute bottom-0 left-0 right-0 p-6">
-            <span className="text-xs uppercase tracking-wider text-sunbeam mb-2 block">
-              {product.category}
-            </span>
             <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
               {product.title}
             </h3>
@@ -124,14 +126,14 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
   return (
     <motion.div
       ref={cardRef}
-      className="relative group cursor-pointer col-span-full lg:col-span-8 row-span-2"
+      className="relative group cursor-pointer h-full"
       initial={{ opacity: 0, y: 60 }}
       animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 60 }}
       transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="relative h-[400px] md:h-[450px] lg:h-full lg:min-h-[500px] rounded-2xl overflow-hidden">
+      <div className="relative h-[400px] md:h-[450px] lg:h-full lg:min-h-[550px] rounded-2xl overflow-hidden">
         <div className={`absolute inset-0 bg-neutral-900 transition-opacity duration-700 ${isLoaded ? 'opacity-0' : 'opacity-100'}`} />
         <motion.div
           className="absolute inset-0"
@@ -155,61 +157,38 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
             sizes="(max-width: 768px) 100vw, 66vw"
           />
         </motion.div>
+        {/* Preloaded YouTube video - always in DOM, shown on hover */}
         <motion.div
           className="absolute inset-0 overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: isHovered ? 1 : 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.3 }}
         >
-          {isHovered && (
-            <iframe
-              src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1`}
-              className={product.isPortrait
-                ? "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-[300%]"
-                : "w-full h-full"
-              }
-              style={{ border: 'none', pointerEvents: 'none' }}
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-            />
-          )}
+          <iframe
+            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`}
+            className={product.isPortrait
+              ? "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-[300%]"
+              : "w-full h-full"
+            }
+            style={{ border: 'none', pointerEvents: 'none' }}
+            allow="autoplay; encrypted-media"
+            loading="eager"
+            allowFullScreen
+          />
         </motion.div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
-        <motion.div
-          className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm rounded-full p-2"
-          animate={{ opacity: isHovered ? 0 : 1 }}
-        >
-          <Play className="h-4 w-4 text-white fill-white" />
-        </motion.div>
-        <motion.div
-          className="absolute top-4 left-4 bg-sunbeam text-black text-xs font-bold px-3 py-1 rounded-full"
-          animate={{ scale: isHovered ? 1.05 : 1 }}
-        >
-          {product.motion}
-        </motion.div>
         <motion.div
           className="absolute bottom-0 left-0 right-0 p-6"
           animate={{ y: isHovered ? -10 : 0 }}
           transition={{ duration: 0.3 }}
         >
-          <span className="text-xs uppercase tracking-wider text-sunbeam mb-2 block">
-            {product.category}
-          </span>
           <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
             {product.title}
           </h3>
-          <p className="text-white/70 text-sm md:text-base mb-4 max-w-md">
+          <p className="text-white/70 text-sm md:text-base max-w-md">
             {product.description}
           </p>
-          <motion.div
-            className="flex items-center gap-2 text-sunbeam font-medium"
-            animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : -10 }}
-            transition={{ duration: 0.3 }}
-          >
-            <span>See it in action</span>
-            <ArrowRight className="h-4 w-4" />
-          </motion.div>
         </motion.div>
         <motion.div
           className="absolute inset-0 rounded-2xl pointer-events-none"
@@ -246,9 +225,9 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
     return (
       <div
         ref={cardRef}
-        className="relative group cursor-pointer lg:flex-1"
+        className="relative group cursor-pointer"
       >
-        <div className="relative h-[200px] sm:h-[180px] lg:h-full lg:min-h-[240px] rounded-xl overflow-hidden">
+        <div className="relative h-[200px] sm:h-[180px] rounded-xl overflow-hidden">
           <div className={`absolute inset-0 bg-neutral-900 transition-opacity duration-500 ${isLoaded ? 'opacity-0' : 'opacity-100'}`} />
           <div className="absolute inset-0">
             <Image
@@ -262,19 +241,10 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
             />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-          <div className="absolute top-3 right-3 bg-black/50 rounded-full p-1.5">
-            <Play className="h-3 w-3 text-white fill-white" />
-          </div>
-          <div className="absolute top-3 left-3 bg-sunbeam text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
-            {product.motion}
-          </div>
           <div className="absolute bottom-0 left-0 right-0 p-4">
-            <h3 className="text-sm md:text-base font-bold text-white mb-1">
+            <h3 className="text-sm md:text-base font-bold text-white">
               {product.title}
             </h3>
-            <span className="text-[10px] uppercase tracking-wider text-sunbeam">
-              {product.category}
-            </span>
           </div>
           <div className="absolute inset-0 rounded-xl border border-white/10 pointer-events-none" />
         </div>
@@ -282,18 +252,18 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
     )
   }
 
-  // Desktop version with animations
+  // Desktop version with animations - portrait optimized
   return (
     <motion.div
       ref={cardRef}
-      className="relative group cursor-pointer lg:flex-1"
+      className="relative group cursor-pointer"
       initial={{ opacity: 0, y: 50 }}
       animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
       transition={{ duration: 0.9, delay: index * 0.15, ease: [0.22, 1, 0.36, 1] }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="relative h-[200px] sm:h-[180px] lg:h-full lg:min-h-[240px] rounded-xl overflow-hidden">
+      <div className="relative h-[200px] sm:h-[180px] lg:h-auto rounded-xl overflow-hidden aspect-auto lg:aspect-[4/5]">
         {/* Loading Placeholder */}
         <div className={`absolute inset-0 bg-neutral-900 transition-opacity duration-700 ${isLoaded ? 'opacity-0' : 'opacity-100'}`} />
 
@@ -321,54 +291,138 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
           />
         </motion.div>
 
-        {/* YouTube video on hover */}
+        {/* Preloaded YouTube video - portrait optimized */}
         <motion.div
           className="absolute inset-0 overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: isHovered ? 1 : 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.3 }}
         >
-          {isHovered && (
-            <iframe
-              src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1`}
-              className={product.isPortrait
-                ? "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-[300%]"
-                : "w-full h-full"
-              }
-              style={{ border: 'none', pointerEvents: 'none' }}
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-            />
-          )}
+          <iframe
+            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[180%]"
+            style={{ border: 'none', pointerEvents: 'none' }}
+            allow="autoplay; encrypted-media"
+            loading="eager"
+            allowFullScreen
+          />
         </motion.div>
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-
-        {/* Play indicator */}
-        <motion.div
-          className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm rounded-full p-1.5"
-          animate={{ opacity: isHovered ? 0 : 1 }}
-        >
-          <Play className="h-3 w-3 text-white fill-white" />
-        </motion.div>
-
-        {/* Motion type badge */}
-        <div className="absolute top-3 left-3 bg-sunbeam text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
-          {product.motion}
-        </div>
 
         {/* Content overlay */}
         <motion.div
           className="absolute bottom-0 left-0 right-0 p-4"
           animate={{ y: isHovered ? -5 : 0 }}
         >
-          <h3 className="text-sm md:text-base font-bold text-white mb-1">
+          <h3 className="text-sm md:text-base font-bold text-white">
             {product.title}
           </h3>
-          <span className="text-[10px] uppercase tracking-wider text-sunbeam">
-            {product.category}
-          </span>
+        </motion.div>
+
+        {/* Hover Border */}
+        <motion.div
+          className="absolute inset-0 rounded-xl pointer-events-none"
+          animate={{
+            boxShadow: isHovered
+              ? "inset 0 0 0 2px rgba(254, 204, 0, 0.7), 0 20px 40px rgba(0,0,0,0.3)"
+              : "inset 0 0 0 1px rgba(255, 255, 255, 0.08)",
+          }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        />
+      </div>
+    </motion.div>
+  )
+}
+
+function LandscapeCard({ product }: { product: typeof products[0] }) {
+  const [isLoaded, setIsLoaded] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  const cardRef = useRef(null)
+  const isInView = useInView(cardRef, { once: true, margin: "-50px" })
+  const isMobile = useIsMobile()
+
+  const handleMouseEnter = () => {
+    setIsHovered(true)
+  }
+
+  const handleMouseLeave = () => {
+    setIsHovered(false)
+  }
+
+  // Hide on mobile - only show on desktop
+  if (isMobile) {
+    return null
+  }
+
+  // Desktop version with animations - landscape optimized
+  return (
+    <motion.div
+      ref={cardRef}
+      className="relative group cursor-pointer h-full"
+      initial={{ opacity: 0, y: 50 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+      transition={{ duration: 0.9, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div className="relative h-full min-h-[239px] rounded-xl overflow-hidden">
+        {/* Loading Placeholder */}
+        <div className={`absolute inset-0 bg-neutral-900 transition-opacity duration-700 ${isLoaded ? 'opacity-0' : 'opacity-100'}`} />
+
+        {/* Image */}
+        <motion.div
+          className="absolute inset-0"
+          initial={{ opacity: 0, scale: 1.1 }}
+          animate={{
+            opacity: isLoaded && !isHovered ? 1 : 0,
+            scale: isHovered ? 1.05 : 1
+          }}
+          transition={{
+            opacity: { duration: 0.5, ease: "easeOut" },
+            scale: { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+          }}
+        >
+          <Image
+            src={product.image}
+            alt={product.title}
+            fill
+            className="object-cover"
+            loading="lazy"
+            onLoad={() => setIsLoaded(true)}
+            sizes="(max-width: 768px) 100vw, 33vw"
+          />
+        </motion.div>
+
+        {/* Preloaded YouTube video - landscape optimized */}
+        <motion.div
+          className="absolute inset-0 overflow-hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isHovered ? 1 : 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <iframe
+            src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${product.youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180%] h-[180%]"
+            style={{ border: 'none', pointerEvents: 'none' }}
+            allow="autoplay; encrypted-media"
+            loading="eager"
+            allowFullScreen
+          />
+        </motion.div>
+
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+
+        {/* Content overlay */}
+        <motion.div
+          className="absolute bottom-0 left-0 right-0 p-4"
+          animate={{ y: isHovered ? -5 : 0 }}
+        >
+          <h3 className="text-sm md:text-base font-bold text-white">
+            {product.title}
+          </h3>
         </motion.div>
 
         {/* Hover Border */}
@@ -434,95 +488,45 @@ export default function ProductShowcase() {
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
-        <div className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div className="mb-10">
           {isMobile ? (
-            <>
-              <div>
-                <span className="text-xs uppercase tracking-[0.2em] text-sunbeam mb-3 block">
-                  Our Products
-                </span>
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight">
-                  Motion That{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-sunbeam via-amber to-solar">
-                    Mesmerizes
-                  </span>
-                </h2>
-                <p className="text-white/60 mt-3 max-w-lg">
-                  Tap each product to learn more. Every installation is custom-built to your specifications.
-                </p>
-              </div>
-              <div>
-                <Link
-                  href="#booking"
-                  className="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-sunbeam/50 text-white px-5 py-2.5 rounded-full transition-all group"
-                >
-                  <span className="text-sm font-medium">Request Custom Build</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </>
+            <div className="flex items-center gap-3">
+              <span className="text-xs uppercase tracking-[0.2em] text-sunbeam font-bold">Live</span>
+              <span className="text-white/40">•</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-white/70">3 Demo</span>
+            </div>
           ) : (
-            <>
-              <div>
-                <motion.span
-                  className="text-xs uppercase tracking-[0.2em] text-sunbeam mb-3 block"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6 }}
-                  viewport={{ once: true }}
-                >
-                  Our Products
-                </motion.span>
-                <motion.h2
-                  className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight"
-                  initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-                  viewport={{ once: true, margin: "-100px" }}
-                >
-                  Motion That{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-sunbeam via-amber to-solar">
-                    Mesmerizes
-                  </span>
-                </motion.h2>
-                <motion.p
-                  className="text-white/60 mt-3 max-w-lg"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                  viewport={{ once: true }}
-                >
-                  Hover over each product to see them in action. Every installation is custom-built to your specifications.
-                </motion.p>
-              </div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                viewport={{ once: true }}
-              >
-                <Link
-                  href="#booking"
-                  className="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-sunbeam/50 text-white px-5 py-2.5 rounded-full transition-all group"
-                >
-                  <span className="text-sm font-medium">Request Custom Build</span>
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </motion.div>
-            </>
+            <motion.div
+              className="flex items-center gap-3"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              <span className="text-xs uppercase tracking-[0.2em] text-sunbeam font-bold">Live</span>
+              <span className="text-white/40">•</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-white/70">3 Demo</span>
+            </motion.div>
           )}
         </div>
 
-        {/* Magazine-Style Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-          {/* Featured Large Card */}
-          <FeaturedCard product={products[0]} />
+        {/* Magazine-Style Layout */}
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-stretch">
+          {/* Featured Large Card - Left */}
+          <div className="lg:w-2/3 h-full">
+            <FeaturedCard product={products[0]} />
+          </div>
 
-          {/* Right Column - Stacked Cards */}
-          <div className="lg:col-span-4 grid grid-cols-2 lg:flex lg:flex-col gap-4 lg:gap-6">
-            {products.slice(1).map((product, index) => (
-              <SmallCard key={product.id} product={product} index={index} />
-            ))}
+          {/* Right Column - Portrait Cards + Landscape Card */}
+          <div className="lg:w-1/3 grid grid-rows-[auto_1fr] gap-4 h-full">
+            {/* Portrait Cards Row */}
+            <div className="grid grid-cols-2 gap-4">
+              {products.slice(1, 3).map((product, index) => (
+                <SmallCard key={product.id} product={product} index={index} />
+              ))}
+            </div>
+            {/* Landscape Card - fills remaining height */}
+            <LandscapeCard product={products[3]} />
           </div>
         </div>
 

@@ -58,15 +58,7 @@ export default function PromoBanner() {
               <span className="text-sunbeam font-bold">{slotsLeft} slots</span> left
             </span>
 
-            {/* CTA Button - static on mobile */}
-            <Link href="#booking">
-              <button className="bg-gradient-to-r from-sunbeam to-amber text-black text-xs font-bold px-4 py-1.5 rounded-full active:scale-95">
-                <span className="flex items-center gap-1.5">
-                  <Zap className="h-3.5 w-3.5" />
-                  Book
-                </span>
-              </button>
-            </Link>
+   
 
             {/* Close button */}
             <button
@@ -116,36 +108,6 @@ export default function PromoBanner() {
               </span>
             </div>
 
-            {/* Timer icon with pulse */}
-            <motion.div
-              className="hidden md:flex items-center gap-1.5 bg-sunbeam/10 border border-sunbeam/30 rounded-full px-3 py-1"
-              animate={{ scale: [1, 1.02, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <Clock className="h-3.5 w-3.5 text-sunbeam" />
-              <span className="text-xs font-mono font-bold text-sunbeam">
-                Filling Fast
-              </span>
-            </motion.div>
-
-            {/* CTA Button */}
-            <Link href="#booking">
-              <motion.button
-                className="bg-gradient-to-r from-sunbeam to-amber text-black text-xs md:text-sm font-bold px-4 md:px-5 py-1.5 rounded-full relative overflow-hidden"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <motion.span
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                  animate={{ x: ["-100%", "200%"] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-                />
-                <span className="relative flex items-center gap-1.5">
-                  <Zap className="h-3.5 w-3.5" />
-                  Grab Your Slot
-                </span>
-              </motion.button>
-            </Link>
 
             {/* Close button */}
             <button

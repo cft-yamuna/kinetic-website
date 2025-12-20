@@ -39,7 +39,7 @@ export default function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen flex items-center overflow-hidden bg-black pt-20 md:pt-12"
+      className="relative min-h-screen flex items-center overflow-hidden bg-black pt-28 md:pt-12"
     >
       {/* Background elements */}
       <div className="absolute inset-0 bg-gradient-to-br from-black via-neutral-950 to-black" />
