@@ -7,12 +7,309 @@ import { ArrowRight, Play, Sparkles } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
-// Rotating Box Tower Component (Desktop only)
+// CSS styles for mobile box animation - optimized for performance
+const mobileBoxStyles = `
+  @keyframes flipBoxContinuous {
+    0%, 5% { transform: rotateY(0deg); }
+    45%, 55% { transform: rotateY(180deg); }
+    95%, 100% { transform: rotateY(360deg); }
+  }
+  .mobile-box {
+    transform-style: preserve-3d;
+    will-change: transform;
+    -webkit-transform-style: preserve-3d;
+  }
+  .mobile-box.animating {
+    animation: flipBoxContinuous 10s ease-in-out infinite;
+  }
+  .mobile-box-face {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: transform;
+  }
+  .mobile-box-back {
+    transform: rotateY(180deg) translateZ(0);
+  }
+  .mobile-3d-edge {
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  /* Staggered delays */
+  .mobile-box:nth-child(2) { animation-delay: 0s !important; }
+  .mobile-box:nth-child(3) { animation-delay: 0.12s !important; }
+  .mobile-box:nth-child(4) { animation-delay: 0.24s !important; }
+  .mobile-box:nth-child(5) { animation-delay: 0.36s !important; }
+  .mobile-box:nth-child(6) { animation-delay: 0.48s !important; }
+  .mobile-box:nth-child(7) { animation-delay: 0.6s !important; }
+
+  /* Mobile text animations - pure CSS for smooth performance */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(15px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .mobile-text-animate {
+    opacity: 0;
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+  .mobile-text-delay-1 { animation-delay: 0.5s; }
+  .mobile-text-delay-2 { animation-delay: 0.8s; }
+  .mobile-text-delay-3 { animation-delay: 1.1s; }
+  .mobile-text-delay-4 { animation-delay: 1.4s; }
+  .mobile-text-delay-5 { animation-delay: 1.7s; }
+`
+
+// Typing Animation Component
+function TypingText({
+  text,
+  delay = 0,
+  speed = 50,
+  className = "",
+  onComplete
+}: {
+  text: string
+  delay?: number
+  speed?: number
+  className?: string
+  onComplete?: () => void
+}) {
+  const [displayedText, setDisplayedText] = useState("")
+  const [isTyping, setIsTyping] = useState(false)
+  const [hasStarted, setHasStarted] = useState(false)
+
+  useEffect(() => {
+    const startTimer = setTimeout(() => {
+      setHasStarted(true)
+      setIsTyping(true)
+    }, delay)
+
+    return () => clearTimeout(startTimer)
+  }, [delay])
+
+  useEffect(() => {
+    if (!hasStarted) return
+
+    if (displayedText.length < text.length) {
+      const timer = setTimeout(() => {
+        setDisplayedText(text.slice(0, displayedText.length + 1))
+      }, speed)
+      return () => clearTimeout(timer)
+    } else {
+      setIsTyping(false)
+      onComplete?.()
+    }
+  }, [displayedText, text, speed, hasStarted, onComplete])
+
+  return (
+    <span className={className}>
+      {displayedText}
+      {isTyping && <span className="animate-pulse">|</span>}
+    </span>
+  )
+}
+
+// Mobile Box Tower - Pure CSS for performance (no Framer Motion)
+function MobileBoxTower() {
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+
+  // 7 boxes: 1 base + 6 rotating
+  const boxes = [
+    { id: 0, isBase: true, text: '', backText: '' },
+    { id: 1, text: 'YOUR VISION', backText: '360°' },
+    { id: 2, text: 'CAPTIVATE', backText: 'ROTATE' },
+    { id: 3, text: 'FLIP & ROTATE', backText: 'FLIP' },
+    { id: 4, text: 'THAT MOVE', backText: 'MOTION' },
+    { id: 5, text: 'LED SCREENS', backText: 'LED' },
+    { id: 6, text: 'KINETIC', backText: 'KINETIC' },
+  ]
+
+  // Preload: Start animation immediately on mount
+  useEffect(() => {
+    // Show boxes immediately
+    setIsVisible(true)
+    // Start animation after a brief moment for smooth entry
+    const timer = setTimeout(() => setIsAnimating(true), 500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const toggleAnimation = () => {
+    setIsAnimating(prev => !prev)
+  }
+
+  return (
+    <div
+      className="relative h-full w-full flex items-center justify-center cursor-pointer"
+      onClick={toggleAnimation}
+    >
+        {/* Simplified glow effect - no blur filter for performance */}
+        <div
+          className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-[150px] h-[150px] pointer-events-none rounded-full"
+          style={{
+            background: 'radial-gradient(ellipse at center, rgba(225, 121, 36, 0.3) 0%, transparent 60%)',
+            opacity: isAnimating ? 0.6 : 0.3,
+            transition: 'opacity 0.5s',
+          }}
+        />
+
+        {/* Box Tower */}
+        <div
+          className="relative flex flex-col-reverse items-center"
+          style={{ transform: 'translateY(5%) translateZ(0)', perspective: '500px' }}
+        >
+          {boxes.map((box, index) => (
+            <div
+              key={box.id}
+              className={`relative mobile-box ${!box.isBase && isAnimating ? 'animating' : ''}`}
+              style={{
+                marginTop: box.isBase ? 0 : -1,
+                zIndex: boxes.length - index,
+                opacity: isVisible ? 1 : 0,
+                transition: `opacity 0.3s ease ${index * 0.1}s`,
+              }}
+            >
+              <div
+                className={box.isBase ? 'w-[150px] h-[40px]' : 'w-[130px] h-[40px]'}
+                style={{ transformStyle: 'preserve-3d' }}
+              >
+                {/* Front face - simplified */}
+                <div
+                  className="absolute inset-0 rounded-sm mobile-box-face"
+                  style={{
+                    transform: 'translateZ(6px)',
+                    background: '#0a0a0a',
+                    border: '2px solid #E17924',
+                  }}
+                >
+                  <div className="absolute inset-[2px] rounded-sm overflow-hidden bg-black flex items-center justify-center">
+                    {box.isBase ? (
+                      <div className="w-full h-full relative bg-gradient-to-b from-[#2a2a2a] to-black">
+                        <div
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[2px] bg-[#E17924]"
+                        />
+                      </div>
+                    ) : (
+                      <span
+                        className="font-black text-center px-1 text-[#E17924]"
+                        style={{
+                          fontSize: box.text.length > 10 ? '9px' : '11px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
+                        {box.text}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Back face - simplified */}
+                <div
+                  className="absolute inset-0 rounded-sm mobile-box-face mobile-box-back"
+                  style={{
+                    transform: 'translateZ(-6px) rotateY(180deg)',
+                    background: '#0a0a0a',
+                    border: '2px solid #E17924',
+                  }}
+                >
+                  {!box.isBase && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="font-black text-[12px] text-[#E17924]">
+                        {box.backText}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3D Left edge only */}
+                {!box.isBase && (
+                  <div
+                    className="absolute top-0 bottom-0 mobile-3d-edge"
+                    style={{
+                      left: 0,
+                      width: '12px',
+                      transform: 'translateZ(-6px) rotateY(-90deg)',
+                      transformOrigin: 'left center',
+                      background: '#BA5617',
+                    }}
+                  />
+                )}
+
+                {/* 3D Right edge only */}
+                {!box.isBase && (
+                  <div
+                    className="absolute top-0 bottom-0 mobile-3d-edge"
+                    style={{
+                      right: 0,
+                      width: '12px',
+                      transform: 'translateZ(-6px) rotateY(90deg)',
+                      transformOrigin: 'right center',
+                      background: '#BA5617',
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Tap instruction */}
+        <div
+          className="absolute bottom-[2%] left-1/2 -translate-x-1/2 text-white/40 text-xs"
+          style={{
+            opacity: isAnimating ? 0 : 1,
+            transition: 'opacity 0.3s',
+          }}
+        >
+          Tap to animate
+        </div>
+    </div>
+  )
+}
+
+// Desktop Rotating Box Tower Component (with Framer Motion)
 function RotatingBoxTower() {
   const [isHovered, setIsHovered] = useState(false)
   const [hoverRotations, setHoverRotations] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0])
   const [activeBoxes, setActiveBoxes] = useState<boolean[]>([false, false, false, false, false, false, false, false])
-  const containerRef = useRef(null)
+  const [isMobileView, setIsMobileView] = useState(false)
+  const [isInView, setIsInView] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobileView(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Intersection Observer - auto-start animation when in view (mobile)
+  useEffect(() => {
+    if (!isMobileView || !containerRef.current) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !isInView) {
+            setIsInView(true)
+            // Auto-start animation when scrolled into view on mobile
+            handleMouseEnter()
+          }
+        })
+      },
+      { threshold: 0.5 }
+    )
+
+    observer.observe(containerRef.current)
+    return () => observer.disconnect()
+  }, [isMobileView, isInView])
 
   // Brand colors from Frame 58.png only
   const boxColors = [
@@ -26,17 +323,26 @@ function RotatingBoxTower() {
     '#994E1F', // brown-orange
   ]
 
-  // Initial static rotations - moderate rotation with variation
-  const initialRotations = [
-    0,    // base stays fixed
-    35,   // box 1
-    -40,  // box 2
-    45,   // box 3
-    -35,  // box 4
-    40,   // box 5
-    -45,  // box 6
-    38,   // box 7
-  ]
+  // Initial static rotations - smaller on mobile for better readability
+  const initialRotations = isMobileView
+    ? [
+        0,    // base stays fixed
+        10,   // box 1 - small rotation
+        -12,  // box 2
+        15,   // box 3
+        -10,  // box 4
+        12,   // box 5
+      ]
+    : [
+        0,    // base stays fixed
+        35,   // box 1
+        -40,  // box 2
+        45,   // box 3
+        -35,  // box 4
+        40,   // box 5
+        -45,  // box 6
+        38,   // box 7
+      ]
 
   // Interval ref for continuous animation
   const animationInterval = useRef<NodeJS.Timeout | null>(null)
@@ -45,12 +351,15 @@ function RotatingBoxTower() {
   const [rotationCycle, setRotationCycle] = useState(0)
 
   // Generate 180 degree rotations (alternating direction for variety)
+  // Use consistent small variations to prevent glitchy jumps
   const generate180Rotations = (cycle: number) => {
+    const boxCount = isMobileView ? 6 : 8 // fewer boxes on mobile
     const newRotations: number[] = [0] // base stays fixed
-    for (let i = 1; i < 8; i++) {
-      // Alternate between 180 and 0 (or 360), with slight random variation
+    for (let i = 1; i < boxCount; i++) {
+      // Alternate between 180 and 0 (or 360), with consistent small variation per box
       const baseRotation = cycle % 2 === 0 ? 180 : 0
-      const variation = (Math.random() - 0.5) * 20 // -10 to +10 variation
+      // Use box index for consistent variation pattern instead of pure random
+      const variation = ((i * 7) % 11 - 5) // consistent -5 to +5 variation based on index
       newRotations.push(baseRotation + variation)
     }
     return newRotations
@@ -68,21 +377,42 @@ function RotatingBoxTower() {
     setIsHovered(true)
 
     // Keep cycling 180 degree rotations while hovering
+    // Interval must be >= animation duration to prevent glitching
     animationInterval.current = setInterval(() => {
       setRotationCycle(prev => {
         const next = prev + 1
         setHoverRotations(generate180Rotations(next))
         return next
       })
-    }, 3500) // Flip every 3.5 seconds
+    }, 4200) // Flip every 4.2s (slightly longer than 4s animation duration)
   }
 
   const handleMouseLeave = () => {
+    // On mobile, don't stop on mouse leave (use click to toggle)
+    if (isMobileView) return
+
     setIsHovered(false)
     // Stop continuous animation
     if (animationInterval.current) {
       clearInterval(animationInterval.current)
       animationInterval.current = null
+    }
+  }
+
+  // Click handler for mobile - toggle animation
+  const handleClick = () => {
+    if (!isMobileView) return
+
+    if (isHovered) {
+      // Stop animation
+      setIsHovered(false)
+      if (animationInterval.current) {
+        clearInterval(animationInterval.current)
+        animationInterval.current = null
+      }
+    } else {
+      // Start animation
+      handleMouseEnter()
     }
   }
 
@@ -95,9 +425,9 @@ function RotatingBoxTower() {
     }
   }, [])
 
-  // 1 base + 7 stacked boxes with colors, text, and back content (Frame 58 colors only)
+  // All boxes definition (Frame 58 colors only)
   // Using solid black (#000000) for all back faces
-  const boxes = [
+  const allBoxes = [
     { id: 0, isBase: true, color: boxColors[0], text: '', backText: '', backColor: '#000000' },
     { id: 1, color: boxColors[1], text: 'YOUR VISION', backText: '360°', backColor: '#000000' },
     { id: 2, color: boxColors[2], text: 'CAPTIVATE', backText: 'ROTATE', backColor: '#000000' },
@@ -108,19 +438,23 @@ function RotatingBoxTower() {
     { id: 7, color: boxColors[7], text: 'KINETIC', backText: 'KINETIC', backColor: '#000000' },
   ]
 
+  // Mobile: 1 base + 5 boxes (6 total), Desktop: 1 base + 7 boxes (8 total)
+  const boxes = isMobileView ? allBoxes.slice(0, 6) : allBoxes
+
   return (
     <motion.div
       ref={containerRef}
       className="relative h-full w-full flex items-center justify-center cursor-pointer"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onClick={handleClick}
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 1, delay: 3.0, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 1, delay: isMobileView ? 0.5 : 3.0, ease: [0.22, 1, 0.36, 1] }}
     >
       {/* Glow effect behind the tower - Frame 58 colors */}
       <motion.div
-        className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-[400px] lg:w-[500px] h-[400px] lg:h-[500px] pointer-events-none"
+        className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-[250px] md:w-[400px] lg:w-[500px] h-[250px] md:h-[400px] lg:h-[500px] pointer-events-none"
         animate={{
           opacity: isHovered ? 0.7 : 0.4,
         }}
@@ -133,7 +467,7 @@ function RotatingBoxTower() {
 
       {/* Floor reflection/glow - Frame 58 colors */}
       <motion.div
-        className="absolute bottom-[12%] left-1/2 -translate-x-1/2 w-[300px] lg:w-[400px] h-[60px] lg:h-[80px]"
+        className="absolute bottom-[12%] left-1/2 -translate-x-1/2 w-[200px] md:w-[300px] lg:w-[400px] h-[40px] md:h-[60px] lg:h-[80px]"
         animate={{
           opacity: isHovered ? 0.6 : 0.3,
         }}
@@ -148,8 +482,8 @@ function RotatingBoxTower() {
       <div
         className="relative flex flex-col-reverse items-center"
         style={{
-          transform: 'translateY(8%) rotateX(5deg)',
-          perspective: '1200px',
+          transform: isMobileView ? 'translateY(5%) rotateX(3deg)' : 'translateY(8%) rotateX(5deg)',
+          perspective: isMobileView ? '800px' : '1200px',
           transformStyle: 'preserve-3d',
         }}
       >
@@ -159,9 +493,10 @@ function RotatingBoxTower() {
             key={box.id}
             className="relative"
             style={{
-              marginTop: box.isBase ? 0 : -2,
+              marginTop: box.isBase ? 0 : (isMobileView ? -1 : -2),
               zIndex: boxes.length - index,
               transformStyle: 'preserve-3d',
+              willChange: 'transform',
             }}
             initial={{
               rotateY: 0,
@@ -179,8 +514,8 @@ function RotatingBoxTower() {
             transition={{
               rotateY: {
                 duration: box.isBase ? 0 : (isHovered ? 4 : 2.5), // Base doesn't rotate
-                delay: box.isBase ? 0 : (isHovered ? index * 0.12 : 0),
-                ease: [0.25, 0.1, 0.25, 1],
+                delay: box.isBase ? 0 : (isHovered ? index * 0.1 : 0),
+                ease: "easeInOut", // Smooth symmetric easing prevents glitchy snaps
               },
               opacity: {
                 duration: 0.8,
@@ -204,8 +539,8 @@ function RotatingBoxTower() {
               className={`
                 relative
                 ${box.isBase
-                  ? 'w-[220px] h-[60px] lg:w-[280px] lg:h-[70px]'
-                  : 'w-[200px] h-[60px] lg:w-[250px] lg:h-[70px]'
+                  ? 'w-[150px] h-[40px] md:w-[220px] md:h-[60px] lg:w-[280px] lg:h-[70px]'
+                  : 'w-[130px] h-[40px] md:w-[200px] md:h-[60px] lg:w-[250px] lg:h-[70px]'
                 }
               `}
               style={{
@@ -217,14 +552,14 @@ function RotatingBoxTower() {
                 className="absolute inset-0 rounded-sm"
                 style={{
                   transform: 'translateZ(10px)',
-                  transformStyle: 'preserve-3d',
-                  background: '#111',
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  background: '#000000',
                   border: '2px solid #E17924',
-                  boxShadow: '0 0 20px rgba(0,0,0,0.5), 0 0 10px rgba(225, 121, 36, 0.3)',
                 }}
               >
                 {/* Inner screen */}
-                <div className="absolute inset-[2px] rounded-sm overflow-hidden bg-[#0a0a0a]">
+                <div className="absolute inset-[2px] rounded-sm overflow-hidden bg-black">
                   {box.isBase ? (
                     /* Base box - Heavy solid industrial support */
                     <div className="absolute inset-0">
@@ -293,14 +628,16 @@ function RotatingBoxTower() {
                   ) : (
                     /* Boxes 1-7: Each box has its own text */
                     <>
-                      <div className="absolute inset-0 bg-black" />
-                      <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black" style={{ zIndex: 1 }} />
+                      <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 2 }}>
                         <motion.span
-                          className="font-black tracking-wide text-center px-2"
+                          className="font-black tracking-wide text-center px-1 md:px-2"
                           style={{
-                            fontSize: box.text.length > 10 ? '11px' : '14px',
+                            fontSize: isMobileView
+                              ? (box.text.length > 10 ? '9px' : '11px')
+                              : (box.text.length > 10 ? '11px' : '14px'),
                             textTransform: 'uppercase',
-                            letterSpacing: '0.1em',
+                            letterSpacing: isMobileView ? '0.08em' : '0.1em',
                           }}
                           animate={{
                             background: isHovered
@@ -321,7 +658,8 @@ function RotatingBoxTower() {
 
                       {/* Scan line */}
                       <motion.div
-                        className="absolute left-0 right-0 h-[2px] pointer-events-none z-10"
+                        className="absolute left-0 right-0 h-[2px] pointer-events-none"
+                        style={{ zIndex: 3 }}
                         animate={{
                           top: ['100%', '0%'],
                           background: isHovered
@@ -334,13 +672,14 @@ function RotatingBoxTower() {
                         }}
                       />
 
-                      {/* Glow effect */}
+                      {/* Inner glow/shine effect on hover */}
                       <motion.div
                         className="absolute inset-0 pointer-events-none rounded-sm"
+                        style={{ zIndex: 4 }}
                         animate={{
                           boxShadow: isHovered
                             ? 'inset 0 0 25px rgba(225, 121, 36, 0.6), inset 0 0 50px rgba(186, 86, 23, 0.3)'
-                            : 'inset 0 0 10px rgba(225, 121, 36, 0.2)',
+                            : 'inset 0 0 0px rgba(225, 121, 36, 0)',
                         }}
                         transition={{ duration: 0.3 }}
                       />
@@ -354,9 +693,10 @@ function RotatingBoxTower() {
                 className="absolute inset-0 rounded-sm overflow-hidden"
                 style={{
                   transform: 'translateZ(-10px) rotateY(180deg)',
-                  background: '#0a0a0a',
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  background: '#000000',
                   border: '2px solid #E17924',
-                  boxShadow: '0 0 15px rgba(225, 121, 36, 0.3)',
                 }}
               >
                 {!box.isBase && (
@@ -374,7 +714,9 @@ function RotatingBoxTower() {
                       <span
                         className="font-black tracking-widest"
                         style={{
-                          fontSize: box.backText.length > 6 ? '12px' : '18px',
+                          fontSize: isMobileView
+                            ? (box.backText.length > 6 ? '10px' : '14px')
+                            : (box.backText.length > 6 ? '12px' : '18px'),
                           color: '#E17924',
                           textShadow: '0 0 10px rgba(225, 121, 36, 0.8), 0 0 20px rgba(225, 121, 36, 0.4)',
                         }}
@@ -386,57 +728,65 @@ function RotatingBoxTower() {
                 )}
               </div>
 
-              {/* Left edge - visible during rotation */}
-              <div
-                className="absolute top-0 bottom-0 w-[20px]"
-                style={{
-                  left: 0,
-                  transform: 'rotateY(-90deg) translateZ(10px)',
-                  transformOrigin: 'left center',
-                  background: 'linear-gradient(to right, #1a1a1a 0%, #E17924 50%, #1a1a1a 100%)',
-                  borderTop: '2px solid #E17924',
-                  borderBottom: '2px solid #E17924',
-                }}
-              />
+              {/* 3D Left edge - connects front to back */}
+              {!box.isBase && (
+                <div
+                  className="absolute top-0 bottom-0"
+                  style={{
+                    left: 0,
+                    width: '20px',
+                    transform: 'rotateY(-90deg)',
+                    transformOrigin: 'left center',
+                    background: '#BA5617',
+                    backfaceVisibility: 'hidden',
+                  }}
+                />
+              )}
 
-              {/* Right edge - visible during rotation */}
-              <div
-                className="absolute top-0 bottom-0 w-[20px]"
-                style={{
-                  right: 0,
-                  transform: 'rotateY(90deg) translateZ(10px)',
-                  transformOrigin: 'right center',
-                  background: 'linear-gradient(to left, #1a1a1a 0%, #E17924 50%, #1a1a1a 100%)',
-                  borderTop: '2px solid #E17924',
-                  borderBottom: '2px solid #E17924',
-                }}
-              />
+              {/* 3D Right edge - connects front to back */}
+              {!box.isBase && (
+                <div
+                  className="absolute top-0 bottom-0"
+                  style={{
+                    right: 0,
+                    width: '20px',
+                    transform: 'rotateY(90deg)',
+                    transformOrigin: 'right center',
+                    background: '#BA5617',
+                    backfaceVisibility: 'hidden',
+                  }}
+                />
+              )}
 
-              {/* Top edge - 3D depth */}
-              <div
-                className="absolute left-0 right-0 h-[20px]"
-                style={{
-                  top: 0,
-                  transform: 'rotateX(90deg) translateZ(10px)',
-                  transformOrigin: 'top center',
-                  background: 'linear-gradient(to bottom, #E17924 0%, #1a1a1a 50%, #0a0a0a 100%)',
-                  borderLeft: '2px solid #E17924',
-                  borderRight: '2px solid #E17924',
-                }}
-              />
+              {/* 3D Top edge */}
+              {!box.isBase && (
+                <div
+                  className="absolute left-0 right-0"
+                  style={{
+                    top: 0,
+                    height: '20px',
+                    transform: 'rotateX(90deg)',
+                    transformOrigin: 'top center',
+                    background: '#E17924',
+                    backfaceVisibility: 'hidden',
+                  }}
+                />
+              )}
 
-              {/* Bottom edge - 3D depth */}
-              <div
-                className="absolute left-0 right-0 h-[20px]"
-                style={{
-                  bottom: 0,
-                  transform: 'rotateX(-90deg) translateZ(10px)',
-                  transformOrigin: 'bottom center',
-                  background: 'linear-gradient(to top, #E17924 0%, #1a1a1a 50%, #0d0d0d 100%)',
-                  borderLeft: '2px solid #E17924',
-                  borderRight: '2px solid #E17924',
-                }}
-              />
+              {/* 3D Bottom edge */}
+              {!box.isBase && (
+                <div
+                  className="absolute left-0 right-0"
+                  style={{
+                    bottom: 0,
+                    height: '20px',
+                    transform: 'rotateX(-90deg)',
+                    transformOrigin: 'bottom center',
+                    background: '#994E1F',
+                    backfaceVisibility: 'hidden',
+                  }}
+                />
+              )}
 
               {/* Shadow underneath box */}
               <div
@@ -486,13 +836,15 @@ function RotatingBoxTower() {
         </>
       )}
 
-      {/* Hover instruction text */}
+      {/* Instruction text - different for mobile/desktop */}
       <motion.div
-        className="absolute bottom-[5%] left-1/2 -translate-x-1/2 text-white/40 text-sm"
+        className="absolute left-1/2 -translate-x-1/2 text-white/40 text-xs md:text-sm"
+        style={{ bottom: isMobileView ? '2%' : '5%' }}
         initial={{ opacity: 0 }}
         animate={{ opacity: isHovered ? 0 : 1 }}
-        transition={{ duration: 0.3, delay: 4 }}
+        transition={{ duration: 0.3, delay: isMobileView ? 1 : 4 }}
       >
+        {isMobileView ? 'Tap to animate' : 'Hover to animate'}
       </motion.div>
     </motion.div>
   )
@@ -532,6 +884,9 @@ export default function HeroSection() {
       ref={sectionRef}
       className="relative min-h-screen flex items-center overflow-hidden bg-black pt-28 md:pt-12"
     >
+      {/* Mobile CSS animations */}
+      {useMobileOptimizations && <style dangerouslySetInnerHTML={{ __html: mobileBoxStyles }} />}
+
       {/* Background elements */}
       <div className="absolute inset-0 bg-gradient-to-br from-black via-neutral-950 to-black" />
 
@@ -581,16 +936,16 @@ export default function HeroSection() {
       >
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-8 items-center min-h-[80vh]">
 
-          {/* Left Side - Text Content */}
-          <div className="text-center lg:text-left order-1">
+          {/* Text Content - Below boxes on mobile, Left on desktop */}
+          <div className="text-center lg:text-left order-2 md:order-1">
             {/* Main headline */}
             {useMobileOptimizations ? (
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-black mb-4 leading-none tracking-tight">
-                <span className="text-white inline-block mobile-fade-in-up mobile-delay-2">
+                <span className="text-white inline-block mobile-text-animate mobile-text-delay-1">
                   SCREENS
                 </span>
                 <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sunbeam via-amber to-solar inline-block mobile-fade-in-up mobile-delay-3">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sunbeam via-amber to-solar inline-block mobile-text-animate mobile-text-delay-2">
                   THAT MOVE
                 </span>
               </h1>
@@ -605,7 +960,7 @@ export default function HeroSection() {
                   className="text-white inline-block"
                   initial={{ opacity: 0, y: 50 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 3.2, ease: "easeOut" }}
+                  transition={{ duration: 0.8, delay: 3.2, ease: [0.25, 0.1, 0.25, 1] }}
                 >
                   SCREENS
                 </motion.span>
@@ -614,7 +969,7 @@ export default function HeroSection() {
                   className="text-transparent bg-clip-text bg-gradient-to-r from-sunbeam via-amber to-solar inline-block"
                   initial={{ opacity: 0, y: 50 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 3.4, ease: "easeOut" }}
+                  transition={{ duration: 0.8, delay: 3.4, ease: [0.25, 0.1, 0.25, 1] }}
                 >
                   THAT MOVE
                 </motion.span>
@@ -623,7 +978,7 @@ export default function HeroSection() {
 
             {/* Sub-headline */}
             {useMobileOptimizations ? (
-              <p className="text-xl md:text-2xl lg:text-3xl text-white/90 mb-4 font-light mobile-fade-in-up mobile-delay-4">
+              <p className="text-xl md:text-2xl lg:text-3xl text-white/90 mb-4 font-light mobile-text-animate mobile-text-delay-3">
                 Rotate. Flip. Captivate.
               </p>
             ) : (
@@ -631,7 +986,7 @@ export default function HeroSection() {
                 className="text-xl md:text-2xl lg:text-3xl text-white/90 mb-4 font-light"
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 3.6, ease: "easeOut" }}
+                transition={{ duration: 0.6, delay: 3.6, ease: [0.25, 0.1, 0.25, 1] }}
               >
                 Rotate. Flip. Captivate.
               </motion.p>
@@ -639,7 +994,7 @@ export default function HeroSection() {
 
             {/* Description */}
             {useMobileOptimizations ? (
-              <p className="text-base md:text-lg text-white/60 mb-8 max-w-lg mx-auto lg:mx-0 mobile-fade-in mobile-delay-5">
+              <p className="text-base md:text-lg text-white/60 mb-8 max-w-lg mx-auto lg:mx-0 mobile-text-animate mobile-text-delay-4">
                 LED displays powered by precision motors that transform static screens into living, breathing installations.
               </p>
             ) : (
@@ -647,7 +1002,7 @@ export default function HeroSection() {
                 className="text-base md:text-lg text-white/60 mb-8 max-w-lg mx-auto lg:mx-0"
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 3.8, ease: "easeOut" }}
+                transition={{ duration: 0.5, delay: 3.8, ease: [0.25, 0.1, 0.25, 1] }}
               >
                 LED displays powered by precision motors that transform static screens into living, breathing installations.
               </motion.p>
@@ -655,7 +1010,7 @@ export default function HeroSection() {
 
             {/* CTA Buttons */}
             {useMobileOptimizations ? (
-              <div className="flex flex-row items-center justify-center lg:justify-start gap-3 mobile-fade-in-up mobile-delay-6">
+              <div className="flex flex-row items-center justify-center lg:justify-start gap-3 mobile-text-animate mobile-text-delay-5">
                 <Link href="#booking">
                   <Button
                     size="sm"
@@ -683,7 +1038,7 @@ export default function HeroSection() {
                 className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 4.0, ease: "easeOut" }}
+                transition={{ duration: 0.5, delay: 4.0, ease: [0.25, 0.1, 0.25, 1] }}
               >
                 <Link href="#booking">
                   <Button
@@ -715,68 +1070,10 @@ export default function HeroSection() {
             )}
           </div>
 
-          {/* Right Side - Images on Mobile, Box Tower on Desktop */}
-          <div className="relative order-2 h-[320px] md:h-[450px] lg:h-[600px]">
-            {/* Mobile: Show 3 Images */}
-            {useMobileOptimizations ? (
-              <>
-                {/* Main featured image - center */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] md:w-[320px] z-20 mobile-scale-in mobile-delay-2">
-                  <div
-                    className="relative rounded-2xl overflow-hidden shadow-2xl shadow-sunbeam/20"
-                    style={{ transform: 'rotate(-3deg)' }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
-                    <Image
-                      src="/1.png"
-                      alt="Rotating LED Panels"
-                      width={350}
-                      height={260}
-                      className="w-full h-auto object-cover max-h-[220px] md:max-h-[440px]"
-                      priority
-                    />
-                    <div className="absolute inset-0 border-2 border-sunbeam/50 rounded-2xl" />
-                  </div>
-                </div>
-
-                {/* Top right image */}
-                <div
-                  className="absolute top-4 right-4 md:top-8 md:right-8 w-[145px] md:w-[200px] z-10 mobile-slide-right mobile-delay-3"
-                  style={{ transform: 'rotate(5deg)' }}
-                >
-                  <div className="relative rounded-xl overflow-hidden shadow-xl">
-                    <Image
-                      src="/2.png"
-                      alt="Flip Display System"
-                      width={200}
-                      height={150}
-                      className="w-full h-auto object-cover max-h-[175px] md:max-h-[280px]"
-                    />
-                    <div className="absolute inset-0 border border-amber/40 rounded-xl" />
-                  </div>
-                </div>
-
-                {/* Bottom left image */}
-                <div
-                  className="absolute bottom-4 left-4 md:bottom-8 md:left-8 w-[130px] md:w-[180px] z-10 mobile-slide-left mobile-delay-4"
-                  style={{ transform: 'rotate(-8deg)' }}
-                >
-                  <div className="relative rounded-xl overflow-hidden shadow-xl">
-                    <Image
-                      src="/3.png"
-                      alt="Wave Motion Wall"
-                      width={200}
-                      height={150}
-                      className="w-full h-auto object-cover max-h-[155px] md:max-h-[320px]"
-                    />
-                    <div className="absolute inset-0 border border-solar/40 rounded-xl" />
-                  </div>
-                </div>
-              </>
-            ) : (
-              /* Desktop: Show Rotating Box Tower */
-              <RotatingBoxTower />
-            )}
+          {/* Box Tower - Top on mobile, Right on desktop */}
+          <div className="relative order-1 md:order-2 h-[340px] md:h-[450px] lg:h-[600px]">
+            {/* Use CSS-based component on mobile for better performance */}
+            {hasMounted && isMobile ? <MobileBoxTower /> : <RotatingBoxTower />}
           </div>
         </div>
       </motion.div>
