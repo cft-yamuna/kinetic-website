@@ -76,6 +76,7 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [videoReady, setVideoReady] = useState(false)
   const cardRef = useRef(null)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const isInView = useInView(cardRef, { once: true, margin: "-100px" })
@@ -83,16 +84,27 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
 
   // Listen for YouTube player state changes on mobile
   useEffect(() => {
-    if (!isMobile || !isPlaying) return
+    if (!isMobile) return
 
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== "https://www.youtube.com") return
 
       try {
         const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data
+
+        // Video is ready
+        if (data.event === "onReady") {
+          setVideoReady(true)
+        }
+
         // State 0 means video ended
         if (data.event === "onStateChange" && data.info === 0) {
           setIsPlaying(false)
+          // Seek back to start for next play
+          if (iframeRef.current) {
+            iframeRef.current.contentWindow?.postMessage('{"event":"command","func":"seekTo","args":[0, true]}', '*')
+            iframeRef.current.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*')
+          }
         }
       } catch (e) {
         // Ignore parse errors
@@ -101,7 +113,18 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
 
     window.addEventListener("message", handleMessage)
     return () => window.removeEventListener("message", handleMessage)
-  }, [isMobile, isPlaying])
+  }, [isMobile])
+
+  // Control video playback via postMessage
+  useEffect(() => {
+    if (!isMobile || !iframeRef.current) return
+
+    if (isPlaying) {
+      iframeRef.current.contentWindow?.postMessage('{"event":"command","func":"playVideo","args":""}', '*')
+    } else {
+      iframeRef.current.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*')
+    }
+  }, [isPlaying, isMobile])
 
   const handleMouseEnter = () => {
     setIsHovered(true)
@@ -118,8 +141,9 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
     }
   }
 
-  // Mobile version - click to play (preloaded)
+  // Mobile version - preloaded, controlled via postMessage API
   if (isMobile) {
+    const videoId = product.mobileYoutubeId || product.youtubeId
     return (
       <div
         ref={cardRef}
@@ -127,8 +151,8 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
         onClick={handleClick}
       >
         <div className="relative h-[400px] md:h-[450px] lg:h-full lg:min-h-[500px] rounded-2xl overflow-hidden">
-          {/* Image - always visible underneath */}
-          <div className="absolute inset-0">
+          {/* Image - shown when not playing */}
+          <div className={`absolute inset-0 z-10 transition-opacity duration-300 ${isPlaying ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <Image
               src={product.image}
               alt={product.title}
@@ -138,14 +162,22 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
               onLoad={() => setIsLoaded(true)}
               sizes="(max-width: 768px) 100vw, 66vw"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-6">
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                {product.title}
+              </h3>
+              <p className="text-white/70 text-sm md:text-base max-w-md">
+                {product.description}
+              </p>
+            </div>
           </div>
-          {/* YouTube video - preloaded, fades in on play */}
-          <div
-            className={`absolute inset-0 overflow-hidden transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-0'}`}
-          >
+          {/* YouTube video - always loaded, controlled via postMessage */}
+          <div className="absolute inset-0 overflow-hidden">
             <iframe
               ref={iframeRef}
-              src={`https://www.youtube.com/embed/${product.mobileYoutubeId || product.youtubeId}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=0&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
               className={product.mobileYoutubeId
                 ? "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[180%]"
                 : product.isPortrait
@@ -157,17 +189,7 @@ function FeaturedCard({ product }: { product: typeof products[0] }) {
               loading="eager"
             />
           </div>
-          <div className={`absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent transition-opacity duration-500 ${isPlaying ? 'opacity-0' : 'opacity-100'}`} />
-          <div className={`absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent transition-opacity duration-500 ${isPlaying ? 'opacity-0' : 'opacity-100'}`} />
-          <div className={`absolute bottom-0 left-0 right-0 p-6 transition-opacity duration-500 ${isPlaying ? 'opacity-0' : 'opacity-100'}`}>
-            <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
-              {product.title}
-            </h3>
-            <p className="text-white/70 text-sm md:text-base max-w-md">
-              {product.description}
-            </p>
-          </div>
-          <div className={`absolute inset-0 rounded-2xl pointer-events-none transition-all duration-500 ${isPlaying ? 'border-2 border-sunbeam/50' : 'border border-white/10'}`} />
+          <div className={`absolute inset-0 rounded-2xl pointer-events-none transition-all duration-300 z-20 ${isPlaying ? 'border-2 border-sunbeam/50' : 'border border-white/10'}`} />
         </div>
       </div>
     )
@@ -271,12 +293,13 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
   const [isHovered, setIsHovered] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const cardRef = useRef(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
   const isInView = useInView(cardRef, { once: true, margin: "-50px" })
   const isMobile = useIsMobile()
 
   // Listen for YouTube player state changes on mobile
   useEffect(() => {
-    if (!isMobile || !isPlaying) return
+    if (!isMobile) return
 
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== "https://www.youtube.com") return
@@ -286,6 +309,11 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
         // State 0 means video ended
         if (data.event === "onStateChange" && data.info === 0) {
           setIsPlaying(false)
+          // Seek back to start for next play
+          if (iframeRef.current) {
+            iframeRef.current.contentWindow?.postMessage('{"event":"command","func":"seekTo","args":[0, true]}', '*')
+            iframeRef.current.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*')
+          }
         }
       } catch (e) {
         // Ignore parse errors
@@ -294,7 +322,18 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
 
     window.addEventListener("message", handleMessage)
     return () => window.removeEventListener("message", handleMessage)
-  }, [isMobile, isPlaying])
+  }, [isMobile])
+
+  // Control video playback via postMessage
+  useEffect(() => {
+    if (!isMobile || !iframeRef.current) return
+
+    if (isPlaying) {
+      iframeRef.current.contentWindow?.postMessage('{"event":"command","func":"playVideo","args":""}', '*')
+    } else {
+      iframeRef.current.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*')
+    }
+  }, [isPlaying, isMobile])
 
   const handleMouseEnter = () => {
     setIsHovered(true)
@@ -311,7 +350,7 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
     }
   }
 
-  // Mobile version - click to play (preloaded)
+  // Mobile version - preloaded, controlled via postMessage API
   if (isMobile) {
     return (
       <div
@@ -320,8 +359,8 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
         onClick={handleClick}
       >
         <div className="relative h-[200px] sm:h-[180px] rounded-xl overflow-hidden">
-          {/* Image - always visible underneath */}
-          <div className="absolute inset-0">
+          {/* Image - shown when not playing */}
+          <div className={`absolute inset-0 z-10 transition-opacity duration-300 ${isPlaying ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <Image
               src={product.image}
               alt={product.title}
@@ -331,26 +370,25 @@ function SmallCard({ product, index }: { product: typeof products[0]; index: num
               onLoad={() => setIsLoaded(true)}
               sizes="(max-width: 768px) 50vw, 33vw"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-4">
+              <h3 className="text-sm md:text-base font-bold text-white">
+                {product.title}
+              </h3>
+            </div>
           </div>
-          {/* YouTube video - preloaded, fades in on play */}
-          <div
-            className={`absolute inset-0 overflow-hidden transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-0'}`}
-          >
+          {/* YouTube video - always loaded, controlled via postMessage */}
+          <div className="absolute inset-0 overflow-hidden">
             <iframe
-              src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+              ref={iframeRef}
+              src={`https://www.youtube.com/embed/${product.youtubeId}?autoplay=0&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[180%]"
               style={{ border: 'none', pointerEvents: 'none' }}
               allow="autoplay; encrypted-media"
               loading="eager"
             />
           </div>
-          <div className={`absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent transition-opacity duration-500 ${isPlaying ? 'opacity-0' : 'opacity-100'}`} />
-          <div className={`absolute bottom-0 left-0 right-0 p-4 transition-opacity duration-500 ${isPlaying ? 'opacity-0' : 'opacity-100'}`}>
-            <h3 className="text-sm md:text-base font-bold text-white">
-              {product.title}
-            </h3>
-          </div>
-          <div className={`absolute inset-0 rounded-xl pointer-events-none transition-all duration-500 ${isPlaying ? 'border-2 border-sunbeam/50' : 'border border-white/10'}`} />
+          <div className={`absolute inset-0 rounded-xl pointer-events-none transition-all duration-300 z-20 ${isPlaying ? 'border-2 border-sunbeam/50' : 'border border-white/10'}`} />
         </div>
       </div>
     )
