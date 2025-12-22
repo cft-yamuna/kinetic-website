@@ -9,18 +9,51 @@ import Image from "next/image"
 
 // CSS styles for mobile box animation - optimized for performance
 const mobileBoxStyles = `
-  @keyframes flipBoxContinuous {
-    0%, 5% { transform: rotateY(0deg); }
-    45%, 55% { transform: rotateY(180deg); }
-    95%, 100% { transform: rotateY(360deg); }
+  /* Initial load animation - flip and return */
+  @keyframes flipAndReturn {
+    0% { transform: rotateY(var(--initial-rotation, 0deg)); }
+    40% { transform: rotateY(180deg); }
+    100% { transform: rotateY(var(--initial-rotation, 0deg)); }
+  }
+  /* Clockwise rotation (swipe right) */
+  @keyframes flipBoxClockwise {
+    0% { transform: rotateY(var(--initial-rotation, 0deg)); }
+    100% { transform: rotateY(180deg); }
+  }
+  /* Anti-clockwise rotation (swipe left) */
+  @keyframes flipBoxAntiClockwise {
+    0% { transform: rotateY(var(--initial-rotation, 0deg)); }
+    100% { transform: rotateY(-180deg); }
+  }
+  /* Return to home from clockwise */
+  @keyframes returnFromClockwise {
+    0% { transform: rotateY(180deg); }
+    100% { transform: rotateY(var(--initial-rotation, 0deg)); }
+  }
+  /* Return to home from anti-clockwise */
+  @keyframes returnFromAntiClockwise {
+    0% { transform: rotateY(-180deg); }
+    100% { transform: rotateY(var(--initial-rotation, 0deg)); }
   }
   .mobile-box {
     transform-style: preserve-3d;
     will-change: transform;
     -webkit-transform-style: preserve-3d;
   }
-  .mobile-box.animating {
-    animation: flipBoxContinuous 10s ease-in-out infinite;
+  .mobile-box.initial-flip {
+    animation: flipAndReturn 3s ease-in-out forwards;
+  }
+  .mobile-box.flip-clockwise {
+    animation: flipBoxClockwise 2s ease-in-out forwards;
+  }
+  .mobile-box.flip-anticlockwise {
+    animation: flipBoxAntiClockwise 2s ease-in-out forwards;
+  }
+  .mobile-box.return-clockwise {
+    animation: returnFromClockwise 2s ease-in-out forwards;
+  }
+  .mobile-box.return-anticlockwise {
+    animation: returnFromAntiClockwise 2s ease-in-out forwards;
   }
   .mobile-box-face {
     backface-visibility: hidden;
@@ -37,11 +70,11 @@ const mobileBoxStyles = `
   }
   /* Staggered delays */
   .mobile-box:nth-child(2) { animation-delay: 0s !important; }
-  .mobile-box:nth-child(3) { animation-delay: 0.12s !important; }
-  .mobile-box:nth-child(4) { animation-delay: 0.24s !important; }
-  .mobile-box:nth-child(5) { animation-delay: 0.36s !important; }
-  .mobile-box:nth-child(6) { animation-delay: 0.48s !important; }
-  .mobile-box:nth-child(7) { animation-delay: 0.6s !important; }
+  .mobile-box:nth-child(3) { animation-delay: 0.1s !important; }
+  .mobile-box:nth-child(4) { animation-delay: 0.2s !important; }
+  .mobile-box:nth-child(5) { animation-delay: 0.3s !important; }
+  .mobile-box:nth-child(6) { animation-delay: 0.4s !important; }
+  .mobile-box:nth-child(7) { animation-delay: 0.5s !important; }
 
   /* Mobile text animations - pure CSS for smooth performance */
   @keyframes fadeInUp {
@@ -116,8 +149,13 @@ function TypingText({
 
 // Mobile Box Tower - Pure CSS for performance (no Framer Motion)
 function MobileBoxTower() {
-  const [isAnimating, setIsAnimating] = useState(false)
+  const [animationState, setAnimationState] = useState<'idle' | 'flip-clockwise' | 'flip-anticlockwise' | 'return-clockwise' | 'return-anticlockwise'>('idle')
   const [isVisible, setIsVisible] = useState(false)
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [lastDirection, setLastDirection] = useState<'cw' | 'acw'>('cw')
+  const containerRef = useRef<HTMLDivElement>(null)
+  const touchStartX = useRef(0)
+  const touchEndX = useRef(0)
 
   // 7 boxes: 1 base + 6 rotating
   const boxes = [
@@ -130,30 +168,80 @@ function MobileBoxTower() {
     { id: 6, text: 'KINETIC', backText: 'KINETIC' },
   ]
 
-  // Preload: Start animation immediately on mount
+  // Preload: Start animation once on mount
   useEffect(() => {
-    // Show boxes immediately
     setIsVisible(true)
-    // Start animation after a brief moment for smooth entry
-    const timer = setTimeout(() => setIsAnimating(true), 500)
+    // Initial flip on load (clockwise)
+    const timer = setTimeout(() => {
+      setAnimationState('flip-clockwise')
+      setLastDirection('cw')
+      setIsFlipped(true)
+    }, 800)
     return () => clearTimeout(timer)
   }, [])
 
-  const toggleAnimation = () => {
-    setIsAnimating(prev => !prev)
+  // Handle swipe gestures
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX
+  }
+
+  const handleTouchEnd = () => {
+    const swipeDistance = touchEndX.current - touchStartX.current
+    const minSwipeDistance = 50 // minimum swipe distance to trigger
+
+    if (Math.abs(swipeDistance) > minSwipeDistance) {
+      if (swipeDistance > 0) {
+        // Swipe right - clockwise rotation
+        if (isFlipped) {
+          setAnimationState('return-clockwise')
+          setIsFlipped(false)
+        } else {
+          setAnimationState('flip-clockwise')
+          setIsFlipped(true)
+        }
+        setLastDirection('cw')
+      } else {
+        // Swipe left - anti-clockwise rotation
+        if (isFlipped) {
+          setAnimationState('return-anticlockwise')
+          setIsFlipped(false)
+        } else {
+          setAnimationState('flip-anticlockwise')
+          setIsFlipped(true)
+        }
+        setLastDirection('acw')
+      }
+    }
+
+    // Reset touch positions
+    touchStartX.current = 0
+    touchEndX.current = 0
+  }
+
+  // Get animation class for each box
+  const getAnimationClass = (isBase: boolean) => {
+    if (isBase || animationState === 'idle') return ''
+    return animationState
   }
 
   return (
     <div
-      className="relative h-full w-full flex items-center justify-center cursor-pointer"
-      onClick={toggleAnimation}
+      ref={containerRef}
+      className="relative h-full w-full flex items-center justify-center"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
         {/* Simplified glow effect - no blur filter for performance */}
         <div
           className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-[150px] h-[150px] pointer-events-none rounded-full"
           style={{
             background: 'radial-gradient(ellipse at center, rgba(225, 121, 36, 0.3) 0%, transparent 60%)',
-            opacity: isAnimating ? 0.6 : 0.3,
+            opacity: animationState !== 'idle' ? 0.6 : 0.3,
             transition: 'opacity 0.5s',
           }}
         />
@@ -166,7 +254,7 @@ function MobileBoxTower() {
           {boxes.map((box, index) => (
             <div
               key={box.id}
-              className={`relative mobile-box ${!box.isBase && isAnimating ? 'animating' : ''}`}
+              className={`relative mobile-box ${getAnimationClass(box.isBase)}`}
               style={{
                 marginTop: box.isBase ? 0 : -1,
                 zIndex: boxes.length - index,
@@ -259,15 +347,13 @@ function MobileBoxTower() {
           ))}
         </div>
 
-        {/* Tap instruction */}
+        {/* Swipe instruction */}
         <div
-          className="absolute bottom-[2%] left-1/2 -translate-x-1/2 text-white/40 text-xs"
-          style={{
-            opacity: isAnimating ? 0 : 1,
-            transition: 'opacity 0.3s',
-          }}
+          className="absolute bottom-[2%] left-1/2 -translate-x-1/2 text-white/40 text-xs flex items-center gap-2"
         >
-          Tap to animate
+          <span>←</span>
+          <span>Swipe to rotate</span>
+          <span>→</span>
         </div>
     </div>
   )
