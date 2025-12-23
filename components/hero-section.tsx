@@ -784,7 +784,9 @@ function RotatingBoxTower() {
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
                   background: '#000000',
-                  border: '2px solid #E17924',
+                  outline: '2px solid #E17924',
+                  outlineOffset: '-2px',
+                  willChange: 'transform',
                 }}
               >
                 {/* Inner screen */}
@@ -925,7 +927,9 @@ function RotatingBoxTower() {
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
                   background: '#000000',
-                  border: '2px solid #E17924',
+                  outline: '2px solid #E17924',
+                  outlineOffset: '-2px',
+                  willChange: 'transform',
                 }}
               >
                 {!box.isBase && (
