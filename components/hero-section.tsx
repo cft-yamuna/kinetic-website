@@ -8,53 +8,133 @@ import Link from "next/link"
 import Image from "next/image"
 
 // CSS styles for mobile box animation - optimized for performance
+// Initial rotations for staggered look (like desktop)
+// Box 1: 25deg, Box 2: -30deg, Box 3: 35deg, Box 4: -25deg, Box 5: 30deg, Box 6: -35deg
+// When flipped: all go to 180deg (linear/aligned) showing back face
+// When returned: back to staggered positions
 const mobileBoxStyles = `
-  /* Initial load animation - flip and return */
-  @keyframes flipAndReturn {
-    0% { transform: rotateY(var(--initial-rotation, 0deg)); }
-    40% { transform: rotateY(180deg); }
-    100% { transform: rotateY(var(--initial-rotation, 0deg)); }
+  /* Initial load animation - flip from staggered to 180 (linear) and back to staggered */
+  @keyframes initialFlip1 {
+    0% { transform: rotateY(25deg); }
+    50% { transform: rotateY(180deg); }
+    100% { transform: rotateY(25deg); }
   }
-  /* Clockwise rotation (swipe right) */
-  @keyframes flipBoxClockwise {
-    0% { transform: rotateY(var(--initial-rotation, 0deg)); }
+  @keyframes initialFlip2 {
+    0% { transform: rotateY(-30deg); }
+    50% { transform: rotateY(180deg); }
+    100% { transform: rotateY(-30deg); }
+  }
+  @keyframes initialFlip3 {
+    0% { transform: rotateY(35deg); }
+    50% { transform: rotateY(180deg); }
+    100% { transform: rotateY(35deg); }
+  }
+  @keyframes initialFlip4 {
+    0% { transform: rotateY(-25deg); }
+    50% { transform: rotateY(180deg); }
+    100% { transform: rotateY(-25deg); }
+  }
+  @keyframes initialFlip5 {
+    0% { transform: rotateY(30deg); }
+    50% { transform: rotateY(180deg); }
+    100% { transform: rotateY(30deg); }
+  }
+  @keyframes initialFlip6 {
+    0% { transform: rotateY(-35deg); }
+    50% { transform: rotateY(180deg); }
+    100% { transform: rotateY(-35deg); }
+  }
+
+  /* Flip to linear (180deg) - all boxes align when showing back */
+  @keyframes flipToLinear1 {
+    0% { transform: rotateY(25deg); }
     100% { transform: rotateY(180deg); }
   }
-  /* Anti-clockwise rotation (swipe left) */
-  @keyframes flipBoxAntiClockwise {
-    0% { transform: rotateY(var(--initial-rotation, 0deg)); }
-    100% { transform: rotateY(-180deg); }
+  @keyframes flipToLinear2 {
+    0% { transform: rotateY(-30deg); }
+    100% { transform: rotateY(180deg); }
   }
-  /* Return to home from clockwise */
-  @keyframes returnFromClockwise {
+  @keyframes flipToLinear3 {
+    0% { transform: rotateY(35deg); }
+    100% { transform: rotateY(180deg); }
+  }
+  @keyframes flipToLinear4 {
+    0% { transform: rotateY(-25deg); }
+    100% { transform: rotateY(180deg); }
+  }
+  @keyframes flipToLinear5 {
+    0% { transform: rotateY(30deg); }
+    100% { transform: rotateY(180deg); }
+  }
+  @keyframes flipToLinear6 {
+    0% { transform: rotateY(-35deg); }
+    100% { transform: rotateY(180deg); }
+  }
+
+  /* Return from linear (180deg) back to staggered positions */
+  @keyframes returnToStaggered1 {
     0% { transform: rotateY(180deg); }
-    100% { transform: rotateY(var(--initial-rotation, 0deg)); }
+    100% { transform: rotateY(25deg); }
   }
-  /* Return to home from anti-clockwise */
-  @keyframes returnFromAntiClockwise {
-    0% { transform: rotateY(-180deg); }
-    100% { transform: rotateY(var(--initial-rotation, 0deg)); }
+  @keyframes returnToStaggered2 {
+    0% { transform: rotateY(180deg); }
+    100% { transform: rotateY(-30deg); }
   }
+  @keyframes returnToStaggered3 {
+    0% { transform: rotateY(180deg); }
+    100% { transform: rotateY(35deg); }
+  }
+  @keyframes returnToStaggered4 {
+    0% { transform: rotateY(180deg); }
+    100% { transform: rotateY(-25deg); }
+  }
+  @keyframes returnToStaggered5 {
+    0% { transform: rotateY(180deg); }
+    100% { transform: rotateY(30deg); }
+  }
+  @keyframes returnToStaggered6 {
+    0% { transform: rotateY(180deg); }
+    100% { transform: rotateY(-35deg); }
+  }
+
   .mobile-box {
     transform-style: preserve-3d;
     will-change: transform;
     -webkit-transform-style: preserve-3d;
   }
-  .mobile-box.initial-flip {
-    animation: flipAndReturn 3s ease-in-out forwards;
-  }
-  .mobile-box.flip-clockwise {
-    animation: flipBoxClockwise 2s ease-in-out forwards;
-  }
-  .mobile-box.flip-anticlockwise {
-    animation: flipBoxAntiClockwise 2s ease-in-out forwards;
-  }
-  .mobile-box.return-clockwise {
-    animation: returnFromClockwise 2s ease-in-out forwards;
-  }
-  .mobile-box.return-anticlockwise {
-    animation: returnFromAntiClockwise 2s ease-in-out forwards;
-  }
+
+  /* Initial rotation positions (staggered like desktop) - only applied when idle */
+  .mobile-box-1:not(.initial-flip):not(.flip-to-linear):not(.return-to-staggered) { transform: rotateY(25deg); }
+  .mobile-box-2:not(.initial-flip):not(.flip-to-linear):not(.return-to-staggered) { transform: rotateY(-30deg); }
+  .mobile-box-3:not(.initial-flip):not(.flip-to-linear):not(.return-to-staggered) { transform: rotateY(35deg); }
+  .mobile-box-4:not(.initial-flip):not(.flip-to-linear):not(.return-to-staggered) { transform: rotateY(-25deg); }
+  .mobile-box-5:not(.initial-flip):not(.flip-to-linear):not(.return-to-staggered) { transform: rotateY(30deg); }
+  .mobile-box-6:not(.initial-flip):not(.flip-to-linear):not(.return-to-staggered) { transform: rotateY(-35deg); }
+
+  /* Initial flip animations - staggered to linear and back */
+  .mobile-box-1.initial-flip { animation: initialFlip1 3.5s ease-in-out forwards; }
+  .mobile-box-2.initial-flip { animation: initialFlip2 3.5s ease-in-out forwards; animation-delay: 0.15s; }
+  .mobile-box-3.initial-flip { animation: initialFlip3 3.5s ease-in-out forwards; animation-delay: 0.3s; }
+  .mobile-box-4.initial-flip { animation: initialFlip4 3.5s ease-in-out forwards; animation-delay: 0.45s; }
+  .mobile-box-5.initial-flip { animation: initialFlip5 3.5s ease-in-out forwards; animation-delay: 0.6s; }
+  .mobile-box-6.initial-flip { animation: initialFlip6 3.5s ease-in-out forwards; animation-delay: 0.75s; }
+
+  /* Flip to linear (swipe triggers this) */
+  .mobile-box-1.flip-to-linear { animation: flipToLinear1 2.5s ease-in-out forwards; }
+  .mobile-box-2.flip-to-linear { animation: flipToLinear2 2.5s ease-in-out forwards; }
+  .mobile-box-3.flip-to-linear { animation: flipToLinear3 2.5s ease-in-out forwards; }
+  .mobile-box-4.flip-to-linear { animation: flipToLinear4 2.5s ease-in-out forwards; }
+  .mobile-box-5.flip-to-linear { animation: flipToLinear5 2.5s ease-in-out forwards; }
+  .mobile-box-6.flip-to-linear { animation: flipToLinear6 2.5s ease-in-out forwards; }
+
+  /* Return to staggered positions */
+  .mobile-box-1.return-to-staggered { animation: returnToStaggered1 2.5s ease-in-out forwards; }
+  .mobile-box-2.return-to-staggered { animation: returnToStaggered2 2.5s ease-in-out forwards; }
+  .mobile-box-3.return-to-staggered { animation: returnToStaggered3 2.5s ease-in-out forwards; }
+  .mobile-box-4.return-to-staggered { animation: returnToStaggered4 2.5s ease-in-out forwards; }
+  .mobile-box-5.return-to-staggered { animation: returnToStaggered5 2.5s ease-in-out forwards; }
+  .mobile-box-6.return-to-staggered { animation: returnToStaggered6 2.5s ease-in-out forwards; }
+
   .mobile-box-face {
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
@@ -68,13 +148,6 @@ const mobileBoxStyles = `
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
   }
-  /* Staggered delays */
-  .mobile-box:nth-child(2) { animation-delay: 0s !important; }
-  .mobile-box:nth-child(3) { animation-delay: 0.1s !important; }
-  .mobile-box:nth-child(4) { animation-delay: 0.2s !important; }
-  .mobile-box:nth-child(5) { animation-delay: 0.3s !important; }
-  .mobile-box:nth-child(6) { animation-delay: 0.4s !important; }
-  .mobile-box:nth-child(7) { animation-delay: 0.5s !important; }
 
   /* Mobile text animations - pure CSS for smooth performance */
   @keyframes fadeInUp {
@@ -149,36 +222,59 @@ function TypingText({
 
 // Mobile Box Tower - Pure CSS for performance (no Framer Motion)
 function MobileBoxTower() {
-  const [animationState, setAnimationState] = useState<'idle' | 'flip-clockwise' | 'flip-anticlockwise' | 'return-clockwise' | 'return-anticlockwise'>('idle')
-  const [isVisible, setIsVisible] = useState(false)
-  const [isFlipped, setIsFlipped] = useState(false)
-  const [lastDirection, setLastDirection] = useState<'cw' | 'acw'>('cw')
+  const [animationState, setAnimationState] = useState<'idle' | 'initial-flip' | 'flip-to-linear' | 'return-to-staggered'>('idle')
+  const [isFlipped, setIsFlipped] = useState(false) // false = staggered (front), true = linear (back)
   const containerRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef(0)
   const touchEndX = useRef(0)
+  const autoReturnTimer = useRef<NodeJS.Timeout | null>(null)
 
-  // 7 boxes: 1 base + 6 rotating
+  // 7 boxes: 1 base + 6 rotating (with index for CSS class)
   const boxes = [
-    { id: 0, isBase: true, text: '', backText: '' },
-    { id: 1, text: 'YOUR VISION', backText: '360°' },
-    { id: 2, text: 'CAPTIVATE', backText: 'ROTATE' },
-    { id: 3, text: 'FLIP & ROTATE', backText: 'FLIP' },
-    { id: 4, text: 'THAT MOVE', backText: 'MOTION' },
-    { id: 5, text: 'LED SCREENS', backText: 'LED' },
-    { id: 6, text: 'KINETIC', backText: 'KINETIC' },
+    { id: 0, isBase: true, text: '', backText: '', boxIndex: 0 },
+    { id: 1, text: 'YOUR VISION', backText: '360°', boxIndex: 1 },
+    { id: 2, text: 'CAPTIVATE', backText: 'ROTATE', boxIndex: 2 },
+    { id: 3, text: 'FLIP & ROTATE', backText: 'FLIP', boxIndex: 3 },
+    { id: 4, text: 'THAT MOVE', backText: 'MOTION', boxIndex: 4 },
+    { id: 5, text: 'LED SCREENS', backText: 'LED', boxIndex: 5 },
+    { id: 6, text: 'KINETIC', backText: 'KINETIC', boxIndex: 6 },
   ]
 
-  // Preload: Start animation once on mount
+  // Preload: Start initial flip animation on mount
   useEffect(() => {
-    setIsVisible(true)
-    // Initial flip on load (clockwise)
+    // Start initial flip animation after a brief delay
     const timer = setTimeout(() => {
-      setAnimationState('flip-clockwise')
-      setLastDirection('cw')
-      setIsFlipped(true)
-    }, 800)
-    return () => clearTimeout(timer)
+      setAnimationState('initial-flip')
+    }, 300)
+    return () => {
+      clearTimeout(timer)
+      if (autoReturnTimer.current) {
+        clearTimeout(autoReturnTimer.current)
+      }
+    }
   }, [])
+
+  // Auto-return to staggered position after showing back for a few seconds
+  useEffect(() => {
+    if (isFlipped && animationState === 'flip-to-linear') {
+      // Clear any existing timer
+      if (autoReturnTimer.current) {
+        clearTimeout(autoReturnTimer.current)
+      }
+
+      // Set timer to auto-return after 4 seconds (wait for flip animation to complete + pause)
+      autoReturnTimer.current = setTimeout(() => {
+        setAnimationState('return-to-staggered')
+        setIsFlipped(false)
+      }, 4000)
+    }
+
+    return () => {
+      if (autoReturnTimer.current) {
+        clearTimeout(autoReturnTimer.current)
+      }
+    }
+  }, [isFlipped, animationState])
 
   // Handle swipe gestures
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -194,26 +290,20 @@ function MobileBoxTower() {
     const minSwipeDistance = 50 // minimum swipe distance to trigger
 
     if (Math.abs(swipeDistance) > minSwipeDistance) {
-      if (swipeDistance > 0) {
-        // Swipe right - clockwise rotation
-        if (isFlipped) {
-          setAnimationState('return-clockwise')
-          setIsFlipped(false)
-        } else {
-          setAnimationState('flip-clockwise')
-          setIsFlipped(true)
-        }
-        setLastDirection('cw')
+      // Clear auto-return timer if user swipes manually
+      if (autoReturnTimer.current) {
+        clearTimeout(autoReturnTimer.current)
+        autoReturnTimer.current = null
+      }
+
+      if (isFlipped) {
+        // Currently showing back (linear) - return to staggered (front)
+        setAnimationState('return-to-staggered')
+        setIsFlipped(false)
       } else {
-        // Swipe left - anti-clockwise rotation
-        if (isFlipped) {
-          setAnimationState('return-anticlockwise')
-          setIsFlipped(false)
-        } else {
-          setAnimationState('flip-anticlockwise')
-          setIsFlipped(true)
-        }
-        setLastDirection('acw')
+        // Currently showing front (staggered) - flip to linear (back)
+        setAnimationState('flip-to-linear')
+        setIsFlipped(true)
       }
     }
 
@@ -222,10 +312,13 @@ function MobileBoxTower() {
     touchEndX.current = 0
   }
 
-  // Get animation class for each box
-  const getAnimationClass = (isBase: boolean) => {
-    if (isBase || animationState === 'idle') return ''
-    return animationState
+  // Get animation class for each box (includes box-specific index class)
+  const getAnimationClass = (isBase: boolean, boxIndex: number) => {
+    if (isBase) return ''
+    // Always include the box index class for initial rotation position
+    const indexClass = `mobile-box-${boxIndex}`
+    if (animationState === 'idle') return indexClass
+    return `${indexClass} ${animationState}`
   }
 
   return (
@@ -249,46 +342,58 @@ function MobileBoxTower() {
         {/* Box Tower */}
         <div
           className="relative flex flex-col-reverse items-center"
-          style={{ transform: 'translateY(5%) translateZ(0)', perspective: '500px' }}
+          style={{
+            transform: 'translateY(5%) rotateX(5deg)',
+            perspective: '800px',
+            perspectiveOrigin: 'center center',
+            transformStyle: 'preserve-3d',
+          }}
         >
           {boxes.map((box, index) => (
             <div
               key={box.id}
-              className={`relative mobile-box ${getAnimationClass(box.isBase)}`}
+              className={`relative mobile-box ${getAnimationClass(box.isBase, box.boxIndex)}`}
               style={{
                 marginTop: box.isBase ? 0 : -1,
                 zIndex: boxes.length - index,
-                opacity: isVisible ? 1 : 0,
-                transition: `opacity 0.3s ease ${index * 0.1}s`,
               }}
             >
               <div
-                className={box.isBase ? 'w-[150px] h-[40px]' : 'w-[130px] h-[40px]'}
+                className={box.isBase ? 'w-[150px] h-[45px]' : 'w-[135px] h-[45px]'}
                 style={{ transformStyle: 'preserve-3d' }}
               >
-                {/* Front face - simplified */}
+                {/* Front face */}
                 <div
                   className="absolute inset-0 rounded-sm mobile-box-face"
                   style={{
-                    transform: 'translateZ(6px)',
+                    transform: 'translateZ(10px)',
                     background: '#0a0a0a',
                     border: '2px solid #E17924',
+                    boxShadow: '0 0 10px rgba(225, 121, 36, 0.3)',
                   }}
                 >
-                  <div className="absolute inset-[2px] rounded-sm overflow-hidden bg-black flex items-center justify-center">
+                  <div
+                    className="absolute inset-[2px] rounded-sm overflow-hidden bg-black flex items-center justify-center"
+                    style={{ transform: 'none', transition: 'none', animation: 'none' }}
+                  >
                     {box.isBase ? (
                       <div className="w-full h-full relative bg-gradient-to-b from-[#2a2a2a] to-black">
                         <div
                           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[2px] bg-[#E17924]"
+                          style={{ boxShadow: '0 0 8px rgba(225, 121, 36, 0.6)' }}
                         />
                       </div>
                     ) : (
                       <span
                         className="font-black text-center px-1 text-[#E17924]"
                         style={{
-                          fontSize: box.text.length > 10 ? '9px' : '11px',
+                          fontSize: box.text.length > 10 ? '10px' : '12px',
                           textTransform: 'uppercase',
                           letterSpacing: '0.05em',
+                          transform: 'none',
+                          transition: 'none',
+                          animation: 'none',
+                          textShadow: '0 0 8px rgba(225, 121, 36, 0.5)',
                         }}
                       >
                         {box.text}
@@ -297,48 +402,88 @@ function MobileBoxTower() {
                   </div>
                 </div>
 
-                {/* Back face - simplified */}
+                {/* Back face */}
                 <div
-                  className="absolute inset-0 rounded-sm mobile-box-face mobile-box-back"
+                  className="absolute inset-0 rounded-sm mobile-box-face"
                   style={{
-                    transform: 'translateZ(-6px) rotateY(180deg)',
+                    transform: 'translateZ(-10px) rotateY(180deg)',
                     background: '#0a0a0a',
                     border: '2px solid #E17924',
+                    boxShadow: '0 0 10px rgba(225, 121, 36, 0.3)',
                   }}
                 >
                   {!box.isBase && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="font-black text-[12px] text-[#E17924]">
+                    <div
+                      className="absolute inset-0 flex items-center justify-center"
+                      style={{ transform: 'none', transition: 'none', animation: 'none' }}
+                    >
+                      <span
+                        className="font-black text-[13px] text-[#E17924]"
+                        style={{
+                          textShadow: '0 0 8px rgba(225, 121, 36, 0.5)',
+                          transform: 'none',
+                          transition: 'none',
+                          animation: 'none',
+                        }}
+                      >
                         {box.backText}
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* 3D Left edge only */}
+                {/* 3D Left edge */}
                 {!box.isBase && (
                   <div
                     className="absolute top-0 bottom-0 mobile-3d-edge"
                     style={{
                       left: 0,
-                      width: '12px',
-                      transform: 'translateZ(-6px) rotateY(-90deg)',
+                      width: '20px',
+                      transform: 'rotateY(-90deg)',
                       transformOrigin: 'left center',
-                      background: '#BA5617',
+                      background: 'linear-gradient(to right, #6C2A00, #BA5617)',
                     }}
                   />
                 )}
 
-                {/* 3D Right edge only */}
+                {/* 3D Right edge */}
                 {!box.isBase && (
                   <div
                     className="absolute top-0 bottom-0 mobile-3d-edge"
                     style={{
                       right: 0,
-                      width: '12px',
-                      transform: 'translateZ(-6px) rotateY(90deg)',
+                      width: '20px',
+                      transform: 'rotateY(90deg)',
                       transformOrigin: 'right center',
-                      background: '#BA5617',
+                      background: 'linear-gradient(to left, #6C2A00, #BA5617)',
+                    }}
+                  />
+                )}
+
+                {/* 3D Top edge */}
+                {!box.isBase && (
+                  <div
+                    className="absolute left-0 right-0 mobile-3d-edge"
+                    style={{
+                      top: 0,
+                      height: '20px',
+                      transform: 'rotateX(90deg)',
+                      transformOrigin: 'top center',
+                      background: '#E17924',
+                    }}
+                  />
+                )}
+
+                {/* 3D Bottom edge */}
+                {!box.isBase && (
+                  <div
+                    className="absolute left-0 right-0 mobile-3d-edge"
+                    style={{
+                      bottom: 0,
+                      height: '20px',
+                      transform: 'rotateX(-90deg)',
+                      transformOrigin: 'bottom center',
+                      background: '#994E1F',
                     }}
                   />
                 )}
@@ -351,9 +496,7 @@ function MobileBoxTower() {
         <div
           className="absolute bottom-[2%] left-1/2 -translate-x-1/2 text-white/40 text-xs flex items-center gap-2"
         >
-          <span>←</span>
-          <span>Swipe to rotate</span>
-          <span>→</span>
+   
         </div>
     </div>
   )
@@ -930,7 +1073,7 @@ function RotatingBoxTower() {
         animate={{ opacity: isHovered ? 0 : 1 }}
         transition={{ duration: 0.3, delay: isMobileView ? 1 : 4 }}
       >
-        {isMobileView ? 'Tap to animate' : 'Hover to animate'}
+        {isMobileView ? 'Tap to animate' : ''}
       </motion.div>
     </motion.div>
   )
