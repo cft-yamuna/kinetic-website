@@ -109,7 +109,7 @@ export default function Navigation() {
                   alt="Craftech 360"
                   width={180}
                   height={50}
-                  className="h-9 w-auto transition-opacity duration-300"
+                  className="h-11 w-auto transition-opacity duration-300"
                   priority
                 />
               </Link>
