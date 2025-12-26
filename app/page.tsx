@@ -1,5 +1,5 @@
 import HeroSection from "@/components/hero-section"
-import ProductShowcase from "@/components/product-showcase"
+import ScrollProductShowcase from "@/components/scroll-product-showcase"
 import SocialProof from "@/components/social-proof"
 import BookingSection from "@/components/booking-section"
 import Footer from "@/components/footer"
@@ -20,8 +20,8 @@ export default function HomePage() {
         <FloatingCTA />
         <main>
           <HeroSection />
+          <ScrollProductShowcase />
           <SocialProof />
-          <ProductShowcase />
           <BookingSection />
         </main>
         <Footer />

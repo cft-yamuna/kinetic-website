@@ -503,13 +503,20 @@ function MobileBoxTower() {
 }
 
 // Desktop Rotating Box Tower Component (with Framer Motion)
-function RotatingBoxTower() {
+function RotatingBoxTower({ scrollProgress }: { scrollProgress?: any }) {
   const [isHovered, setIsHovered] = useState(false)
   const [hoverRotations, setHoverRotations] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0])
   const [activeBoxes, setActiveBoxes] = useState<boolean[]>([false, false, false, false, false, false, false, false])
   const [isMobileView, setIsMobileView] = useState(false)
   const [isInView, setIsInView] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Scroll-based transforms for shrinking boxes into ball
+  const boxesScale = useTransform(scrollProgress || new Map(), [0, 0.5, 0.8], [1, 0.6, 0.2])
+  const boxesOpacity = useTransform(scrollProgress || new Map(), [0, 0.6, 0.85], [1, 1, 0])
+  const ballScale = useTransform(scrollProgress || new Map(), [0.5, 0.7, 0.9], [0, 1, 1.2])
+  const ballOpacity = useTransform(scrollProgress || new Map(), [0.5, 0.65, 0.85, 1], [0, 1, 1, 0])
+  const ballY = useTransform(scrollProgress || new Map(), [0.7, 1], [0, 300])
 
   // Check if mobile
   useEffect(() => {
@@ -707,13 +714,30 @@ function RotatingBoxTower() {
         }}
       />
 
+      {/* Ball forming from boxes */}
+      <motion.div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          width: 80,
+          height: 80,
+          background: 'radial-gradient(circle at 30% 30%, #E17924 0%, #BA5617 40%, #6C2A00 100%)',
+          boxShadow: '0 0 40px rgba(225, 121, 36, 0.8), 0 0 80px rgba(225, 121, 36, 0.4), inset 0 -10px 20px rgba(0,0,0,0.3)',
+          scale: ballScale,
+          opacity: ballOpacity,
+          y: ballY,
+          zIndex: 100,
+        }}
+      />
+
       {/* Box Tower */}
-      <div
+      <motion.div
         className="relative flex flex-col-reverse items-center"
         style={{
           transform: isMobileView ? 'translateY(5%) rotateX(3deg)' : 'translateY(8%) rotateX(5deg)',
           perspective: isMobileView ? '800px' : '1200px',
           transformStyle: 'preserve-3d',
+          scale: boxesScale,
+          opacity: boxesOpacity,
         }}
       >
 
@@ -1034,7 +1058,7 @@ function RotatingBoxTower() {
             </div>
           </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Ambient particles on hover */}
       {isHovered && (
@@ -1306,7 +1330,7 @@ export default function HeroSection() {
           {/* Box Tower - Top on mobile, Right on desktop */}
           <div className="relative order-1 md:order-2 h-[340px] md:h-[450px] lg:h-[600px]">
             {/* Use CSS-based component on mobile for better performance */}
-            {hasMounted && isMobile ? <MobileBoxTower /> : <RotatingBoxTower />}
+            {hasMounted && isMobile ? <MobileBoxTower /> : <RotatingBoxTower scrollProgress={scrollYProgress} />}
           </div>
         </div>
       </motion.div>
