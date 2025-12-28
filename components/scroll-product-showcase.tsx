@@ -975,35 +975,47 @@ function BentoTriblockVisual({ isActive }: { isActive: boolean }) {
   )
 }
 
-// Content options for split-flap display
+// Content options for split-flap display - more colors for multi-layer effect
 const FLAP_CONTENTS = [
-  // Orange/amber solid colors (0-4)
+  // Orange/amber tones (0-5)
   { type: 'color', bg: '#E17924' },
   { type: 'color', bg: '#D97706' },
   { type: 'color', bg: '#B45309' },
   { type: 'color', bg: '#F59E0B' },
   { type: 'color', bg: '#FBBF24' },
-  // Dark tones (5-7)
+  { type: 'color', bg: '#FCD34D' },
+  // Darker orange/brown (6-9)
+  { type: 'color', bg: '#92400E' },
+  { type: 'color', bg: '#78350F' },
+  { type: 'color', bg: '#A16207' },
+  { type: 'color', bg: '#CA8A04' },
+  // Dark tones (10-13)
   { type: 'color', bg: '#1a1a1a' },
   { type: 'color', bg: '#2d2d2d' },
   { type: 'color', bg: '#404040' },
-  // Letters for "FLAP" (8-11)
+  { type: 'color', bg: '#171717' },
+  // Warm browns (14-17)
+  { type: 'color', bg: '#7C2D12' },
+  { type: 'color', bg: '#9A3412' },
+  { type: 'color', bg: '#C2410C' },
+  { type: 'color', bg: '#EA580C' },
+  // Letters for "FLAP" (18-21)
   { type: 'text', value: 'F', bg: '#1a1a1a', color: '#E17924' },
   { type: 'text', value: 'L', bg: '#1a1a1a', color: '#F59E0B' },
   { type: 'text', value: 'A', bg: '#1a1a1a', color: '#D97706' },
   { type: 'text', value: 'P', bg: '#1a1a1a', color: '#FBBF24' },
-  // Letters for "HELLO" (12-16)
+  // Letters for "HELLO" (22-26)
   { type: 'text', value: 'H', bg: '#E17924', color: '#fff' },
   { type: 'text', value: 'E', bg: '#D97706', color: '#fff' },
   { type: 'text', value: 'L', bg: '#B45309', color: '#fff' },
   { type: 'text', value: 'L', bg: '#F59E0B', color: '#fff' },
   { type: 'text', value: 'O', bg: '#FBBF24', color: '#fff' },
-  // Letters for "2024" (17-20)
+  // Letters for "2024" (27-30)
   { type: 'text', value: '2', bg: '#1a1a1a', color: '#E17924' },
   { type: 'text', value: '0', bg: '#1a1a1a', color: '#F59E0B' },
   { type: 'text', value: '2', bg: '#1a1a1a', color: '#D97706' },
   { type: 'text', value: '4', bg: '#1a1a1a', color: '#FBBF24' },
-  // Extra letters (21-24)
+  // Extra letters KINE (31-34)
   { type: 'text', value: 'K', bg: '#E17924', color: '#fff' },
   { type: 'text', value: 'I', bg: '#D97706', color: '#fff' },
   { type: 'text', value: 'N', bg: '#B45309', color: '#fff' },
@@ -1012,46 +1024,58 @@ const FLAP_CONTENTS = [
 
 // Different settled patterns that cycle - 5 rows x 8 cols - each shows words
 const SETTLED_PATTERNS = [
-  // Pattern 1: "FLAP" centered
+  // Pattern 1: "FLAP" centered with color accents
   [
-    [0, 5, 5, 5, 5, 5, 5, 1],
-    [5, 5, 8, 9, 10, 11, 5, 5],
-    [5, 5, 5, 5, 5, 5, 5, 5],
-    [2, 5, 5, 5, 5, 5, 5, 3],
-    [5, 4, 5, 5, 5, 5, 0, 5],
+    [0, 10, 10, 10, 10, 10, 10, 1],
+    [10, 10, 18, 19, 20, 21, 10, 10],
+    [6, 10, 10, 10, 10, 10, 10, 7],
+    [2, 10, 10, 10, 10, 10, 10, 3],
+    [10, 4, 10, 10, 10, 10, 0, 10],
   ],
-  // Pattern 2: "HELLO"
+  // Pattern 2: "HELLO" with color bar
   [
-    [5, 5, 5, 5, 5, 5, 5, 5],
-    [5, 12, 13, 14, 15, 16, 5, 5],
-    [5, 5, 5, 5, 5, 5, 5, 5],
-    [0, 1, 2, 3, 4, 0, 1, 2],
-    [5, 5, 5, 5, 5, 5, 5, 5],
+    [10, 10, 10, 10, 10, 10, 10, 10],
+    [10, 22, 23, 24, 25, 26, 10, 10],
+    [10, 10, 10, 10, 10, 10, 10, 10],
+    [0, 1, 2, 3, 4, 5, 0, 1],
+    [14, 15, 16, 17, 14, 15, 16, 17],
   ],
   // Pattern 3: "2024" with decorations
   [
-    [5, 5, 0, 5, 5, 1, 5, 5],
-    [5, 5, 5, 5, 5, 5, 5, 5],
-    [5, 17, 18, 19, 20, 5, 5, 5],
-    [5, 5, 5, 5, 5, 5, 5, 5],
-    [5, 5, 2, 5, 5, 3, 5, 5],
+    [6, 10, 0, 10, 10, 1, 10, 7],
+    [10, 10, 10, 10, 10, 10, 10, 10],
+    [10, 27, 28, 29, 30, 10, 10, 10],
+    [10, 10, 10, 10, 10, 10, 10, 10],
+    [8, 10, 2, 10, 10, 3, 10, 9],
   ],
-  // Pattern 4: Checkered with letters
+  // Pattern 4: Checkered with KINE and FLAP
   [
-    [0, 5, 1, 5, 2, 5, 3, 5],
-    [5, 21, 5, 22, 5, 23, 5, 24],
-    [4, 5, 0, 5, 1, 5, 2, 5],
-    [5, 8, 5, 9, 5, 10, 5, 11],
-    [3, 5, 4, 5, 0, 5, 1, 5],
+    [0, 10, 1, 10, 2, 10, 3, 10],
+    [10, 31, 10, 32, 10, 33, 10, 34],
+    [4, 10, 5, 10, 0, 10, 1, 10],
+    [10, 18, 10, 19, 10, 20, 10, 21],
+    [6, 10, 7, 10, 8, 10, 9, 10],
   ],
-  // Pattern 5: Wave pattern with HELLO
+  // Pattern 5: Wave with HELLO
   [
-    [0, 1, 2, 3, 4, 0, 1, 2],
-    [5, 5, 5, 5, 5, 5, 5, 5],
-    [12, 13, 14, 15, 16, 5, 5, 5],
-    [5, 5, 5, 5, 5, 5, 5, 5],
+    [0, 1, 2, 3, 4, 5, 0, 1],
+    [14, 15, 16, 17, 14, 15, 16, 17],
+    [22, 23, 24, 25, 26, 10, 10, 10],
+    [6, 7, 8, 9, 6, 7, 8, 9],
     [3, 4, 0, 1, 2, 3, 4, 0],
   ],
+]
+
+// Sequence of colors for each flip - distinct colors to show layers
+const FLIP_COLOR_SEQUENCE = [
+  '#E17924', // bright orange
+  '#1a1a1a', // dark
+  '#F59E0B', // amber
+  '#78350F', // dark brown
+  '#FBBF24', // yellow
+  '#404040', // gray
+  '#D97706', // orange
+  '#2d2d2d', // dark gray
 ]
 
 // Multi-flip block - flips through multiple pages before settling
@@ -1066,37 +1090,46 @@ function BentoFlapBlock({
   finalContent: number
   flipCount: number
 }) {
-  const [currentContent, setCurrentContent] = useState(finalContent)
+  const [currentColor, setCurrentColor] = useState<string | null>(null)
   const [flipAngle, setFlipAngle] = useState(0)
+  const [showFinalContent, setShowFinalContent] = useState(true)
+  const isRunningRef = useRef(false)
 
   useEffect(() => {
     if (!isAnimating) {
-      // Show final content without animation reset
-      setCurrentContent(finalContent)
+      isRunningRef.current = false
+      setShowFinalContent(true)
+      setCurrentColor(null)
       return
     }
+
+    // Prevent double-triggering
+    if (isRunningRef.current) return
+    isRunningRef.current = true
 
     // Start multi-flip after delay
     const delayTimer = setTimeout(() => {
       let flipNum = 0
+      setShowFinalContent(false)
 
-      // Do multiple flips
+      // Multiple flips with distinct color for each
       const flipTimer = setInterval(() => {
-        flipNum++
         // Rotate by 180 degrees each flip
-        setFlipAngle(flipNum * 180)
-        // Show random content during flipping
-        setCurrentContent(Math.floor(Math.random() * FLAP_CONTENTS.length))
+        setFlipAngle(prev => prev + 180)
+        // Show next color in sequence
+        setCurrentColor(FLIP_COLOR_SEQUENCE[flipNum % FLIP_COLOR_SEQUENCE.length])
+        flipNum++
 
         if (flipNum >= flipCount) {
           clearInterval(flipTimer)
           // Final settle to target content
           setTimeout(() => {
-            setFlipAngle((flipNum + 1) * 180)
-            setCurrentContent(finalContent)
-          }, 180)
+            setFlipAngle(prev => prev + 180)
+            setCurrentColor(null)
+            setShowFinalContent(true)
+          }, 400)
         }
-      }, 220) // 220ms per flip
+      }, 450) // 450ms per flip
 
       return () => clearInterval(flipTimer)
     }, delay)
@@ -1104,10 +1137,15 @@ function BentoFlapBlock({
     return () => clearTimeout(delayTimer)
   }, [isAnimating, delay, finalContent, flipCount])
 
-  const content = FLAP_CONTENTS[currentContent] || FLAP_CONTENTS[5]
+  const finalContentData = FLAP_CONTENTS[finalContent] || FLAP_CONTENTS[10]
+
+  // Determine what to show - either a flip color or final content
+  const displayBg = showFinalContent
+    ? finalContentData.bg
+    : (currentColor || finalContentData.bg)
 
   return (
-    <div style={{ width: 38, height: 48, perspective: '400px' }}>
+    <div style={{ width: 52, height: 66, perspective: '500px' }}>
       <div
         style={{
           width: '100%',
@@ -1115,7 +1153,7 @@ function BentoFlapBlock({
           position: 'relative',
           transformStyle: 'preserve-3d',
           transform: `rotateX(${flipAngle}deg)`,
-          transition: 'transform 0.18s ease-out',
+          transition: 'transform 0.38s ease-out',
         }}
       >
         {/* Front face */}
@@ -1124,29 +1162,29 @@ function BentoFlapBlock({
             position: 'absolute',
             inset: 0,
             background: `linear-gradient(180deg,
-              ${adjustColor(content.bg, 25)} 0%,
-              ${content.bg} 48.5%,
+              ${adjustColor(displayBg, 25)} 0%,
+              ${displayBg} 48.5%,
               #080808 49%,
               #080808 51%,
-              ${adjustColor(content.bg, -12)} 51.5%,
-              ${adjustColor(content.bg, -25)} 100%)`,
-            borderRadius: '4px',
+              ${adjustColor(displayBg, -12)} 51.5%,
+              ${adjustColor(displayBg, -25)} 100%)`,
+            borderRadius: '5px',
             backfaceVisibility: 'hidden',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)',
+            boxShadow: '0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          {content.type === 'text' && (
+          {showFinalContent && finalContentData.type === 'text' && (
             <span style={{
-              fontSize: '22px',
+              fontSize: '28px',
               fontWeight: 900,
-              color: content.color,
-              textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+              color: finalContentData.color,
+              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
               fontFamily: 'system-ui, sans-serif',
             }}>
-              {content.value}
+              {finalContentData.value}
             </span>
           )}
         </div>
@@ -1156,30 +1194,30 @@ function BentoFlapBlock({
             position: 'absolute',
             inset: 0,
             background: `linear-gradient(180deg,
-              ${adjustColor(content.bg, 30)} 0%,
-              ${adjustColor(content.bg, 5)} 48.5%,
+              ${adjustColor(displayBg, 30)} 0%,
+              ${adjustColor(displayBg, 5)} 48.5%,
               #080808 49%,
               #080808 51%,
-              ${adjustColor(content.bg, -8)} 51.5%,
-              ${adjustColor(content.bg, -20)} 100%)`,
-            borderRadius: '4px',
+              ${adjustColor(displayBg, -8)} 51.5%,
+              ${adjustColor(displayBg, -20)} 100%)`,
+            borderRadius: '5px',
             backfaceVisibility: 'hidden',
             transform: 'rotateX(180deg)',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)',
+            boxShadow: '0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          {content.type === 'text' && (
+          {showFinalContent && finalContentData.type === 'text' && (
             <span style={{
-              fontSize: '22px',
+              fontSize: '28px',
               fontWeight: 900,
-              color: content.color,
-              textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+              color: finalContentData.color,
+              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
               fontFamily: 'system-ui, sans-serif',
             }}>
-              {content.value}
+              {finalContentData.value}
             </span>
           )}
         </div>
@@ -1195,11 +1233,23 @@ function BentoFlapVisual({ isActive }: { isActive: boolean }) {
   const cols = 8
 
   const getWaveDelay = useCallback((row: number, col: number, patternIdx: number) => {
-    switch (patternIdx % 4) {
-      case 0: return (row + col) * 35
-      case 1: return Math.sqrt(Math.pow(row - rows/2, 2) + Math.pow(col - cols/2, 2)) * 50
-      case 2: return ((rows - 1 - row) + (cols - 1 - col)) * 35
-      case 3: return col * 60 + row * 12
+    // Larger delays so wave effect is clearly visible - each block starts 150ms after previous
+    switch (patternIdx % 5) {
+      case 0:
+        // Top-left corner - distance from (0,0)
+        return (row + col) * 150
+      case 1:
+        // Center/middle - distance from center
+        return Math.sqrt(Math.pow(row - rows/2, 2) + Math.pow(col - cols/2, 2)) * 180
+      case 2:
+        // Bottom-right corner - distance from (rows-1, cols-1)
+        return ((rows - 1 - row) + (cols - 1 - col)) * 150
+      case 3:
+        // Top-right corner - distance from (0, cols-1)
+        return (row + (cols - 1 - col)) * 150
+      case 4:
+        // Bottom-left corner - distance from (rows-1, 0)
+        return ((rows - 1 - row) + col) * 150
       default: return 0
     }
   }, [rows, cols])
@@ -1216,17 +1266,18 @@ function BentoFlapVisual({ isActive }: { isActive: boolean }) {
       // Start animation
       setIsAnimating(true)
 
-      // Stop animation after all blocks settle
+      // Stop animation after all blocks settle (wave delay + flip time)
+      // Max delay ~1650ms + max flips ~2700ms = ~4350ms
       setTimeout(() => {
         setIsAnimating(false)
-      }, 2200)
+      }, 5000)
     }
 
     // Initial delay
-    const initialTimeout = setTimeout(runAnimation, 1200)
+    const initialTimeout = setTimeout(runAnimation, 800)
 
-    // Repeat every 4 seconds
-    const interval = setInterval(runAnimation, 4000)
+    // Repeat every 10 seconds - one animation cycle, then long pause
+    const interval = setInterval(runAnimation, 10000)
 
     return () => {
       clearTimeout(initialTimeout)
@@ -1237,17 +1288,17 @@ function BentoFlapVisual({ isActive }: { isActive: boolean }) {
   const currentPattern = SETTLED_PATTERNS[patternIndex]
 
   return (
-    <div className="relative scale-[0.85] origin-center" style={{ perspective: '800px' }}>
+    <div className="relative scale-[0.78] origin-center" style={{ perspective: '800px' }}>
       <div style={{
-        padding: '10px 12px',
+        padding: '14px 16px',
         background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
-        borderRadius: '10px',
+        borderRadius: '12px',
         border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 15px 35px rgba(0,0,0,0.5)',
+        boxShadow: '0 18px 40px rgba(0,0,0,0.5)',
         transform: 'rotateX(5deg)',
         transformStyle: 'preserve-3d'
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 38px)`, gap: '3px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 52px)`, gap: '4px' }}>
           {Array.from({ length: rows * cols }).map((_, index) => {
             const row = Math.floor(index / cols)
             const col = index % cols
@@ -1264,7 +1315,7 @@ function BentoFlapVisual({ isActive }: { isActive: boolean }) {
           })}
         </div>
       </div>
-      <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-[340px] h-[45px]" style={{ background: 'radial-gradient(ellipse, rgba(245,158,11,0.4) 0%, transparent 70%)', filter: 'blur(18px)' }} />
+      <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-[460px] h-[50px]" style={{ background: 'radial-gradient(ellipse, rgba(245,158,11,0.4) 0%, transparent 70%)', filter: 'blur(20px)' }} />
     </div>
   )
 }
@@ -1466,7 +1517,7 @@ function DesktopShowcase() {
             onLeave={() => setHoveredCard(null)}
             delay={0.1}
           >
-            <div className="scale-[0.65] origin-center">
+            <div className="scale-[0.58] origin-center">
               <BentoFlapVisual isActive={hoveredCard === 'flap' || hoveredCard === null} />
             </div>
           </BentoCard>
