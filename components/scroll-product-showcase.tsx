@@ -807,109 +807,713 @@ function MatrixVisual({ isActive }: { isActive: boolean }) {
   )
 }
 
-// Desktop animations
-const contentVariants = {
-  enter: (d: number) => ({ y: d > 0 ? 60 : -60, opacity: 0 }),
-  center: { y: 0, opacity: 1 },
-  exit: (d: number) => ({ y: d < 0 ? 60 : -60, opacity: 0 }),
+// Bento Card Component
+function BentoCard({
+  product,
+  children,
+  className = "",
+  isHovered,
+  onHover,
+  onLeave,
+  delay = 0
+}: {
+  product: typeof products[0]
+  children: React.ReactNode
+  className?: string
+  isHovered: boolean
+  onHover: () => void
+  onLeave: () => void
+  delay?: number
+}) {
+  return (
+    <motion.div
+      className={`relative rounded-3xl overflow-hidden cursor-pointer group ${className}`}
+      style={{
+        background: `linear-gradient(135deg, rgba(20,20,20,0.9) 0%, rgba(10,10,10,0.95) 100%)`,
+        border: `1px solid rgba(255,255,255,0.08)`,
+      }}
+      initial={{ opacity: 0, y: 40, scale: 0.95 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.7, delay, ease: [0.25, 0.1, 0.25, 1] }}
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
+      whileHover={{ scale: 1.02 }}
+    >
+      {/* Accent glow on hover */}
+      <motion.div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at 50% 50%, ${product.accentColor}15 0%, transparent 70%)`,
+        }}
+      />
+
+      {/* Border glow on hover */}
+      <motion.div
+        className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        style={{
+          boxShadow: `inset 0 0 0 1px ${product.accentColor}40, 0 0 40px ${product.accentColor}20`,
+        }}
+      />
+
+      {/* Content */}
+      <div className="relative h-full flex flex-col">
+        {/* Header */}
+        <div className="absolute top-5 left-6 z-20">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: delay + 0.2 }}
+          >
+            <h3 className={`text-2xl lg:text-3xl font-bold bg-gradient-to-r ${product.gradient} bg-clip-text text-transparent`}>
+              {product.title}
+            </h3>
+            <p className="text-sm text-white/40 font-medium">{product.subtitle}</p>
+          </motion.div>
+        </div>
+
+        {/* Visual */}
+        <div className="flex-1 flex items-center justify-center pt-16 pb-6 px-4">
+          {children}
+        </div>
+
+        {/* CTA on hover */}
+        <motion.div
+          className="absolute bottom-5 right-6 z-20"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 10 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Link
+            href="#booking"
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r ${product.gradient} text-white text-sm font-semibold hover:scale-105 transition-transform`}
+          >
+            <span>Explore</span>
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </motion.div>
+
+        {/* Sparkle indicator */}
+        <motion.div
+          className="absolute top-5 right-6 z-20"
+          animate={{
+            opacity: isHovered ? 1 : 0.4,
+            scale: isHovered ? 1.1 : 1,
+          }}
+          transition={{ duration: 0.3 }}
+        >
+          <Sparkles className="h-5 w-5" style={{ color: product.accentColor }} />
+        </motion.div>
+      </div>
+    </motion.div>
+  )
 }
 
-const visualVariants = {
-  enter: (d: number) => ({ scale: 0.8, opacity: 0, rotateY: d > 0 ? 15 : -15 }),
-  center: { scale: 1, opacity: 1, rotateY: 0 },
-  exit: (d: number) => ({ scale: 0.8, opacity: 0, rotateY: d < 0 ? 15 : -15 }),
-}
+// Scaled-down visuals for Bento cards
+function BentoTriblockVisual({ isActive }: { isActive: boolean }) {
+  const [blocks] = useState(() => generateTriblocks(8, 12))
+  const [activatedBlocks, setActivatedBlocks] = useState<Map<string, number>>(new Map())
+  const gridRef = useRef<HTMLDivElement>(null)
 
-// Desktop Showcase
-function DesktopShowcase() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [activeIndex, setActiveIndex] = useState(0)
-  const [direction, setDirection] = useState(0)
-  const prevIndexRef = useRef(0)
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!containerRef.current) return
-      const rect = containerRef.current.getBoundingClientRect()
-      const progress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)))
-      const newIndex = Math.min(Math.floor(progress * products.length), products.length - 1)
-      if (newIndex !== prevIndexRef.current) {
-        setDirection(newIndex > prevIndexRef.current ? 1 : -1)
-        setActiveIndex(newIndex)
-        prevIndexRef.current = newIndex
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!gridRef.current) return
+    const rect = gridRef.current.getBoundingClientRect()
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+    const blockSize = 32
+    const maxRadius = 100
+    const newActivated = new Map<string, number>()
+    const centerCol = Math.floor(mouseX / blockSize)
+    const centerRow = Math.floor(mouseY / blockSize)
+    const checkRadius = Math.ceil(maxRadius / blockSize) + 1
+    for (let row = Math.max(0, centerRow - checkRadius); row < Math.min(8, centerRow + checkRadius + 1); row++) {
+      for (let col = Math.max(0, centerCol - checkRadius); col < Math.min(12, centerCol + checkRadius + 1); col++) {
+        const blockCenterX = col * blockSize + blockSize / 2
+        const blockCenterY = row * blockSize + blockSize / 2
+        const distance = Math.sqrt(Math.pow(mouseX - blockCenterX, 2) + Math.pow(mouseY - blockCenterY, 2))
+        if (distance < maxRadius) {
+          newActivated.set(`${row}-${col}`, Math.pow(1 - distance / maxRadius, 1.5))
+        }
       }
     }
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll()
-    return () => window.removeEventListener('scroll', handleScroll)
+    setActivatedBlocks(newActivated)
   }, [])
 
-  const product = products[activeIndex]
+  return (
+    <div
+      className="relative"
+      style={{ perspective: '800px' }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setActivatedBlocks(new Map())}
+    >
+      <div ref={gridRef} style={{ transformStyle: 'preserve-3d', transform: 'rotateX(-15deg) rotateY(20deg)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(12, 28px)`, gap: '3px' }}>
+          {blocks.map((block) => {
+            const intensity = activatedBlocks.get(block.id) || 0
+            return (
+              <div
+                key={block.id}
+                style={{
+                  width: 28,
+                  height: 28,
+                  background: `linear-gradient(145deg, ${adjustColor(block.colors.face1, 30)} 0%, ${block.colors.face1} 50%, ${adjustColor(block.colors.face1, -20)} 100%)`,
+                  borderRadius: '3px',
+                  transform: `translateY(${intensity > 0.1 ? -4 : 0}px)`,
+                  transition: 'transform 0.2s ease-out, box-shadow 0.2s ease-out',
+                  boxShadow: intensity > 0.1
+                    ? `0 6px 15px rgba(0,0,0,0.4), 0 0 15px rgba(225,121,36,${intensity * 0.5})`
+                    : '0 2px 4px rgba(0,0,0,0.3)',
+                }}
+              />
+            )
+          })}
+        </div>
+        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-[350px] h-[60px]" style={{ background: 'radial-gradient(ellipse, rgba(225,121,36,0.4) 0%, transparent 70%)', filter: 'blur(20px)' }} />
+      </div>
+    </div>
+  )
+}
 
-  const renderVisual = () => {
-    switch (product.type) {
-      case 'triblock': return <TriblockVisual isActive={activeIndex === 0} />
-      case 'flap': return <FlapVisual isActive={activeIndex === 1} />
-      case 'hrms': return <HRMSVisual isActive={activeIndex === 2} />
-      case 'matrix': return <MatrixVisual isActive={activeIndex === 3} />
-      default: return null
+// Content options for split-flap display
+const FLAP_CONTENTS = [
+  // Orange/amber solid colors (0-4)
+  { type: 'color', bg: '#E17924' },
+  { type: 'color', bg: '#D97706' },
+  { type: 'color', bg: '#B45309' },
+  { type: 'color', bg: '#F59E0B' },
+  { type: 'color', bg: '#FBBF24' },
+  // Dark tones (5-7)
+  { type: 'color', bg: '#1a1a1a' },
+  { type: 'color', bg: '#2d2d2d' },
+  { type: 'color', bg: '#404040' },
+  // Letters for "FLAP" (8-11)
+  { type: 'text', value: 'F', bg: '#1a1a1a', color: '#E17924' },
+  { type: 'text', value: 'L', bg: '#1a1a1a', color: '#F59E0B' },
+  { type: 'text', value: 'A', bg: '#1a1a1a', color: '#D97706' },
+  { type: 'text', value: 'P', bg: '#1a1a1a', color: '#FBBF24' },
+  // Letters for "HELLO" (12-16)
+  { type: 'text', value: 'H', bg: '#E17924', color: '#fff' },
+  { type: 'text', value: 'E', bg: '#D97706', color: '#fff' },
+  { type: 'text', value: 'L', bg: '#B45309', color: '#fff' },
+  { type: 'text', value: 'L', bg: '#F59E0B', color: '#fff' },
+  { type: 'text', value: 'O', bg: '#FBBF24', color: '#fff' },
+  // Letters for "2024" (17-20)
+  { type: 'text', value: '2', bg: '#1a1a1a', color: '#E17924' },
+  { type: 'text', value: '0', bg: '#1a1a1a', color: '#F59E0B' },
+  { type: 'text', value: '2', bg: '#1a1a1a', color: '#D97706' },
+  { type: 'text', value: '4', bg: '#1a1a1a', color: '#FBBF24' },
+  // Extra letters (21-24)
+  { type: 'text', value: 'K', bg: '#E17924', color: '#fff' },
+  { type: 'text', value: 'I', bg: '#D97706', color: '#fff' },
+  { type: 'text', value: 'N', bg: '#B45309', color: '#fff' },
+  { type: 'text', value: 'E', bg: '#F59E0B', color: '#fff' },
+]
+
+// Different settled patterns that cycle - 5 rows x 8 cols - each shows words
+const SETTLED_PATTERNS = [
+  // Pattern 1: "FLAP" centered
+  [
+    [0, 5, 5, 5, 5, 5, 5, 1],
+    [5, 5, 8, 9, 10, 11, 5, 5],
+    [5, 5, 5, 5, 5, 5, 5, 5],
+    [2, 5, 5, 5, 5, 5, 5, 3],
+    [5, 4, 5, 5, 5, 5, 0, 5],
+  ],
+  // Pattern 2: "HELLO"
+  [
+    [5, 5, 5, 5, 5, 5, 5, 5],
+    [5, 12, 13, 14, 15, 16, 5, 5],
+    [5, 5, 5, 5, 5, 5, 5, 5],
+    [0, 1, 2, 3, 4, 0, 1, 2],
+    [5, 5, 5, 5, 5, 5, 5, 5],
+  ],
+  // Pattern 3: "2024" with decorations
+  [
+    [5, 5, 0, 5, 5, 1, 5, 5],
+    [5, 5, 5, 5, 5, 5, 5, 5],
+    [5, 17, 18, 19, 20, 5, 5, 5],
+    [5, 5, 5, 5, 5, 5, 5, 5],
+    [5, 5, 2, 5, 5, 3, 5, 5],
+  ],
+  // Pattern 4: Checkered with letters
+  [
+    [0, 5, 1, 5, 2, 5, 3, 5],
+    [5, 21, 5, 22, 5, 23, 5, 24],
+    [4, 5, 0, 5, 1, 5, 2, 5],
+    [5, 8, 5, 9, 5, 10, 5, 11],
+    [3, 5, 4, 5, 0, 5, 1, 5],
+  ],
+  // Pattern 5: Wave pattern with HELLO
+  [
+    [0, 1, 2, 3, 4, 0, 1, 2],
+    [5, 5, 5, 5, 5, 5, 5, 5],
+    [12, 13, 14, 15, 16, 5, 5, 5],
+    [5, 5, 5, 5, 5, 5, 5, 5],
+    [3, 4, 0, 1, 2, 3, 4, 0],
+  ],
+]
+
+// Multi-flip block - flips through multiple pages before settling
+function BentoFlapBlock({
+  isAnimating,
+  delay,
+  finalContent,
+  flipCount
+}: {
+  isAnimating: boolean
+  delay: number
+  finalContent: number
+  flipCount: number
+}) {
+  const [currentContent, setCurrentContent] = useState(finalContent)
+  const [flipAngle, setFlipAngle] = useState(0)
+
+  useEffect(() => {
+    if (!isAnimating) {
+      // Show final content without animation reset
+      setCurrentContent(finalContent)
+      return
     }
+
+    // Start multi-flip after delay
+    const delayTimer = setTimeout(() => {
+      let flipNum = 0
+
+      // Do multiple flips
+      const flipTimer = setInterval(() => {
+        flipNum++
+        // Rotate by 180 degrees each flip
+        setFlipAngle(flipNum * 180)
+        // Show random content during flipping
+        setCurrentContent(Math.floor(Math.random() * FLAP_CONTENTS.length))
+
+        if (flipNum >= flipCount) {
+          clearInterval(flipTimer)
+          // Final settle to target content
+          setTimeout(() => {
+            setFlipAngle((flipNum + 1) * 180)
+            setCurrentContent(finalContent)
+          }, 180)
+        }
+      }, 220) // 220ms per flip
+
+      return () => clearInterval(flipTimer)
+    }, delay)
+
+    return () => clearTimeout(delayTimer)
+  }, [isAnimating, delay, finalContent, flipCount])
+
+  const content = FLAP_CONTENTS[currentContent] || FLAP_CONTENTS[5]
+
+  return (
+    <div style={{ width: 38, height: 48, perspective: '400px' }}>
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          position: 'relative',
+          transformStyle: 'preserve-3d',
+          transform: `rotateX(${flipAngle}deg)`,
+          transition: 'transform 0.18s ease-out',
+        }}
+      >
+        {/* Front face */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: `linear-gradient(180deg,
+              ${adjustColor(content.bg, 25)} 0%,
+              ${content.bg} 48.5%,
+              #080808 49%,
+              #080808 51%,
+              ${adjustColor(content.bg, -12)} 51.5%,
+              ${adjustColor(content.bg, -25)} 100%)`,
+            borderRadius: '4px',
+            backfaceVisibility: 'hidden',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {content.type === 'text' && (
+            <span style={{
+              fontSize: '22px',
+              fontWeight: 900,
+              color: content.color,
+              textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+              fontFamily: 'system-ui, sans-serif',
+            }}>
+              {content.value}
+            </span>
+          )}
+        </div>
+        {/* Back face */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: `linear-gradient(180deg,
+              ${adjustColor(content.bg, 30)} 0%,
+              ${adjustColor(content.bg, 5)} 48.5%,
+              #080808 49%,
+              #080808 51%,
+              ${adjustColor(content.bg, -8)} 51.5%,
+              ${adjustColor(content.bg, -20)} 100%)`,
+            borderRadius: '4px',
+            backfaceVisibility: 'hidden',
+            transform: 'rotateX(180deg)',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {content.type === 'text' && (
+            <span style={{
+              fontSize: '22px',
+              fontWeight: 900,
+              color: content.color,
+              textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+              fontFamily: 'system-ui, sans-serif',
+            }}>
+              {content.value}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BentoFlapVisual({ isActive }: { isActive: boolean }) {
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [patternIndex, setPatternIndex] = useState(0)
+  const rows = 5
+  const cols = 8
+
+  const getWaveDelay = useCallback((row: number, col: number, patternIdx: number) => {
+    switch (patternIdx % 4) {
+      case 0: return (row + col) * 35
+      case 1: return Math.sqrt(Math.pow(row - rows/2, 2) + Math.pow(col - cols/2, 2)) * 50
+      case 2: return ((rows - 1 - row) + (cols - 1 - col)) * 35
+      case 3: return col * 60 + row * 12
+      default: return 0
+    }
+  }, [rows, cols])
+
+  useEffect(() => {
+    if (!isActive) {
+      setIsAnimating(false)
+      return
+    }
+
+    const runAnimation = () => {
+      // Update pattern first
+      setPatternIndex(prev => (prev + 1) % SETTLED_PATTERNS.length)
+      // Start animation
+      setIsAnimating(true)
+
+      // Stop animation after all blocks settle
+      setTimeout(() => {
+        setIsAnimating(false)
+      }, 2200)
+    }
+
+    // Initial delay
+    const initialTimeout = setTimeout(runAnimation, 1200)
+
+    // Repeat every 4 seconds
+    const interval = setInterval(runAnimation, 4000)
+
+    return () => {
+      clearTimeout(initialTimeout)
+      clearInterval(interval)
+    }
+  }, [isActive])
+
+  const currentPattern = SETTLED_PATTERNS[patternIndex]
+
+  return (
+    <div className="relative scale-[0.85] origin-center" style={{ perspective: '800px' }}>
+      <div style={{
+        padding: '10px 12px',
+        background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
+        borderRadius: '10px',
+        border: '1px solid rgba(255,255,255,0.08)',
+        boxShadow: '0 15px 35px rgba(0,0,0,0.5)',
+        transform: 'rotateX(5deg)',
+        transformStyle: 'preserve-3d'
+      }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 38px)`, gap: '3px' }}>
+          {Array.from({ length: rows * cols }).map((_, index) => {
+            const row = Math.floor(index / cols)
+            const col = index % cols
+            const finalContent = currentPattern[row]?.[col] ?? 5
+            return (
+              <BentoFlapBlock
+                key={`${row}-${col}`}
+                isAnimating={isAnimating}
+                delay={getWaveDelay(row, col, patternIndex)}
+                finalContent={finalContent}
+                flipCount={4 + (index % 3)}
+              />
+            )
+          })}
+        </div>
+      </div>
+      <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-[340px] h-[45px]" style={{ background: 'radial-gradient(ellipse, rgba(245,158,11,0.4) 0%, transparent 70%)', filter: 'blur(18px)' }} />
+    </div>
+  )
+}
+
+function BentoHRMSVisual({ isActive }: { isActive: boolean }) {
+  const [rotationCycle, setRotationCycle] = useState(0)
+  const [movementPhase, setMovementPhase] = useState(0)
+
+  useEffect(() => {
+    if (isActive) {
+      setRotationCycle(1)
+      setMovementPhase(1)
+      const r = setInterval(() => setRotationCycle(prev => prev + 1), 3000)
+      const m = setInterval(() => setMovementPhase(prev => (prev % 2) + 1), 2500)
+      return () => { clearInterval(r); clearInterval(m) }
+    } else {
+      setRotationCycle(0)
+      setMovementPhase(0)
+    }
+  }, [isActive])
+
+  const getRotation = (pillarIndex: number, boxIndex: number, cycle: number) => {
+    if (cycle === 0) return [0, 25, -30, 35, -25][boxIndex] || 0
+    return (cycle % 2 === 0 ? 180 : 0) + ((boxIndex * 5 + pillarIndex * 3) % 8 - 4)
+  }
+
+  // Horizontal movement: left pillar goes left, right pillar goes right
+  const getOffset = (pillarIndex: number) => {
+    if (movementPhase === 0) return 0
+    if (pillarIndex === 0) return movementPhase === 1 ? -60 : 0  // Left pillar
+    if (pillarIndex === 2) return movementPhase === 1 ? 60 : 0   // Right pillar
+    return 0  // Center pillar stays
   }
 
   return (
-    <div ref={containerRef} className="relative bg-black" style={{ height: `${products.length * 100}vh` }}>
-      <div className="sticky top-0 h-screen overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-neutral-900" />
-        <motion.div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-[180px] opacity-20" animate={{ background: `radial-gradient(circle, ${product.accentColor}, transparent)` }} transition={{ duration: 0.8 }} />
-        <motion.div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full blur-[150px] opacity-15" animate={{ background: `radial-gradient(circle, ${product.accentColor}, transparent)` }} transition={{ duration: 0.8 }} />
+    <div className="relative">
+      <div className="flex items-end justify-center gap-6">
+        {[0, 1, 2].map((pillarIndex) => (
+          <div
+            key={pillarIndex}
+            className="flex flex-col-reverse items-center"
+            style={{
+              perspective: '600px',
+              transformStyle: 'preserve-3d',
+              transform: `translateX(${getOffset(pillarIndex)}px)`,
+              transition: 'transform 1.5s ease-in-out',
+            }}
+          >
+            {HRMS_BOXES.slice(0, 4).map((box, boxIndex) => (
+              <div
+                key={box.id}
+                style={{
+                  marginTop: boxIndex === 0 ? 0 : -1,
+                  zIndex: 4 - boxIndex,
+                  transformStyle: 'preserve-3d',
+                  transform: `rotateY(${getRotation(pillarIndex, boxIndex, rotationCycle)}deg)`,
+                  transition: 'transform 2s ease-in-out',
+                }}
+              >
+                <div className="w-[90px] h-[32px]" style={{ transformStyle: 'preserve-3d' }}>
+                  <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(8px)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `1.5px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 12px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span className="font-black text-[10px] tracking-wider" style={{ color: HRMS_PRIMARY }}>{box.text}</span>
+                  </div>
+                  <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(-8px) rotateY(180deg)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `1.5px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 12px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span className="font-black text-[11px]" style={{ color: HRMS_PRIMARY }}>{box.backText}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      {/* Base */}
+      <div className="mt-3 mx-auto w-[340px] h-[24px]" style={{ background: 'linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%)', border: `1.5px solid ${HRMS_PRIMARY}`, borderRadius: '4px', boxShadow: `0 0 20px ${HRMS_GLOW}` }} />
+      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[400px] h-[70px]" style={{ background: `radial-gradient(ellipse, ${HRMS_GLOW} 0%, transparent 70%)`, filter: 'blur(25px)' }} />
+    </div>
+  )
+}
 
-        <div className="relative h-full grid lg:grid-cols-[1fr_1.5fr] gap-8 px-12 lg:px-20">
-          {/* Content - Minimal */}
-          <div className="flex flex-col justify-center items-start text-left relative z-10">
-            <div className="flex gap-2 mb-6">
-              {products.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    const target = (idx / products.length) * (containerRef.current?.offsetHeight || 0 - window.innerHeight)
-                    window.scrollTo({ top: target + (containerRef.current?.offsetTop || 0), behavior: 'smooth' })
+function BentoMatrixVisual({ isActive }: { isActive: boolean }) {
+  const [wavePhase, setWavePhase] = useState(0)
+
+  useEffect(() => {
+    if (isActive) {
+      const i = setInterval(() => setWavePhase(prev => prev + 1), 1200)
+      return () => clearInterval(i)
+    }
+  }, [isActive])
+
+  const getOffset = (colIndex: number) => {
+    if (!isActive) return 0
+    const dirs = [-1, 0, 1, 1, 0, -1]
+    const m = wavePhase % 2 === 0 ? 1 : -1
+    return dirs[colIndex % 6] * m * 0.7
+  }
+
+  return (
+    <div className="relative" style={{ perspective: '800px' }}>
+      <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(6deg) rotateY(-10deg)' }}>
+        <div style={{ display: 'flex', gap: '6px', padding: '20px 16px', background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)', borderRadius: '8px', border: '1.5px solid #2a2a40', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+          {Array.from({ length: 6 }).map((_, colIndex) => (
+            <div key={colIndex} className="flex flex-col" style={{ gap: '3px' }}>
+              {[0, 1, 2].map((rowIndex) => (
+                <div
+                  key={rowIndex}
+                  style={{
+                    width: 44,
+                    height: 36,
+                    transform: `translateY(${getOffset(colIndex) * 30}px)`,
+                    transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                    background: 'linear-gradient(135deg, rgba(6,182,212,0.5) 0%, rgba(8,145,178,0.6) 50%, rgba(14,116,144,0.4) 100%)',
+                    borderRadius: '3px',
+                    border: '1px solid rgba(6,182,212,0.4)',
+                    boxShadow: '0 0 15px rgba(6,182,212,0.3), inset 0 0 15px rgba(6,182,212,0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
-                  className={`h-2 rounded-full transition-all duration-500 ${idx === activeIndex ? 'w-8' : 'w-2'}`}
-                  style={{ backgroundColor: idx === activeIndex ? product.accentColor : 'rgba(255,255,255,0.2)', boxShadow: idx === activeIndex ? `0 0 10px ${product.accentColor}` : 'none' }}
-                />
+                >
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.7) 0%, transparent 70%)' }} />
+                </div>
               ))}
             </div>
+          ))}
+        </div>
+      </div>
+      <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[300px] h-[50px]" style={{ background: 'radial-gradient(ellipse, rgba(6,182,212,0.35) 0%, transparent 70%)', filter: 'blur(15px)' }} />
+    </div>
+  )
+}
 
-            <AnimatePresence mode="wait" custom={direction}>
-              <motion.div key={product.id} custom={direction} variants={contentVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.5 }} className="w-full">
-                <h2 className={`text-5xl lg:text-7xl font-bold bg-gradient-to-r ${product.gradient} bg-clip-text text-transparent mb-2`}>{product.title}</h2>
-                <p className="text-xl text-white/50 font-medium mb-6">{product.subtitle}</p>
-                <Link href="#booking" className={`inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r ${product.gradient} text-white font-semibold hover:scale-105 transition-transform`}>
-                  <span>Learn More</span>
-                  <ArrowRight className="h-5 w-5" />
-                </Link>
-              </motion.div>
-            </AnimatePresence>
-          </div>
+// Desktop Bento Grid Showcase
+function DesktopShowcase() {
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null)
+  const sectionRef = useRef<HTMLDivElement>(null)
 
-          {/* Visual - Larger */}
-          <div className="relative h-full flex items-center justify-center overflow-hidden">
-            <AnimatePresence mode="wait" custom={direction}>
-              <motion.div key={product.id} custom={direction} variants={visualVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.6 }} className="absolute inset-0 flex items-center justify-center" style={{ perspective: '1000px' }}>
-                {renderVisual()}
-              </motion.div>
-            </AnimatePresence>
-          </div>
+  return (
+    <section ref={sectionRef} className="relative min-h-screen bg-black py-20 px-6 lg:px-12 overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-neutral-900" />
+
+      {/* Ambient glows */}
+      <motion.div
+        className="absolute top-20 right-20 w-[500px] h-[500px] rounded-full blur-[150px] opacity-20"
+        animate={{
+          background: hoveredCard
+            ? `radial-gradient(circle, ${products.find(p => p.id === hoveredCard)?.accentColor || '#E17924'}, transparent)`
+            : 'radial-gradient(circle, #E17924, transparent)'
+        }}
+        transition={{ duration: 0.8 }}
+      />
+      <motion.div
+        className="absolute bottom-20 left-20 w-[400px] h-[400px] rounded-full blur-[120px] opacity-15"
+        animate={{
+          background: hoveredCard
+            ? `radial-gradient(circle, ${products.find(p => p.id === hoveredCard)?.accentColor || '#8B5CF6'}, transparent)`
+            : 'radial-gradient(circle, #8B5CF6, transparent)'
+        }}
+        transition={{ duration: 0.8 }}
+      />
+
+      <div className="relative max-w-7xl mx-auto">
+        {/* Header */}
+        <motion.div
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">
+            Our <span className="bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-500 bg-clip-text text-transparent">Products</span>
+          </h2>
+          <p className="text-lg text-white/50 max-w-2xl mx-auto">
+            Interactive kinetic displays that captivate and engage. Hover to explore each product.
+          </p>
+        </motion.div>
+
+        {/* Bento Grid */}
+        <div className="grid grid-cols-3 grid-rows-[360px_280px] gap-5">
+          {/* TRIBLOCK - Large Featured (spans 2 cols, 1 row) */}
+          <BentoCard
+            product={products[0]}
+            className="col-span-2 row-span-1"
+            isHovered={hoveredCard === 'triblock'}
+            onHover={() => setHoveredCard('triblock')}
+            onLeave={() => setHoveredCard(null)}
+            delay={0}
+          >
+            <BentoTriblockVisual isActive={hoveredCard === 'triblock' || hoveredCard === null} />
+          </BentoCard>
+
+          {/* FLAP - Medium (1 col, 1 row) */}
+          <BentoCard
+            product={products[1]}
+            className="col-span-1 row-span-1"
+            isHovered={hoveredCard === 'flap'}
+            onHover={() => setHoveredCard('flap')}
+            onLeave={() => setHoveredCard(null)}
+            delay={0.1}
+          >
+            <div className="scale-[0.65] origin-center">
+              <BentoFlapVisual isActive={hoveredCard === 'flap' || hoveredCard === null} />
+            </div>
+          </BentoCard>
+
+          {/* MATRIX - Medium (1 col, 1 row) */}
+          <BentoCard
+            product={products[3]}
+            className="col-span-1 row-span-1"
+            isHovered={hoveredCard === 'matrix'}
+            onHover={() => setHoveredCard('matrix')}
+            onLeave={() => setHoveredCard(null)}
+            delay={0.2}
+          >
+            <BentoMatrixVisual isActive={hoveredCard === 'matrix' || hoveredCard === null} />
+          </BentoCard>
+
+          {/* HRMS - Wide (spans 2 cols, 1 row) for pillar movement */}
+          <BentoCard
+            product={products[2]}
+            className="col-span-2 row-span-1"
+            isHovered={hoveredCard === 'hrms'}
+            onHover={() => setHoveredCard('hrms')}
+            onLeave={() => setHoveredCard(null)}
+            delay={0.3}
+          >
+            <BentoHRMSVisual isActive={hoveredCard === 'hrms' || hoveredCard === null} />
+          </BentoCard>
         </div>
 
-        <motion.div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/40" animate={{ opacity: activeIndex === products.length - 1 ? 0 : 1 }}>
-          <span className="text-xs uppercase tracking-widest">Scroll</span>
-          <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-5 h-8 rounded-full border-2 border-white/20 flex items-start justify-center p-1">
-            <div className="w-1 h-2 rounded-full bg-white/40" />
-          </motion.div>
+        {/* Bottom CTA */}
+        <motion.div
+          className="text-center mt-12"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <Link
+            href="#booking"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-500 text-white font-semibold text-lg hover:scale-105 transition-transform shadow-lg shadow-orange-500/25"
+          >
+            <span>Request a Demo</span>
+            <ArrowRight className="h-5 w-5" />
+          </Link>
         </motion.div>
       </div>
-    </div>
+    </section>
   )
 }
 
