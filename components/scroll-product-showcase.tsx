@@ -6,13 +6,24 @@ import { ArrowRight, Sparkles } from "lucide-react"
 import Link from "next/link"
 
 // Triblock colors - 3 distinct faces per triangular prism for visible rotation
-const TRIBLOCK_COLORS = [
-  { face1: '#C9A227', face2: '#1A1A1A', face3: '#E17924' }, // Gold, Black, Orange
-  { face1: '#B8860B', face2: '#2C2C2C', face3: '#BA5617' }, // Dark Gold, Charcoal, Rust
-  { face1: '#DAA520', face2: '#0F0F0F', face3: '#D4650E' }, // Goldenrod, Deep Black, Amber
-  { face1: '#CD853F', face2: '#252525', face3: '#F28C38' }, // Peru/Copper, Dark gray, Light Orange
-  { face1: '#D4A84B', face2: '#1F1F1F', face3: '#994E1F' }, // Brass, Near black, Brown
+// Main warm colors (used most often)
+const TRIBLOCK_COLORS_WARM = [
+  { face1: '#C9A227', face2: '#8B5A2B', face3: '#E17924' }, // Gold, Saddle Brown, Orange
+  { face1: '#B8860B', face2: '#CD853F', face3: '#BA5617' }, // Dark Gold, Peru, Rust
+  { face1: '#DAA520', face2: '#A0522D', face3: '#D4650E' }, // Goldenrod, Sienna, Amber
+  { face1: '#CD853F', face2: '#D2691E', face3: '#F28C38' }, // Peru, Chocolate, Light Orange
+  { face1: '#D4A84B', face2: '#B87333', face3: '#994E1F' }, // Brass, Copper, Brown
 ]
+
+// Dark accent colors - warm dark tones (not pure black)
+const TRIBLOCK_COLORS_DARK = [
+  { face1: '#4A3728', face2: '#E17924', face3: '#3D2E1F' }, // Dark brown, Orange, Darker brown
+  { face1: '#5C4033', face2: '#C9A227', face3: '#4A3525' }, // Coffee brown, Gold, Espresso
+  { face1: '#3E2F23', face2: '#B8860B', face3: '#2F241A' }, // Dark chocolate, Dark Gold, Deep brown
+]
+
+// Combined for backward compatibility
+const TRIBLOCK_COLORS = [...TRIBLOCK_COLORS_WARM, ...TRIBLOCK_COLORS_DARK]
 
 // Flap colors
 const FLAP_BASE_COLORS = [
@@ -54,12 +65,12 @@ function useIsMobile() {
   return isMobile
 }
 
-// Generate blocks
+// Generate blocks with warm colors only - no dark blocks
 function generateTriblocks(rows: number, cols: number) {
   const blocks = []
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
-      const colorSet = TRIBLOCK_COLORS[Math.floor(Math.random() * TRIBLOCK_COLORS.length)]
+      const colorSet = TRIBLOCK_COLORS_WARM[Math.floor(Math.random() * TRIBLOCK_COLORS_WARM.length)]
       blocks.push({ id: `${row}-${col}`, row, col, colors: colorSet })
     }
   }
@@ -152,8 +163,8 @@ function MobileTriangularPrism({
   delay: number
 }) {
   const faceWidth = size
-  const faceHeight = size * 0.85
-  const apothem = faceHeight * 0.32
+  const faceHeight = size * 0.8
+  const apothem = faceHeight * 0.45
 
   return (
     <div
@@ -208,9 +219,10 @@ function MobileTriangularPrism({
 
 // Mobile Triblock Visual
 function MobileTriblockCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
-  const rows = MOBILE_TRIBLOCK_ROWS
-  const cols = MOBILE_TRIBLOCK_COLS
-  const blockSize = 24
+  const rows = 6
+  const cols = 8
+  const blockSize = 28
+  const gap = 5
   const [blocks] = useState(() => generateTriblocks(rows, cols))
   const [rotations, setRotations] = useState<number[][]>(() =>
     Array(rows).fill(null).map(() => Array(cols).fill(0))
@@ -250,7 +262,7 @@ function MobileTriblockCard({ isActive, onTap }: { isActive: boolean; onTap: () 
           <div style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${cols}, ${blockSize}px)`,
-            gap: '2px',
+            gap: `${gap}px`,
             transformStyle: 'preserve-3d',
           }}>
             {blocks.map((block, index) => {
@@ -304,7 +316,7 @@ function MobileFlapBlock({ baseColor, colorPool, delay, isFlipping }: { baseColo
           setColorIndex(prev => (prev + 1) % colorPool.length)
           flipNum++
           if (flipNum >= 4) clearInterval(flipTimer)
-        }, 300)
+        }, 500)
         return () => clearInterval(flipTimer)
       }, delay)
       return () => clearTimeout(delayTimer)
@@ -320,12 +332,12 @@ function MobileFlapBlock({ baseColor, colorPool, delay, isFlipping }: { baseColo
         height: '100%',
         transformStyle: 'preserve-3d',
         transform: `rotateX(${flipAngle}deg)`,
-        transition: 'transform 0.25s ease-out',
+        transition: 'transform 0.45s ease-out',
       }}>
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: `linear-gradient(180deg, ${adjustColor(currentColor, 30)} 0%, ${currentColor} 48%, #080808 49%, #080808 51%, ${adjustColor(currentColor, -15)} 52%, ${adjustColor(currentColor, -25)} 100%)`,
+          background: `linear-gradient(180deg, ${adjustColor(currentColor, 30)} 0%, ${currentColor} 49%, #080808 49.5%, #080808 50.5%, ${adjustColor(currentColor, -15)} 51%, ${adjustColor(currentColor, -25)} 100%)`,
           borderRadius: '2px',
           backfaceVisibility: 'hidden',
           boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
@@ -333,7 +345,7 @@ function MobileFlapBlock({ baseColor, colorPool, delay, isFlipping }: { baseColo
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: `linear-gradient(180deg, ${adjustColor(currentColor, 35)} 0%, ${adjustColor(currentColor, 5)} 48%, #080808 49%, #080808 51%, ${adjustColor(currentColor, -10)} 52%, ${adjustColor(currentColor, -20)} 100%)`,
+          background: `linear-gradient(180deg, ${adjustColor(currentColor, 35)} 0%, ${adjustColor(currentColor, 5)} 49%, #080808 49.5%, #080808 50.5%, ${adjustColor(currentColor, -10)} 51%, ${adjustColor(currentColor, -20)} 100%)`,
           borderRadius: '2px',
           backfaceVisibility: 'hidden',
           transform: 'rotateX(180deg)',
@@ -1000,8 +1012,8 @@ function MobileShowcase() {
 // Desktop Triblock Visual
 function TriPrismBlock({ colors, intensity }: { colors: { face1: string; face2: string; face3: string }; intensity: number }) {
   const size = 38
-  const faceHeight = size * 0.9
-  const apothem = faceHeight * 0.35
+  const faceHeight = size * 0.85
+  const apothem = faceHeight * 0.45
   const rotation = intensity > 0.1 ? 80 : 0
 
   return (
@@ -1122,7 +1134,7 @@ function FlapBlock({ baseColor, colorPool, isFlipped, delay }: { baseColor: stri
           setInternalFlip(prev => !prev)
           setColorIndex(prev => (prev + 1) % colorPool.length)
           setFlipCount(prev => prev + 1)
-        }, 1400)
+        }, 2200)
       }, delay)
       return () => { clearTimeout(timeout); if (flipIntervalRef.current) clearInterval(flipIntervalRef.current) }
     } else {
@@ -1144,7 +1156,7 @@ function FlapBlock({ baseColor, colorPool, isFlipped, delay }: { baseColor: stri
           height: '100%',
           transformStyle: 'preserve-3d',
           transform: internalFlip ? 'rotateY(180deg)' : 'rotateY(0deg)',
-          transition: `transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${actualDelay}ms`,
+          transition: `transform 1.2s cubic-bezier(0.4, 0, 0.2, 1) ${actualDelay}ms`,
         }}
       >
         <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${adjustColor(currentColor, 30)} 0%, ${currentColor} 50%, ${adjustColor(currentColor, -25)} 100%)`, borderRadius: '8px', backfaceVisibility: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }} />
@@ -1409,11 +1421,12 @@ function BentoCard({
 
 // Scaled-down visuals for Bento cards - Triangular Prisms
 function BentoTriblockVisual({ isActive }: { isActive: boolean }) {
-  const rows = 8
-  const cols = 12
-  const blockSize = 30
-  const faceHeight = blockSize * 0.85
-  const apothem = faceHeight * 0.32
+  const rows = 6
+  const cols = 10
+  const blockSize = 34
+  const gap = 6
+  const faceHeight = blockSize * 0.8
+  const apothem = faceHeight * 0.45
   const [blocks] = useState(() => generateTriblocks(rows, cols))
   const [rotations, setRotations] = useState<number[][]>(() =>
     Array(rows).fill(null).map(() => Array(cols).fill(0))
@@ -1456,7 +1469,7 @@ function BentoTriblockVisual({ isActive }: { isActive: boolean }) {
       onMouseLeave={handleHoverEnd}
     >
       <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(12deg) rotateY(-5deg)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${blockSize}px)`, gap: '3px', transformStyle: 'preserve-3d' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${blockSize}px)`, gap: `${gap}px`, transformStyle: 'preserve-3d' }}>
           {blocks.map((block, index) => {
             const row = Math.floor(index / cols)
             const col = index % cols
@@ -1659,9 +1672,9 @@ function BentoFlapBlock({
             setFlipAngle(prev => prev + 180)
             setCurrentColor(null)
             setShowFinalContent(true)
-          }, 250)
+          }, 450)
         }
-      }, 280) // 280ms per flip - faster cascade
+      }, 500) // 500ms per flip - slower cascade
 
       return () => clearInterval(flipTimer)
     }, delay)
@@ -1685,7 +1698,7 @@ function BentoFlapBlock({
           position: 'relative',
           transformStyle: 'preserve-3d',
           transform: `rotateX(${flipAngle}deg)`,
-          transition: 'transform 0.25s ease-out',
+          transition: 'transform 0.45s ease-out',
         }}
       >
         {/* Front face */}
@@ -1695,10 +1708,10 @@ function BentoFlapBlock({
             inset: 0,
             background: `linear-gradient(180deg,
               ${adjustColor(displayBg, 35)} 0%,
-              ${displayBg} 48.5%,
-              #080808 49%,
-              #080808 51%,
-              ${adjustColor(displayBg, -8)} 51.5%,
+              ${displayBg} 49%,
+              #080808 49.5%,
+              #080808 50.5%,
+              ${adjustColor(displayBg, -8)} 51%,
               ${adjustColor(displayBg, -20)} 100%)`,
             borderRadius: '3px',
             backfaceVisibility: 'hidden',
@@ -1727,10 +1740,10 @@ function BentoFlapBlock({
             inset: 0,
             background: `linear-gradient(180deg,
               ${adjustColor(displayBg, 40)} 0%,
-              ${adjustColor(displayBg, 10)} 48.5%,
-              #080808 49%,
-              #080808 51%,
-              ${adjustColor(displayBg, -5)} 51.5%,
+              ${adjustColor(displayBg, 10)} 49%,
+              #080808 49.5%,
+              #080808 50.5%,
+              ${adjustColor(displayBg, -5)} 51%,
               ${adjustColor(displayBg, -15)} 100%)`,
             borderRadius: '3px',
             backfaceVisibility: 'hidden',
@@ -2027,7 +2040,7 @@ const VISUAL_ROWS = 10
 const VISUAL_COLS = 14
 
 // Large-scale visuals for scroll sections
-// 3D Triangular Prism Component (Toblerone shape - 3 sided)
+// 3D Triangular Prism Component (Toblerone shape - 3 sided) - Clean version matching mobile
 function TriangularPrism({
   colors,
   size,
@@ -2039,95 +2052,62 @@ function TriangularPrism({
   rotation: number
   delay: number
 }) {
-  // Triangle geometry - equilateral triangle cross-section
   const faceWidth = size
   const faceHeight = size * 0.85
-  // Distance from center to face (apothem of triangle) - increased for visibility
-  const apothem = faceHeight * 0.5
+  const apothem = faceHeight * 0.38 // Good 3D depth
 
   return (
-    <div
-      style={{
-        width: faceWidth,
-        height: faceHeight,
-        position: 'relative',
-        transformStyle: 'preserve-3d',
-        transform: `rotateX(${rotation}deg)`,
-        transition: `transform 1.4s cubic-bezier(0.25, 0.1, 0.25, 1) ${delay}ms`,
-      }}
-    >
-      {/* Face 1 - Front (cream - visible at 0 degrees) */}
+    <div style={{ perspective: '200px' }}>
       <div
         style={{
-          position: 'absolute',
           width: faceWidth,
           height: faceHeight,
-          background: `linear-gradient(180deg, ${adjustColor(colors.face1, 20)} 0%, ${colors.face1} 40%, ${adjustColor(colors.face1, -15)} 100%)`,
-          transform: `translateZ(${apothem}px)`,
-          backfaceVisibility: 'hidden',
-          boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.6), inset 0 -2px 0 rgba(0,0,0,0.1)',
-          borderLeft: '1px solid rgba(0,0,0,0.08)',
-          borderRight: '1px solid rgba(0,0,0,0.08)',
+          position: 'relative',
+          transformStyle: 'preserve-3d',
+          transform: `rotateX(${rotation}deg)`,
+          transition: `transform 1.2s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms`,
         }}
-      />
-      {/* Face 2 - Upper right (dark - visible at 120 degrees) */}
-      <div
-        style={{
-          position: 'absolute',
-          width: faceWidth,
-          height: faceHeight,
-          background: `linear-gradient(180deg, ${adjustColor(colors.face2, 25)} 0%, ${colors.face2} 50%, ${adjustColor(colors.face2, -15)} 100%)`,
-          transform: `rotateX(-120deg) translateZ(${apothem}px)`,
-          backfaceVisibility: 'hidden',
-          boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.2)',
-          borderLeft: '1px solid rgba(0,0,0,0.15)',
-          borderRight: '1px solid rgba(0,0,0,0.15)',
-        }}
-      />
-      {/* Face 3 - Upper left (orange - visible at 240 degrees) */}
-      <div
-        style={{
-          position: 'absolute',
-          width: faceWidth,
-          height: faceHeight,
-          background: `linear-gradient(180deg, ${adjustColor(colors.face3, 30)} 0%, ${colors.face3} 45%, ${adjustColor(colors.face3, -12)} 100%)`,
-          transform: `rotateX(-240deg) translateZ(${apothem}px)`,
-          backfaceVisibility: 'hidden',
-          boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -2px 0 rgba(0,0,0,0.15)',
-          borderLeft: '1px solid rgba(0,0,0,0.08)',
-          borderRight: '1px solid rgba(0,0,0,0.08)',
-        }}
-      />
-      {/* Left triangle cap */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: '50%',
-          width: 0,
-          height: 0,
-          borderTop: `${faceHeight/2}px solid transparent`,
-          borderBottom: `${faceHeight/2}px solid transparent`,
-          borderRight: `${apothem * 1.5}px solid ${adjustColor(colors.face1, -30)}`,
-          transform: `translateY(-50%) translateX(-${apothem}px) rotateY(-90deg)`,
-          transformOrigin: 'right center',
-        }}
-      />
-      {/* Right triangle cap */}
-      <div
-        style={{
-          position: 'absolute',
-          right: 0,
-          top: '50%',
-          width: 0,
-          height: 0,
-          borderTop: `${faceHeight/2}px solid transparent`,
-          borderBottom: `${faceHeight/2}px solid transparent`,
-          borderLeft: `${apothem * 1.5}px solid ${adjustColor(colors.face1, -25)}`,
-          transform: `translateY(-50%) translateX(${apothem}px) rotateY(90deg)`,
-          transformOrigin: 'left center',
-        }}
-      />
+      >
+        {/* Face 1 - Front (gold) */}
+        <div
+          style={{
+            position: 'absolute',
+            width: faceWidth,
+            height: faceHeight,
+            background: `linear-gradient(180deg, ${adjustColor(colors.face1, 40)} 0%, ${colors.face1} 30%, ${adjustColor(colors.face1, -30)} 100%)`,
+            transform: `translateZ(${apothem}px)`,
+            backfaceVisibility: 'hidden',
+            borderRadius: '2px',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -1px 0 rgba(0,0,0,0.3)',
+          }}
+        />
+        {/* Face 2 - Upper (visible at 120 degrees) */}
+        <div
+          style={{
+            position: 'absolute',
+            width: faceWidth,
+            height: faceHeight,
+            background: `linear-gradient(180deg, ${adjustColor(colors.face2, 45)} 0%, ${colors.face2} 40%, ${adjustColor(colors.face2, -30)} 100%)`,
+            transform: `rotateX(-120deg) translateZ(${apothem}px)`,
+            backfaceVisibility: 'hidden',
+            borderRadius: '2px',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(0,0,0,0.25)',
+          }}
+        />
+        {/* Face 3 - Back (orange - visible at 240 degrees) */}
+        <div
+          style={{
+            position: 'absolute',
+            width: faceWidth,
+            height: faceHeight,
+            background: `linear-gradient(180deg, ${adjustColor(colors.face3, 45)} 0%, ${colors.face3} 35%, ${adjustColor(colors.face3, -25)} 100%)`,
+            transform: `rotateX(-240deg) translateZ(${apothem}px)`,
+            backfaceVisibility: 'hidden',
+            borderRadius: '2px',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.25)',
+          }}
+        />
+      </div>
     </div>
   )
 }
@@ -2150,34 +2130,10 @@ function LargeTriblockVisual() {
     if (!isHoveringRef.current) return
 
     setIsAnimating(true)
-    const pattern = wavePattern % 4
 
-    // Calculate new rotations based on wave pattern
-    const newRotations = Array(rows).fill(null).map((_, row) =>
-      Array(cols).fill(null).map((_, col) => {
-        let baseRotation = 120 // Rotate to next face
-
-        // Add variation based on pattern
-        switch (pattern) {
-          case 0: // All rotate same direction
-            return baseRotation
-          case 1: // Alternating columns
-            return col % 2 === 0 ? baseRotation : baseRotation * 2
-          case 2: // Diagonal wave
-            return ((row + col) % 3) * 120
-          case 3: // Center outward
-            const centerRow = rows / 2
-            const centerCol = cols / 2
-            const dist = Math.sqrt(Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2))
-            return Math.floor(dist) % 3 * 120
-          default:
-            return baseRotation
-        }
-      })
-    )
-
-    setRotations(prev => prev.map((rowArr, row) =>
-      rowArr.map((rot, col) => rot + newRotations[row][col])
+    // Always rotate by exactly 120 degrees (to next face) - no variation to prevent jitter
+    setRotations(prev => prev.map((rowArr) =>
+      rowArr.map((rot) => rot + 120)
     ))
 
     setWavePattern(prev => prev + 1)
@@ -2186,10 +2142,10 @@ function LargeTriblockVisual() {
     setTimeout(() => {
       setIsAnimating(false)
       if (isHoveringRef.current) {
-        setTimeout(() => runWaveAnimation(), 1000)
+        setTimeout(() => runWaveAnimation(), 1200)
       }
-    }, 2800)
-  }, [wavePattern, rows, cols])
+    }, 2500)
+  }, [])
 
   const handleHover = useCallback(() => {
     if (isHoveringRef.current) return
@@ -2215,19 +2171,36 @@ function LargeTriblockVisual() {
   return (
     <div
       className="relative cursor-pointer"
-      style={{ perspective: '1200px' }}
+      style={{ perspective: '1000px' }}
       onMouseEnter={handleHover}
       onMouseLeave={handleHoverEnd}
     >
       <div style={{
         transformStyle: 'preserve-3d',
-        transform: 'rotateX(15deg) rotateY(-5deg)',
+        transform: 'rotateX(20deg) rotateY(-4deg)',
+        position: 'relative',
       }}>
+        {/* Dark frame/mount behind the blocks - inside the flipped container */}
+        <div
+          style={{
+            position: 'absolute',
+            top: -16,
+            left: -16,
+            right: -16,
+            bottom: -16,
+            background: 'linear-gradient(145deg, #252525 0%, #1a1a1a 50%, #0a0a0a 100%)',
+            borderRadius: '6px',
+            zIndex: -1,
+            boxShadow: '0 30px 80px rgba(0,0,0,0.85)',
+          }}
+        />
         <div style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${cols}, ${blockSize}px)`,
           gap: `${gap}px`,
           transformStyle: 'preserve-3d',
+          position: 'relative',
+          zIndex: 1,
         }}>
           {blocks.map((block, index) => {
             const row = Math.floor(index / cols)
@@ -2246,21 +2219,6 @@ function LargeTriblockVisual() {
           })}
         </div>
       </div>
-
-      {/* Dark frame/mount behind the blocks */}
-      <div
-        style={{
-          position: 'absolute',
-          top: -20,
-          left: -20,
-          right: -20,
-          bottom: -20,
-          background: '#1a1a1a',
-          borderRadius: '8px',
-          zIndex: -1,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
-        }}
-      />
     </div>
   )
 }
