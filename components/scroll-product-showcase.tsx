@@ -139,7 +139,7 @@ const products = [
 
 // ============ MOBILE COMPONENTS ============
 
-// Mobile Triblock Visual - Tap to animate
+// Mobile Triblock Visual
 function MobileTriblockCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
   const [blocks] = useState(() => generateTriblocks(MOBILE_TRIBLOCK_ROWS, MOBILE_TRIBLOCK_COLS))
   const [waveCenter, setWaveCenter] = useState<{ row: number; col: number } | null>(null)
@@ -194,14 +194,6 @@ function MobileTriblockCard({ isActive, onTap }: { isActive: boolean; onTap: () 
       </div>
       {/* Glow */}
       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[280px] h-[50px]" style={{ background: 'radial-gradient(ellipse, rgba(225,121,36,0.4) 0%, transparent 70%)', filter: 'blur(15px)' }} />
-      {/* Tap hint */}
-      <motion.div
-        className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-white/40 uppercase tracking-wider"
-        animate={{ opacity: [0.4, 0.8, 0.4] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      >
-        Tap to animate
-      </motion.div>
     </motion.div>
   )
 }
@@ -451,50 +443,41 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
           boxShadow: `0 0 15px ${HRMS_GLOW}`,
         }}
       />
-      <motion.div
-        className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] text-white/40 uppercase tracking-wider"
-        animate={{ opacity: [0.4, 0.8, 0.4] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      >
-        Tap to animate
-      </motion.div>
     </motion.div>
   )
 }
 
-// Mobile Matrix Visual - Color pulse animation only
+// Mobile Matrix Visual - Movement animation
 function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
-  const [colorPhase, setColorPhase] = useState(0)
+  const [wavePhase, setWavePhase] = useState(0)
 
   useEffect(() => {
     if (isActive) {
-      // Cycle through color phases
-      const interval = setInterval(() => {
-        setColorPhase(prev => (prev + 1) % 4)
-      }, 800)
-      return () => clearInterval(interval)
-    } else {
-      setColorPhase(0)
+      // Movement wave
+      setWavePhase(prev => prev + 1)
     }
   }, [isActive])
 
-  // Different color schemes - warm tones
-  const colorSchemes = [
-    { bg: 'rgba(255,200,0,0.7)', border: 'rgba(255,200,0,0.6)', glow: 'rgba(255,200,0,0.5)' },      // Golden yellow
-    { bg: 'rgba(255,100,50,0.7)', border: 'rgba(255,100,50,0.6)', glow: 'rgba(255,100,50,0.5)' },   // Orange red
-    { bg: 'rgba(245,166,35,0.7)', border: 'rgba(245,166,35,0.6)', glow: 'rgba(245,166,35,0.5)' },   // Amber
-    { bg: 'rgba(255,80,120,0.7)', border: 'rgba(255,80,120,0.6)', glow: 'rgba(255,80,120,0.5)' },   // Pink/magenta
-  ]
+  // Wave offsets for columns
+  const getOffset = (colIndex: number) => {
+    if (wavePhase === 0) return 0
+    const directions = [-1, 0, 1, 1, 0, -1]
+    const multiplier = wavePhase % 2 === 0 ? 1 : -1
+    return (directions[colIndex % 6] || 0) * multiplier * 15
+  }
 
-  const getColor = (colIndex: number, rowIndex: number) => {
-    if (!isActive) return colorSchemes[1] // Default orange
-    const cellPhase = (colorPhase + colIndex + rowIndex) % 4
-    return colorSchemes[cellPhase]
+  // Brand orange color from palette #E17924
+  const colors = {
+    bg: 'rgba(225,121,36,0.85)',
+    border: 'rgba(186,86,23,0.7)',
+    glow: 'rgba(225,121,36,0.5)',
+    dark: 'rgba(108,42,0,0.9)'
   }
 
   return (
     <motion.div
-      className="relative w-full h-full flex items-center justify-center cursor-pointer pt-8"
+      className="relative w-full flex items-center justify-center cursor-pointer"
+      style={{ minHeight: '220px', paddingTop: '50px', paddingBottom: '20px' }}
       onClick={onTap}
       whileTap={{ scale: 0.98 }}
     >
@@ -503,53 +486,46 @@ function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () =>
           style={{
             display: 'flex',
             gap: '3px',
-            padding: '8px',
-            background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)',
+            padding: '10px',
+            background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
             borderRadius: '6px',
-            border: '1px solid #2a2a40',
+            border: '1px solid #333',
           }}
         >
-          {Array.from({ length: MOBILE_MATRIX_COLS }).map((_, colIndex) => (
-            <div key={colIndex} className="flex flex-col" style={{ gap: '3px' }}>
-              {[0, 1, 2].map((rowIndex) => {
-                const colors = getColor(colIndex, rowIndex)
-                return (
-                  <div
+          {Array.from({ length: MOBILE_MATRIX_COLS }).map((_, colIndex) => {
+            return (
+              <div key={colIndex} className="flex flex-col" style={{ gap: '3px' }}>
+                {[0, 1, 2].map((rowIndex) => (
+                  <motion.div
                     key={rowIndex}
+                    animate={isActive ? { y: getOffset(colIndex) } : { y: 0 }}
+                    transition={{ duration: 0.8, delay: colIndex * 0.05 }}
                     style={{
                       width: 46,
-                      height: 42,
-                      background: `linear-gradient(135deg, ${colors.bg} 0%, ${colors.bg} 100%)`,
+                      height: 40,
+                      background: `linear-gradient(135deg, ${colors.bg} 0%, ${colors.dark} 100%)`,
                       borderRadius: '3px',
                       border: `1px solid ${colors.border}`,
-                      boxShadow: `0 0 12px ${colors.glow}, inset 0 0 18px ${colors.glow}`,
+                      boxShadow: `0 2px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      transition: 'all 0.5s ease-in-out',
                     }}
                   >
                     <div style={{
-                      width: 7,
-                      height: 7,
+                      width: 5,
+                      height: 5,
                       borderRadius: '50%',
-                      background: `radial-gradient(circle, ${colors.bg} 0%, transparent 70%)`,
-                      boxShadow: `0 0 8px ${colors.glow}`,
+                      background: 'rgba(255,255,255,0.8)',
+                      boxShadow: `0 0 6px rgba(255,255,255,0.6)`,
                     }} />
-                  </div>
-                )
-              })}
-            </div>
-          ))}
+                  </motion.div>
+                ))}
+              </div>
+            )
+          })}
         </div>
       </div>
-      <motion.div
-        className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-white/40 uppercase tracking-wider"
-        animate={{ opacity: [0.4, 0.8, 0.4] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      >
-        Tap for colors
-      </motion.div>
     </motion.div>
   )
 }
@@ -2036,36 +2012,43 @@ function LargeTriHelixVisual() {
   // Track if still hovering for loop
   const isHoveringRef = useRef(false)
 
-  // Animation sequence - loops while hovering (wings only, no center rotation)
+  // Animation sequence - loops while hovering (open wings -> close wings -> rotate 180°)
   const runAnimation = useCallback(() => {
     if (!isHoveringRef.current) return
 
     setIsAnimating(true)
 
-    // Phase 1: Open wings slowly
+    // Phase 1: Open wings
     setWingAngle(120)
     setContentPhase(1)
 
-    // Phase 2: Hold open
-    setTimeout(() => {
-      if (!isHoveringRef.current) return
-      setContentPhase(2)
-    }, 2500)
-
-    // Phase 3: Close wings
+    // Phase 2: Close wings
     setTimeout(() => {
       if (!isHoveringRef.current) return
       setWingAngle(0)
-      setContentPhase(0)
-    }, 4500)
+      setContentPhase(2)
+    }, 2500)
 
-    // Phase 4: Loop again if still hovering
+    // Phase 3: Rotate all layers 180° (staggered timing via CSS transition delay)
+    setTimeout(() => {
+      if (!isHoveringRef.current) return
+      setLayerRotations([180, 180, 180, 180, 180, 180])
+    }, 3500)
+
+    // Phase 4: Reset rotations and restart
+    setTimeout(() => {
+      if (!isHoveringRef.current) return
+      setLayerRotations([0, 0, 0, 0, 0, 0])
+      setContentPhase(0)
+    }, 5500)
+
+    // Phase 5: Loop again if still hovering
     setTimeout(() => {
       setIsAnimating(false)
       if (isHoveringRef.current) {
         runAnimation()
       }
-    }, 6500)
+    }, 7000)
   }, [])
 
   const handleHover = useCallback(() => {
@@ -2342,34 +2325,37 @@ function LargeMatrixVisual() {
 
   // Wave patterns - Y offsets for each column (screens slide up/down)
   const patterns = [
-    // Pattern 0: Flat
     [0, 0, 0, 0, 0, 0, 0, 0],
-    // Pattern 1: Wave right
     [-25, -15, 0, 15, 25, 15, 0, -15],
-    // Pattern 2: Center dip
     [20, 10, -5, -15, -15, -5, 10, 20],
-    // Pattern 3: Alternating
     [-20, 15, -20, 15, -20, 15, -20, 15],
-    // Pattern 4: Wave left
     [15, 0, -15, -25, -15, 0, 15, 25],
   ]
 
+  // Brand orange color from palette #E17924
+  const colors = {
+    bg: 'rgba(225,121,36,0.9)',
+    glow: 'rgba(225,121,36,0.5)',
+    dark: 'rgba(108,42,0,0.95)',
+    dot: 'rgba(255,255,255,0.9)'
+  }
+
   // Cycle through patterns while hovering
-  const cyclePattern = useCallback(() => {
+  const cycleAnimation = useCallback(() => {
     if (!isHoveringRef.current) return
 
     setPattern(prev => (prev + 1) % patterns.length)
 
     setTimeout(() => {
       if (isHoveringRef.current) {
-        cyclePattern()
+        cycleAnimation()
       }
-    }, 2500)
+    }, 2000)
   }, [])
 
   const handleHover = () => {
     isHoveringRef.current = true
-    cyclePattern()
+    cycleAnimation()
   }
 
   const handleHoverEnd = () => {
@@ -2404,49 +2390,24 @@ function LargeMatrixVisual() {
                       height: cellHeight,
                       transform: `translateY(${patterns[pattern][colIndex]}px)`,
                       transition: 'transform 1.8s ease-in-out',
-                      background: 'linear-gradient(135deg, #0a0a12 0%, #151522 50%, #0a0a12 100%)',
-                      borderRadius: '3px',
-                      border: '2px solid #333',
-                      boxShadow: '0 4px 15px rgba(0,0,0,0.5), inset 0 0 30px rgba(245,166,35,0.15)',
+                      background: `linear-gradient(135deg, ${colors.bg} 0%, ${colors.dark} 100%)`,
+                      borderRadius: '4px',
+                      border: '2px solid rgba(186,86,23,0.6)',
+                      boxShadow: `0 4px 15px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15)`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       overflow: 'hidden',
                     }}
                   >
-                    {/* Screen content - circuit pattern */}
+                    {/* Glow dot */}
                     <div style={{
-                      width: '90%',
-                      height: '90%',
-                      background: 'linear-gradient(135deg, rgba(20,60,100,0.8) 0%, rgba(10,30,60,0.9) 100%)',
-                      borderRadius: '2px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}>
-                      {/* Circuit lines */}
-                      <div style={{
-                        position: 'absolute',
-                        width: '100%',
-                        height: '100%',
-                        opacity: 0.4,
-                        background: `
-                          linear-gradient(90deg, transparent 48%, rgba(100,180,255,0.3) 49%, rgba(100,180,255,0.3) 51%, transparent 52%),
-                          linear-gradient(0deg, transparent 48%, rgba(100,180,255,0.3) 49%, rgba(100,180,255,0.3) 51%, transparent 52%)
-                        `,
-                        backgroundSize: '20px 20px',
-                      }} />
-                      {/* Glow dot */}
-                      <div style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        background: 'radial-gradient(circle, rgba(100,180,255,0.9) 0%, transparent 70%)',
-                        boxShadow: '0 0 15px rgba(100,180,255,0.6)',
-                      }} />
-                    </div>
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: `radial-gradient(circle, ${colors.dot} 0%, rgba(255,255,255,0.3) 50%, transparent 70%)`,
+                      boxShadow: `0 0 10px rgba(255,255,255,0.5)`,
+                    }} />
                   </div>
                 ))}
               </div>
@@ -2458,7 +2419,7 @@ function LargeMatrixVisual() {
       <div
         className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-[600px] h-[80px]"
         style={{
-          background: 'radial-gradient(ellipse, rgba(100,180,255,0.25) 0%, transparent 70%)',
+          background: `radial-gradient(ellipse, ${colors.glow} 0%, transparent 70%)`,
           filter: 'blur(20px)',
         }}
       />
