@@ -1080,37 +1080,22 @@ const FLIP_COLOR_SEQUENCE = [
 
 // Multi-flip block - flips through multiple pages before settling
 function BentoFlapBlock({
-  isAnimating,
   delay,
   finalContent,
   flipCount
 }: {
-  isAnimating: boolean
   delay: number
   finalContent: number
   flipCount: number
 }) {
   const [currentColor, setCurrentColor] = useState<string | null>(null)
   const [flipAngle, setFlipAngle] = useState(0)
-  const [showFinalContent, setShowFinalContent] = useState(true)
-  const isRunningRef = useRef(false)
+  const [showFinalContent, setShowFinalContent] = useState(false)
 
   useEffect(() => {
-    if (!isAnimating) {
-      isRunningRef.current = false
-      setShowFinalContent(true)
-      setCurrentColor(null)
-      return
-    }
-
-    // Prevent double-triggering
-    if (isRunningRef.current) return
-    isRunningRef.current = true
-
-    // Start multi-flip after delay
+    // Start multi-flip after delay - runs once on mount
     const delayTimer = setTimeout(() => {
       let flipNum = 0
-      setShowFinalContent(false)
 
       // Multiple flips with distinct color for each
       const flipTimer = setInterval(() => {
@@ -1135,7 +1120,7 @@ function BentoFlapBlock({
     }, delay)
 
     return () => clearTimeout(delayTimer)
-  }, [isAnimating, delay, finalContent, flipCount])
+  }, []) // Empty deps - runs once on mount
 
   const finalContentData = FLAP_CONTENTS[finalContent] || FLAP_CONTENTS[10]
 
@@ -1227,7 +1212,7 @@ function BentoFlapBlock({
 }
 
 function BentoFlapVisual({ isActive }: { isActive: boolean }) {
-  const [isAnimating, setIsAnimating] = useState(false)
+  const [animationCycle, setAnimationCycle] = useState(0)
   const [patternIndex, setPatternIndex] = useState(0)
   const rows = 5
   const cols = 8
@@ -1256,21 +1241,14 @@ function BentoFlapVisual({ isActive }: { isActive: boolean }) {
 
   useEffect(() => {
     if (!isActive) {
-      setIsAnimating(false)
       return
     }
 
     const runAnimation = () => {
-      // Update pattern first
+      // Increment cycle to trigger fresh animation
+      setAnimationCycle(prev => prev + 1)
+      // Update pattern
       setPatternIndex(prev => (prev + 1) % SETTLED_PATTERNS.length)
-      // Start animation
-      setIsAnimating(true)
-
-      // Stop animation after all blocks settle (wave delay + flip time)
-      // Max delay ~1650ms + max flips ~2700ms = ~4350ms
-      setTimeout(() => {
-        setIsAnimating(false)
-      }, 5000)
     }
 
     // Initial delay
@@ -1302,11 +1280,10 @@ function BentoFlapVisual({ isActive }: { isActive: boolean }) {
           {Array.from({ length: rows * cols }).map((_, index) => {
             const row = Math.floor(index / cols)
             const col = index % cols
-            const finalContent = currentPattern[row]?.[col] ?? 5
+            const finalContent = currentPattern[row]?.[col] ?? 10
             return (
               <BentoFlapBlock
-                key={`${row}-${col}`}
-                isAnimating={isAnimating}
+                key={`${row}-${col}-${animationCycle}`}
                 delay={getWaveDelay(row, col, patternIndex)}
                 finalContent={finalContent}
                 flipCount={4 + (index % 3)}
