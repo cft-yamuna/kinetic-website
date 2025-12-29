@@ -29,9 +29,9 @@ const MATRIX_COLS = 6
 // Mobile configuration - optimized sizes
 const MOBILE_TRIBLOCK_ROWS = 8
 const MOBILE_TRIBLOCK_COLS = 10
-const MOBILE_FLAP_ROWS = 5
-const MOBILE_FLAP_COLS = 8
-const MOBILE_MATRIX_COLS = 5
+const MOBILE_FLAP_ROWS = 6
+const MOBILE_FLAP_COLS = 10
+const MOBILE_MATRIX_COLS = 6
 
 // Helper function
 function adjustColor(color: string, amount: number): string {
@@ -156,26 +156,26 @@ function MobileTriblockCard({ isActive, onTap }: { isActive: boolean; onTap: () 
 
   return (
     <motion.div
-      className="relative w-full h-full flex items-center justify-center cursor-pointer"
+      className="relative w-full h-full flex items-center justify-center cursor-pointer pt-8"
       onClick={onTap}
       whileTap={{ scale: 0.98 }}
     >
       <div style={{ transform: 'rotateX(-12deg) rotateY(15deg)', transformStyle: 'preserve-3d' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${MOBILE_TRIBLOCK_COLS}, 28px)`, gap: '2px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${MOBILE_TRIBLOCK_COLS}, 22px)`, gap: '2px' }}>
           {blocks.map((block) => {
             const intensity = isActive ? getBlockIntensity(block.row, block.col) : 0
             return (
               <motion.div
                 key={block.id}
-                animate={{ y: intensity > 0.1 ? -6 : 0 }}
+                animate={{ y: intensity > 0.1 ? -4 : 0 }}
                 transition={{ duration: 0.2 }}
                 style={{
-                  width: 28,
-                  height: 28,
+                  width: 22,
+                  height: 22,
                   background: `linear-gradient(145deg, ${adjustColor(block.colors.face1, 30)} 0%, ${block.colors.face1} 50%, ${adjustColor(block.colors.face1, -20)} 100%)`,
-                  borderRadius: '3px',
+                  borderRadius: '2px',
                   boxShadow: intensity > 0.1
-                    ? `0 8px 16px rgba(0,0,0,0.4), 0 0 20px rgba(225,121,36,${intensity * 0.6})`
+                    ? `0 6px 12px rgba(0,0,0,0.4), 0 0 15px rgba(225,121,36,${intensity * 0.6})`
                     : '0 2px 4px rgba(0,0,0,0.3)',
                 }}
               />
@@ -197,62 +197,92 @@ function MobileTriblockCard({ isActive, onTap }: { isActive: boolean; onTap: () 
   )
 }
 
+// Mobile Flap Block with multi-flip animation like desktop
+function MobileFlapBlock({ baseColor, colorPool, delay, isFlipping }: { baseColor: string; colorPool: string[]; delay: number; isFlipping: boolean }) {
+  const [flipAngle, setFlipAngle] = useState(0)
+  const [colorIndex, setColorIndex] = useState(0)
+
+  useEffect(() => {
+    if (isFlipping) {
+      const delayTimer = setTimeout(() => {
+        let flipNum = 0
+        const flipTimer = setInterval(() => {
+          setFlipAngle(prev => prev + 180)
+          setColorIndex(prev => (prev + 1) % colorPool.length)
+          flipNum++
+          if (flipNum >= 4) clearInterval(flipTimer)
+        }, 300)
+        return () => clearInterval(flipTimer)
+      }, delay)
+      return () => clearTimeout(delayTimer)
+    }
+  }, [isFlipping, delay, colorPool.length])
+
+  const currentColor = colorPool[colorIndex]
+
+  return (
+    <div style={{ width: 24, height: 30, perspective: '400px' }}>
+      <div style={{
+        width: '100%',
+        height: '100%',
+        transformStyle: 'preserve-3d',
+        transform: `rotateX(${flipAngle}deg)`,
+        transition: 'transform 0.25s ease-out',
+      }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: `linear-gradient(180deg, ${adjustColor(currentColor, 30)} 0%, ${currentColor} 48%, #080808 49%, #080808 51%, ${adjustColor(currentColor, -15)} 52%, ${adjustColor(currentColor, -25)} 100%)`,
+          borderRadius: '2px',
+          backfaceVisibility: 'hidden',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
+        }} />
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: `linear-gradient(180deg, ${adjustColor(currentColor, 35)} 0%, ${adjustColor(currentColor, 5)} 48%, #080808 49%, #080808 51%, ${adjustColor(currentColor, -10)} 52%, ${adjustColor(currentColor, -20)} 100%)`,
+          borderRadius: '2px',
+          backfaceVisibility: 'hidden',
+          transform: 'rotateX(180deg)',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
+        }} />
+      </div>
+    </div>
+  )
+}
+
 // Mobile Flap Visual - Tap to flip
 function MobileFlapCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
   const [blocks] = useState(() => generateFlapBlocks(MOBILE_FLAP_ROWS, MOBILE_FLAP_COLS))
-  const [flipPattern, setFlipPattern] = useState(0)
+  const [flipCycle, setFlipCycle] = useState(0)
 
   useEffect(() => {
     if (isActive) {
-      setFlipPattern(prev => prev + 1)
+      setFlipCycle(prev => prev + 1)
     }
   }, [isActive])
 
   const getDelay = (row: number, col: number) => {
-    const pattern = flipPattern % 4
-    switch (pattern) {
-      case 0: return (row + col) * 60
-      case 1: return Math.sqrt(Math.pow(row - MOBILE_FLAP_ROWS / 2, 2) + Math.pow(col - MOBILE_FLAP_COLS / 2, 2)) * 80
-      case 2: return ((MOBILE_FLAP_ROWS - 1 - row) + (MOBILE_FLAP_COLS - 1 - col)) * 60
-      case 3: return row * 100 + (col % 3) * 30
-      default: return 0
-    }
+    return (row + col) * 80
   }
 
   return (
     <motion.div
-      className="relative w-full h-full flex items-center justify-center cursor-pointer"
+      className="relative w-full h-full flex items-center justify-center cursor-pointer pt-8"
       onClick={onTap}
       whileTap={{ scale: 0.98 }}
     >
-      <div
-        style={{
-          padding: '12px',
-          background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
-          borderRadius: '10px',
-          border: '1px solid rgba(255,255,255,0.1)',
-        }}
-      >
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${MOBILE_FLAP_COLS}, 32px)`, gap: '3px' }}>
-          {blocks.map((block) => (
-            <motion.div
-              key={`${block.id}-${flipPattern}`}
-              initial={{ rotateY: 0 }}
-              animate={isActive ? { rotateY: [0, 180, 0] } : {}}
-              transition={{ duration: 0.6, delay: getDelay(block.row, block.col) / 1000 }}
-              style={{
-                width: 32,
-                height: 40,
-                background: `linear-gradient(135deg, ${adjustColor(block.baseColor, 25)} 0%, ${block.baseColor} 50%, ${adjustColor(block.baseColor, -20)} 100%)`,
-                borderRadius: '4px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-              }}
-            />
-          ))}
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${MOBILE_FLAP_COLS}, 24px)`, gap: '2px' }}>
+        {blocks.map((block) => (
+          <MobileFlapBlock
+            key={`${block.id}-${flipCycle}`}
+            baseColor={block.baseColor}
+            colorPool={block.colorPool}
+            delay={getDelay(block.row, block.col)}
+            isFlipping={isActive}
+          />
+        ))}
       </div>
-      {/* Glow */}
-      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[280px] h-[50px]" style={{ background: 'radial-gradient(ellipse, rgba(245,158,11,0.4) 0%, transparent 70%)', filter: 'blur(15px)' }} />
       <motion.div
         className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-white/40 uppercase tracking-wider"
         animate={{ opacity: [0.4, 0.8, 0.4] }}
@@ -264,13 +294,15 @@ function MobileFlapCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
   )
 }
 
-// Mobile HRMS Visual - All 3 pillars visible
+// Mobile HRMS Visual - All 3 pillars visible with rotation and movement
 function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
   const [rotationPhase, setRotationPhase] = useState(0)
+  const [movementPhase, setMovementPhase] = useState(0)
 
   useEffect(() => {
     if (isActive) {
       setRotationPhase(prev => prev + 1)
+      setMovementPhase(prev => prev + 1)
     }
   }, [isActive])
 
@@ -280,22 +312,34 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
     return base + (pillarIndex * 15) + (boxIndex * 10)
   }
 
+  const getOffset = (pillarIndex: number) => {
+    if (movementPhase === 0) return 0
+    if (pillarIndex === 0) return movementPhase % 2 === 1 ? -40 : 0
+    if (pillarIndex === 2) return movementPhase % 2 === 1 ? 40 : 0
+    return 0
+  }
+
   return (
     <motion.div
-      className="relative w-full h-full flex items-center justify-center cursor-pointer"
+      className="relative w-full h-full flex items-center justify-center cursor-pointer pt-6"
       onClick={onTap}
       whileTap={{ scale: 0.98 }}
     >
       <div className="flex items-end justify-center gap-3">
         {[0, 1, 2].map((pillarIndex) => (
-          <div key={pillarIndex} className="flex flex-col-reverse items-center gap-0.5">
+          <motion.div
+            key={pillarIndex}
+            className="flex flex-col-reverse items-center gap-0.5"
+            animate={{ x: getOffset(pillarIndex) }}
+            transition={{ duration: 1, ease: 'easeInOut' }}
+          >
             {HRMS_BOXES.slice(0, 4).map((box, boxIndex) => (
               <motion.div
                 key={box.id}
                 animate={isActive ? { rotateY: getRotation(pillarIndex, boxIndex) } : {}}
                 transition={{ duration: 1.5, delay: pillarIndex * 0.1 + boxIndex * 0.05 }}
                 style={{
-                  width: 70,
+                  width: 72,
                   height: 28,
                   background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)',
                   border: `1.5px solid ${HRMS_PRIMARY}`,
@@ -307,32 +351,30 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
                   transformStyle: 'preserve-3d',
                 }}
               >
-                <span style={{ fontSize: 8, fontWeight: 800, color: HRMS_PRIMARY, letterSpacing: '0.5px' }}>{box.text}</span>
+                <span style={{ fontSize: 8, fontWeight: 800, color: HRMS_PRIMARY, letterSpacing: '0.4px' }}>{box.text}</span>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         ))}
       </div>
       {/* Base */}
       <div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        className="absolute bottom-6 left-1/2 -translate-x-1/2"
         style={{
           width: 260,
-          height: 20,
+          height: 18,
           background: 'linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%)',
           border: `1.5px solid ${HRMS_PRIMARY}`,
-          borderRadius: '4px',
+          borderRadius: '3px',
           boxShadow: `0 0 15px ${HRMS_GLOW}`,
         }}
       />
-      {/* Glow */}
-      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[280px] h-[60px]" style={{ background: `radial-gradient(ellipse, ${HRMS_GLOW} 0%, transparent 70%)`, filter: 'blur(20px)' }} />
       <motion.div
-        className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-white/40 uppercase tracking-wider"
+        className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] text-white/40 uppercase tracking-wider"
         animate={{ opacity: [0.4, 0.8, 0.4] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
-        Tap to rotate
+        Tap to animate
       </motion.div>
     </motion.div>
   )
@@ -357,7 +399,7 @@ function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () =>
 
   return (
     <motion.div
-      className="relative w-full h-full flex items-center justify-center cursor-pointer"
+      className="relative w-full h-full flex items-center justify-center cursor-pointer pt-8"
       onClick={onTap}
       whileTap={{ scale: 0.98 }}
     >
@@ -365,41 +407,39 @@ function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () =>
         <div
           style={{
             display: 'flex',
-            gap: '6px',
-            padding: '20px 16px',
+            gap: '3px',
+            padding: '8px',
             background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)',
-            borderRadius: '8px',
-            border: '1.5px solid #2a2a40',
+            borderRadius: '6px',
+            border: '1px solid #2a2a40',
           }}
         >
           {Array.from({ length: MOBILE_MATRIX_COLS }).map((_, colIndex) => (
-            <div key={colIndex} className="flex flex-col gap-2">
+            <div key={colIndex} className="flex flex-col" style={{ gap: '3px' }}>
               {[0, 1, 2].map((rowIndex) => (
                 <motion.div
                   key={rowIndex}
                   animate={isActive ? { y: getOffset(colIndex) } : { y: 0 }}
                   transition={{ duration: 0.8, delay: colIndex * 0.05 }}
                   style={{
-                    width: 50,
-                    height: 45,
+                    width: 46,
+                    height: 42,
                     background: 'linear-gradient(135deg, rgba(6,182,212,0.6) 0%, rgba(8,145,178,0.7) 50%, rgba(14,116,144,0.5) 100%)',
                     borderRadius: '3px',
                     border: '1px solid rgba(6,182,212,0.5)',
-                    boxShadow: '0 0 15px rgba(6,182,212,0.4), inset 0 0 20px rgba(6,182,212,0.3)',
+                    boxShadow: '0 0 12px rgba(6,182,212,0.4), inset 0 0 18px rgba(6,182,212,0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.8) 0%, transparent 70%)' }} />
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.8) 0%, transparent 70%)' }} />
                 </motion.div>
               ))}
             </div>
           ))}
         </div>
       </div>
-      {/* Glow */}
-      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[300px] h-[50px]" style={{ background: 'radial-gradient(ellipse, rgba(6,182,212,0.4) 0%, transparent 70%)', filter: 'blur(15px)' }} />
       <motion.div
         className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-white/40 uppercase tracking-wider"
         animate={{ opacity: [0.4, 0.8, 0.4] }}
@@ -456,7 +496,7 @@ function MobileShowcase() {
           style={{
             background: 'linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(0,0,0,0.8) 100%)',
             border: '1px solid rgba(245,158,11,0.2)',
-            height: 320,
+            height: 290,
           }}
           whileTap={{ scale: 0.99 }}
         >
@@ -473,7 +513,7 @@ function MobileShowcase() {
           style={{
             background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(0,0,0,0.8) 100%)',
             border: '1px solid rgba(139,92,246,0.2)',
-            height: 280,
+            height: 220,
           }}
           whileTap={{ scale: 0.99 }}
         >
@@ -490,7 +530,7 @@ function MobileShowcase() {
           style={{
             background: 'linear-gradient(135deg, rgba(6,182,212,0.1) 0%, rgba(0,0,0,0.8) 100%)',
             border: '1px solid rgba(6,182,212,0.2)',
-            height: 300,
+            height: 230,
           }}
           whileTap={{ scale: 0.99 }}
         >
@@ -878,22 +918,6 @@ function BentoCard({
           {children}
         </div>
 
-        {/* CTA on hover */}
-        <motion.div
-          className="absolute bottom-5 right-6 z-20"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 10 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Link
-            href="#booking"
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r ${product.gradient} text-white text-sm font-semibold hover:scale-105 transition-transform`}
-          >
-            <span>Explore</span>
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </motion.div>
-
         {/* Sparkle indicator */}
         <motion.div
           className="absolute top-5 right-6 z-20"
@@ -921,8 +945,8 @@ function BentoTriblockVisual({ isActive }: { isActive: boolean }) {
     const rect = gridRef.current.getBoundingClientRect()
     const mouseX = e.clientX - rect.left
     const mouseY = e.clientY - rect.top
-    const blockSize = 32
-    const maxRadius = 100
+    const blockSize = 34
+    const maxRadius = 110
     const newActivated = new Map<string, number>()
     const centerCol = Math.floor(mouseX / blockSize)
     const centerRow = Math.floor(mouseY / blockSize)
@@ -948,28 +972,28 @@ function BentoTriblockVisual({ isActive }: { isActive: boolean }) {
       onMouseLeave={() => setActivatedBlocks(new Map())}
     >
       <div ref={gridRef} style={{ transformStyle: 'preserve-3d', transform: 'rotateX(-15deg) rotateY(20deg)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(12, 28px)`, gap: '3px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(12, 30px)`, gap: '4px' }}>
           {blocks.map((block) => {
             const intensity = activatedBlocks.get(block.id) || 0
             return (
               <div
                 key={block.id}
                 style={{
-                  width: 28,
-                  height: 28,
-                  background: `linear-gradient(145deg, ${adjustColor(block.colors.face1, 30)} 0%, ${block.colors.face1} 50%, ${adjustColor(block.colors.face1, -20)} 100%)`,
+                  width: 30,
+                  height: 30,
+                  background: `linear-gradient(145deg, ${adjustColor(block.colors.face1, 40)} 0%, ${block.colors.face1} 50%, ${adjustColor(block.colors.face1, -15)} 100%)`,
                   borderRadius: '3px',
-                  transform: `translateY(${intensity > 0.1 ? -4 : 0}px)`,
+                  transform: `translateY(${intensity > 0.1 ? -5 : 0}px)`,
                   transition: 'transform 0.2s ease-out, box-shadow 0.2s ease-out',
                   boxShadow: intensity > 0.1
-                    ? `0 6px 15px rgba(0,0,0,0.4), 0 0 15px rgba(225,121,36,${intensity * 0.5})`
-                    : '0 2px 4px rgba(0,0,0,0.3)',
+                    ? `0 8px 18px rgba(0,0,0,0.5), 0 0 20px rgba(225,121,36,${intensity * 0.6})`
+                    : '0 3px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
                 }}
               />
             )
           })}
         </div>
-        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-[350px] h-[60px]" style={{ background: 'radial-gradient(ellipse, rgba(225,121,36,0.4) 0%, transparent 70%)', filter: 'blur(20px)' }} />
+        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-[380px] h-[70px]" style={{ background: 'radial-gradient(ellipse, rgba(225,121,36,0.5) 0%, transparent 70%)', filter: 'blur(20px)' }} />
       </div>
     </div>
   )
@@ -1130,7 +1154,7 @@ function BentoFlapBlock({
     : (currentColor || finalContentData.bg)
 
   return (
-    <div style={{ width: 52, height: 66, perspective: '500px' }}>
+    <div style={{ width: 32, height: 40, perspective: '500px' }}>
       <div
         style={{
           width: '100%',
@@ -1147,15 +1171,15 @@ function BentoFlapBlock({
             position: 'absolute',
             inset: 0,
             background: `linear-gradient(180deg,
-              ${adjustColor(displayBg, 25)} 0%,
+              ${adjustColor(displayBg, 35)} 0%,
               ${displayBg} 48.5%,
               #080808 49%,
               #080808 51%,
-              ${adjustColor(displayBg, -12)} 51.5%,
-              ${adjustColor(displayBg, -25)} 100%)`,
-            borderRadius: '5px',
+              ${adjustColor(displayBg, -8)} 51.5%,
+              ${adjustColor(displayBg, -20)} 100%)`,
+            borderRadius: '3px',
             backfaceVisibility: 'hidden',
-            boxShadow: '0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.35)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1163,10 +1187,10 @@ function BentoFlapBlock({
         >
           {showFinalContent && finalContentData.type === 'text' && (
             <span style={{
-              fontSize: '28px',
+              fontSize: '16px',
               fontWeight: 900,
               color: finalContentData.color,
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              textShadow: '0 1px 2px rgba(0,0,0,0.5)',
               fontFamily: 'system-ui, sans-serif',
             }}>
               {finalContentData.value}
@@ -1179,16 +1203,16 @@ function BentoFlapBlock({
             position: 'absolute',
             inset: 0,
             background: `linear-gradient(180deg,
-              ${adjustColor(displayBg, 30)} 0%,
-              ${adjustColor(displayBg, 5)} 48.5%,
+              ${adjustColor(displayBg, 40)} 0%,
+              ${adjustColor(displayBg, 10)} 48.5%,
               #080808 49%,
               #080808 51%,
-              ${adjustColor(displayBg, -8)} 51.5%,
-              ${adjustColor(displayBg, -20)} 100%)`,
-            borderRadius: '5px',
+              ${adjustColor(displayBg, -5)} 51.5%,
+              ${adjustColor(displayBg, -15)} 100%)`,
+            borderRadius: '3px',
             backfaceVisibility: 'hidden',
             transform: 'rotateX(180deg)',
-            boxShadow: '0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.35)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1196,10 +1220,10 @@ function BentoFlapBlock({
         >
           {showFinalContent && finalContentData.type === 'text' && (
             <span style={{
-              fontSize: '28px',
+              fontSize: '16px',
               fontWeight: 900,
               color: finalContentData.color,
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              textShadow: '0 1px 2px rgba(0,0,0,0.5)',
               fontFamily: 'system-ui, sans-serif',
             }}>
               {finalContentData.value}
@@ -1214,27 +1238,27 @@ function BentoFlapBlock({
 function BentoFlapVisual({ isActive }: { isActive: boolean }) {
   const [animationCycle, setAnimationCycle] = useState(0)
   const [patternIndex, setPatternIndex] = useState(0)
-  const rows = 5
-  const cols = 8
+  const rows = 6
+  const cols = 11
 
   const getWaveDelay = useCallback((row: number, col: number, patternIdx: number) => {
-    // Larger delays so wave effect is clearly visible - each block starts 150ms after previous
+    // Larger delays so wave effect is clearly visible - each block starts 100ms after previous
     switch (patternIdx % 5) {
       case 0:
         // Top-left corner - distance from (0,0)
-        return (row + col) * 150
+        return (row + col) * 100
       case 1:
         // Center/middle - distance from center
-        return Math.sqrt(Math.pow(row - rows/2, 2) + Math.pow(col - cols/2, 2)) * 180
+        return Math.sqrt(Math.pow(row - rows/2, 2) + Math.pow(col - cols/2, 2)) * 120
       case 2:
         // Bottom-right corner - distance from (rows-1, cols-1)
-        return ((rows - 1 - row) + (cols - 1 - col)) * 150
+        return ((rows - 1 - row) + (cols - 1 - col)) * 100
       case 3:
         // Top-right corner - distance from (0, cols-1)
-        return (row + (cols - 1 - col)) * 150
+        return (row + (cols - 1 - col)) * 100
       case 4:
         // Bottom-left corner - distance from (rows-1, 0)
-        return ((rows - 1 - row) + col) * 150
+        return ((rows - 1 - row) + col) * 100
       default: return 0
     }
   }, [rows, cols])
@@ -1263,24 +1287,26 @@ function BentoFlapVisual({ isActive }: { isActive: boolean }) {
     }
   }, [isActive])
 
-  const currentPattern = SETTLED_PATTERNS[patternIndex]
+  // Extend patterns to 6x11 by repeating/tiling
+  const getExtendedContent = (row: number, col: number) => {
+    const basePattern = SETTLED_PATTERNS[patternIndex]
+    const baseRow = row % 5
+    const baseCol = col % 8
+    return basePattern[baseRow]?.[baseCol] ?? 10
+  }
 
   return (
-    <div className="relative scale-[0.78] origin-center" style={{ perspective: '800px' }}>
+    <div className="relative w-full h-full flex items-start justify-center mt-12" style={{ perspective: '800px' }}>
       <div style={{
-        padding: '14px 16px',
-        background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
-        borderRadius: '12px',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 18px 40px rgba(0,0,0,0.5)',
+        padding: '0',
         transform: 'rotateX(5deg)',
         transformStyle: 'preserve-3d'
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 52px)`, gap: '4px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 32px)`, gap: '2px' }}>
           {Array.from({ length: rows * cols }).map((_, index) => {
             const row = Math.floor(index / cols)
             const col = index % cols
-            const finalContent = currentPattern[row]?.[col] ?? 10
+            const finalContent = getExtendedContent(row, col)
             return (
               <BentoFlapBlock
                 key={`${row}-${col}-${animationCycle}`}
@@ -1292,7 +1318,6 @@ function BentoFlapVisual({ isActive }: { isActive: boolean }) {
           })}
         </div>
       </div>
-      <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-[460px] h-[50px]" style={{ background: 'radial-gradient(ellipse, rgba(245,158,11,0.4) 0%, transparent 70%)', filter: 'blur(20px)' }} />
     </div>
   )
 }
@@ -1494,9 +1519,7 @@ function DesktopShowcase() {
             onLeave={() => setHoveredCard(null)}
             delay={0.1}
           >
-            <div className="scale-[0.58] origin-center">
-              <BentoFlapVisual isActive={hoveredCard === 'flap' || hoveredCard === null} />
-            </div>
+            <BentoFlapVisual isActive={hoveredCard === 'flap' || hoveredCard === null} />
           </BentoCard>
 
           {/* MATRIX - Medium (1 col, 1 row) */}
