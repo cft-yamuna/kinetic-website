@@ -1267,7 +1267,7 @@ export default function HeroSection() {
 
             {/* CTA Buttons */}
             {useMobileOptimizations ? (
-              <div className="flex flex-row items-center justify-center lg:justify-start gap-3 mobile-text-animate mobile-text-delay-5">
+              <div className="flex flex-row items-center justify-center lg:justify-start gap-3 mobile-text-animate mobile-text-delay-5 -translate-y-[10px]">
                 <Link href="#booking">
                   <Button
                     size="sm"

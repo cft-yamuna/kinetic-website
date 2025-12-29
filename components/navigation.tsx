@@ -148,7 +148,7 @@ export default function Navigation() {
             animation: 'fadeIn 0.2s ease-out forwards'
           }}
         >
-          <div className="flex flex-col items-center justify-center h-full gap-8">
+          <div className="flex flex-col items-center justify-center h-full gap-8 -translate-y-[30px]">
             {navLinks.map((link) => (
               <div key={link.href}>
                 <Link

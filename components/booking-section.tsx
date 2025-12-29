@@ -1,15 +1,45 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Calendar, Clock, CheckCircle2, Loader2 } from "lucide-react"
+import { useState, useMemo, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Calendar, Clock, CheckCircle2, Loader2, User, Mail, Phone, Building2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+
+// Time slots available each day
+const TIME_SLOTS = [
+  { id: "morning", time: "11:30 AM", label: "Morning Session" },
+  { id: "afternoon", time: "3:00 PM", label: "Afternoon Session" },
+]
+
+// Booking month configuration
+const BOOKING_YEAR = 2026
+const BOOKING_MONTH = 0 // January (0-indexed)
+const MONTH_NAME = "January"
+
+// Generate days for January 2026
+function generateCalendarDays() {
+  const firstDay = new Date(BOOKING_YEAR, BOOKING_MONTH, 1)
+  const lastDay = new Date(BOOKING_YEAR, BOOKING_MONTH + 1, 0)
+  const daysInMonth = lastDay.getDate()
+  const startingDayOfWeek = firstDay.getDay() // 0 = Sunday
+
+  const days: (number | null)[] = []
+
+  // Add empty slots for days before the 1st
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    days.push(null)
+  }
+
+  // Add all days of the month
+  for (let day = 1; day <= daysInMonth; day++) {
+    days.push(day)
+  }
+
+  return days
+}
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false)
@@ -23,36 +53,49 @@ function useIsMobile() {
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  // Only return true for mobile after hydration to avoid mismatch
   return hasMounted && isMobile
 }
 
-const availableSlots = [
-  { date: "2025-01-15", time: "10:00 AM", available: true, popular: false },
-  { date: "2025-01-15", time: "2:00 PM", available: true, popular: false },
-  { date: "2025-01-16", time: "9:00 AM", available: false, popular: false },
-  { date: "2025-01-16", time: "11:00 AM", available: true, popular: false },
-  { date: "2025-01-16", time: "3:00 PM", available: true, popular: false },
-  { date: "2025-01-17", time: "10:00 AM", available: true, popular: false },
-  { date: "2025-01-17", time: "1:00 PM", available: true, popular: false },
-  { date: "2025-01-17", time: "4:00 PM", available: false, popular: false },
-]
-
 export default function BookingSection() {
-  const [step, setStep] = useState<"select" | "form" | "confirmation">("select")
-  const [selectedSlot, setSelectedSlot] = useState<{ date: string; time: string } | null>(null)
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "", purpose: "" })
+  const [selectedDate, setSelectedDate] = useState<number | null>(null)
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", company: "" })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
   const [phoneError, setPhoneError] = useState("")
+  const [bookedSlots, setBookedSlots] = useState<Record<string, string[]>>({})
   const isMobile = useIsMobile()
 
-  const handleSlotSelect = (date: string, time: string) => {
-    setSelectedSlot({ date, time })
-    setStep("form")
+  const calendarDays = useMemo(() => generateCalendarDays(), [])
+
+  const formatDateKey = (day: number) => {
+    return `${BOOKING_YEAR}-${String(BOOKING_MONTH + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+  }
+
+  const isSlotBooked = (day: number, slotId: string) => {
+    const dateKey = formatDateKey(day)
+    return bookedSlots[dateKey]?.includes(slotId) || false
+  }
+
+  const isDayFullyBooked = (day: number) => {
+    const dateKey = formatDateKey(day)
+    const booked = bookedSlots[dateKey] || []
+    return booked.length >= 2
+  }
+
+  const handleDateSelect = (day: number) => {
+    if (isDayFullyBooked(day)) return
+    setSelectedDate(day)
+    setSelectedSlot(null)
+  }
+
+  const handleSlotSelect = (slotId: string) => {
+    if (selectedDate && isSlotBooked(selectedDate, slotId)) return
+    setSelectedSlot(slotId)
   }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, "") // Remove non-digits
+    const value = e.target.value.replace(/\D/g, "")
     if (value.length <= 10) {
       setFormData({ ...formData, phone: value })
       if (value.length === 10) {
@@ -67,8 +110,8 @@ export default function BookingSection() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!selectedDate || !selectedSlot) return
 
-    // Validate phone number
     if (formData.phone.length !== 10) {
       setPhoneError("Phone number must be 10 digits")
       return
@@ -77,13 +120,16 @@ export default function BookingSection() {
     setIsSubmitting(true)
 
     try {
+      const dateKey = formatDateKey(selectedDate)
+      const slotDetails = TIME_SLOTS.find(s => s.id === selectedSlot)
+
       const { error } = await supabase
         .from("kinetic-data")
         .insert({
           name: formData.name,
           phone_num: parseInt(formData.phone, 10),
           email: formData.email,
-          work: formData.purpose
+          work: `Booking: ${MONTH_NAME} ${selectedDate}, ${BOOKING_YEAR} at ${slotDetails?.time} | Company: ${formData.company}`
         })
 
       if (error) {
@@ -93,7 +139,13 @@ export default function BookingSection() {
         return
       }
 
-      setStep("confirmation")
+      // Add to booked slots locally
+      setBookedSlots((prev) => ({
+        ...prev,
+        [dateKey]: [...(prev[dateKey] || []), selectedSlot],
+      }))
+
+      setIsSubmitted(true)
     } catch (err) {
       console.error("Error:", err)
       alert("Failed to save booking. Please try again.")
@@ -102,475 +154,377 @@ export default function BookingSection() {
     }
   }
 
+  const resetForm = () => {
+    setIsSubmitted(false)
+    setSelectedDate(null)
+    setSelectedSlot(null)
+    setFormData({ name: "", email: "", phone: "", company: "" })
+  }
+
+  const selectedSlotDetails = TIME_SLOTS.find((s) => s.id === selectedSlot)
+
   return (
-    <section id="booking" className="py-24 md:py-32 bg-muted/30 relative overflow-hidden">
-      {/* Grid Pattern - Block style */}
-      <div className="absolute inset-0 opacity-[0.03]">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              linear-gradient(to right, currentColor 1px, transparent 1px),
-              linear-gradient(to bottom, currentColor 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px'
-          }}
-        />
+    <section id="booking" className="relative py-16 md:py-24 px-4 lg:px-12 bg-gradient-to-b from-black via-neutral-900 to-black overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-orange-500/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-amber-500/10 rounded-full blur-[100px]" />
       </div>
 
-      {/* Intersecting Lines */}
-      <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-sunbeam/20 to-transparent" />
-      <div className="absolute top-0 right-1/3 w-px h-full bg-gradient-to-b from-transparent via-amber/10 to-transparent" />
-      <div className="absolute top-1/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-sunbeam/15 to-transparent" />
-      <div className="absolute bottom-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber/10 to-transparent" />
-
-      {/* Corner Accents */}
-      <div className="absolute top-0 left-0 w-32 h-32 border-l-2 border-t-2 border-sunbeam/10" />
-      <div className="absolute bottom-0 right-0 w-32 h-32 border-r-2 border-b-2 border-sunbeam/10" />
-
-      {/* Decorative Blurs */}
-      <div className="absolute top-20 right-10 w-64 h-64 bg-sunbeam/5 rounded-full blur-[100px]" />
-      <div className="absolute bottom-20 left-10 w-80 h-80 bg-amber/5 rounded-full blur-[120px]" />
-
-      <div className="container mx-auto px-4 relative z-10">
-        {/* Header Section */}
-        {isMobile ? (
-          <div className="text-center mb-8">
-            {/* Urgency badge - static on mobile */}
-            <div className="inline-flex items-center gap-2 bg-sunbeam/10 border border-sunbeam/30 rounded-full px-4 py-1.5 mb-4">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sunbeam opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-sunbeam"></span>
-              </span>
-              <span className="text-sm font-medium text-sunbeam">Limited slots available this week</span>
-            </div>
-
-            <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold text-balance mb-4">
-              See It <span className="text-transparent bg-clip-text bg-gradient-to-r from-sunbeam via-amber to-solar">Moving</span> In Person
-            </h2>
-            <p className="text-base text-muted-foreground max-w-2xl mx-auto text-balance">
-              Words and videos can only show so much. Book a live demo to experience the full impact of kinetic LED displays.
-            </p>
+      <div className="relative max-w-6xl mx-auto">
+        {/* Header */}
+        <motion.div
+          className="text-center mb-10 md:mb-12"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 rounded-full px-4 py-1.5 mb-4">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+            </span>
+            <span className="text-sm font-medium text-orange-400">Limited slots for {MONTH_NAME} {BOOKING_YEAR}</span>
           </div>
-        ) : (
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-          >
-            {/* Urgency badge */}
+
+          <h2 className="text-3xl lg:text-5xl font-bold text-white mb-4">
+            Book a <span className="bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-500 bg-clip-text text-transparent">Demo</span>
+          </h2>
+          <p className="text-base md:text-lg text-white/50 max-w-2xl mx-auto">
+            Schedule a personalized demo to see our kinetic displays in action. Choose a date and time that works for you.
+          </p>
+
+          {/* Value props */}
+        
+        </motion.div>
+
+        <AnimatePresence mode="wait">
+          {isSubmitted ? (
+            /* Success State */
             <motion.div
-              className="inline-flex items-center gap-2 bg-sunbeam/10 border border-sunbeam/30 rounded-full px-4 py-1.5 mb-6"
-              animate={{ scale: [1, 1.02, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
+              key="success"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="max-w-lg mx-auto"
             >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sunbeam opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-sunbeam"></span>
-              </span>
-              <span className="text-sm font-medium text-sunbeam">Limited slots available this week</span>
+              <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-8 md:p-12 border border-white/10 text-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  className="w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mx-auto mb-6"
+                >
+                  <CheckCircle2 className="h-10 w-10 text-white" />
+                </motion.div>
+
+                <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">Booking Confirmed!</h3>
+                <p className="text-white/50 mb-8">
+                  We&apos;ll send a confirmation to {formData.email}
+                </p>
+
+                <div className="bg-orange-500/10 rounded-2xl p-6 mb-8 border border-orange-500/20 text-left">
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Date:</span>
+                      <span className="font-semibold text-white">{MONTH_NAME} {selectedDate}, {BOOKING_YEAR}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Time:</span>
+                      <span className="font-semibold text-white">{selectedSlotDetails?.time}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Name:</span>
+                      <span className="font-semibold text-white">{formData.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Company:</span>
+                      <span className="font-semibold text-white">{formData.company}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={resetForm}
+                  className="px-6 py-3 rounded-full border border-white/20 text-white hover:bg-white/5 transition-colors"
+                >
+                  Book Another Demo
+                </button>
+              </div>
             </motion.div>
+          ) : (
+            /* Calendar and Form */
+            <motion.div
+              key="booking"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid lg:grid-cols-2 gap-6 lg:gap-8"
+            >
+              {/* Calendar Section */}
+              <motion.div
+                className="bg-white/5 backdrop-blur-sm rounded-3xl p-5 md:p-8 border border-white/10"
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                {/* Month Header */}
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-lg md:text-xl font-semibold text-white flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-orange-500" />
+                    {MONTH_NAME} {BOOKING_YEAR}
+                  </h3>
+                  <span className="text-xs md:text-sm text-white/50">Select a date</span>
+                </div>
 
-            <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold text-balance mb-6">
-              See It <span className="text-transparent bg-clip-text bg-gradient-to-r from-sunbeam via-amber to-solar">Moving</span> In Person
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
-              Words and videos can only show so much. Book a live demo to experience the full impact of kinetic LED displays.
-            </p>
+                {/* Weekday Headers */}
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {WEEKDAYS.map((day) => (
+                    <div key={day} className="text-center text-xs font-medium text-white/40 py-2">
+                      {isMobile ? day.charAt(0) : day}
+                    </div>
+                  ))}
+                </div>
 
-            {/* Value props */}
-            <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-sunbeam" />
-                <span>No obligation</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-sunbeam" />
-                <span>30-min session</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-sunbeam" />
-                <span>Custom solutions discussed</span>
-              </div>
-            </div>
-          </motion.div>
-        )}
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 gap-1">
+                  {calendarDays.map((day, index) => {
+                    if (day === null) {
+                      return <div key={`empty-${index}`} className="aspect-square" />
+                    }
 
-        <div className="max-w-4xl mx-auto">
-          {step === "select" && (
-            isMobile ? (
-              <div>
-                <Card className="p-4 sm:p-6 md:p-8 bg-card">
-                  <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                    <Calendar className="h-5 w-5 text-sunbeam" />
-                    <h3 className="text-lg sm:text-xl font-bold">Select a Time Slot</h3>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
-                    {availableSlots.map((slot, index) => (
-                      <button
-                        key={index}
-                        onClick={() => slot.available && handleSlotSelect(slot.date, slot.time)}
-                        disabled={!slot.available}
-                        className={`relative p-3 sm:p-4 rounded-xl border-2 text-left transition-colors active:scale-[0.98] ${
-                          slot.available
-                            ? "border-border hover:border-sunbeam bg-background"
-                            : "border-border bg-muted/50 opacity-50 cursor-not-allowed"
-                        }`}
-                      >
-                        {slot.popular && slot.available && (
-                          <span className="absolute -top-2 -right-2 bg-sunbeam text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
-                            Popular
-                          </span>
-                        )}
-                        <p className="font-semibold text-sm sm:text-base mb-1">{slot.date}</p>
-                        <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {slot.time}
-                        </div>
-                        {!slot.available && <p className="text-xs text-destructive mt-1 sm:mt-2">Booked</p>}
-                      </button>
-                    ))}
-                  </div>
+                    const isFullyBooked = isDayFullyBooked(day)
+                    const isSelected = selectedDate === day
 
-                  {/* Urgency note */}
-                  <p className="text-center text-sm text-muted-foreground mt-6">
-                    <span className="text-sunbeam font-medium">3 slots</span> already booked this week. Secure yours now.
-                  </p>
-                </Card>
-              </div>
-            ) : (
-              <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                <Card className="p-4 sm:p-6 md:p-8 bg-card">
-                  <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                    <Calendar className="h-5 w-5 text-sunbeam" />
-                    <h3 className="text-lg sm:text-xl font-bold">Select a Time Slot</h3>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
-                    {availableSlots.map((slot, index) => (
+                    return (
                       <motion.button
-                        key={index}
-                        onClick={() => slot.available && handleSlotSelect(slot.date, slot.time)}
-                        disabled={!slot.available}
-                        className={`relative p-3 sm:p-4 rounded-xl border-2 text-left transition-all ${
-                          slot.available
-                            ? "border-border hover:border-sunbeam hover:shadow-lg bg-background"
-                            : "border-border bg-muted/50 opacity-50 cursor-not-allowed"
-                        }`}
-                        whileHover={slot.available ? { scale: 1.03 } : {}}
-                        whileTap={slot.available ? { scale: 0.98 } : {}}
+                        key={day}
+                        onClick={() => !isFullyBooked && handleDateSelect(day)}
+                        disabled={isFullyBooked}
+                        className={`
+                          aspect-square rounded-lg md:rounded-xl text-xs md:text-sm font-medium transition-all duration-200
+                          flex items-center justify-center relative
+                          ${isSelected
+                            ? "bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30"
+                            : isFullyBooked
+                              ? "bg-white/5 text-white/20 cursor-not-allowed"
+                              : "bg-white/5 text-white hover:bg-white/10"
+                          }
+                        `}
+                        whileHover={!isFullyBooked ? { scale: 1.05 } : {}}
+                        whileTap={!isFullyBooked ? { scale: 0.95 } : {}}
                       >
-                        {slot.popular && slot.available && (
-                          <span className="absolute -top-2 -right-2 bg-sunbeam text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
-                            Popular
-                          </span>
+                        {day}
+                        {isFullyBooked && (
+                          <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
                         )}
-                        <p className="font-semibold text-sm sm:text-base mb-1">{slot.date}</p>
-                        <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {slot.time}
-                        </div>
-                        {!slot.available && <p className="text-xs text-destructive mt-1 sm:mt-2">Booked</p>}
                       </motion.button>
-                    ))}
-                  </div>
+                    )
+                  })}
+                </div>
 
-                  {/* Urgency note */}
-                  <p className="text-center text-sm text-muted-foreground mt-6">
-                    <span className="text-sunbeam font-medium">3 slots</span> already booked this week. Secure yours now.
-                  </p>
-                </Card>
+                {/* Legend */}
+                <div className="flex flex-wrap items-center gap-3 md:gap-4 mt-5 text-xs text-white/50">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded bg-gradient-to-br from-orange-500 to-amber-500" />
+                    <span>Selected</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded bg-white/5 relative">
+                      <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full" />
+                    </div>
+                    <span>Fully Booked</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded bg-white/10" />
+                    <span>Available</span>
+                  </div>
+                </div>
+
+                {/* Time Slots */}
+                <AnimatePresence>
+                  {selectedDate && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="mt-5 pt-5 border-t border-white/10"
+                    >
+                      <h4 className="text-sm font-medium text-white/70 mb-3 flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-orange-500" />
+                        Available Times for {MONTH_NAME} {selectedDate}
+                      </h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        {TIME_SLOTS.map((slot) => {
+                          const isBooked = isSlotBooked(selectedDate, slot.id)
+                          const isSelectedSlot = selectedSlot === slot.id
+
+                          return (
+                            <motion.button
+                              key={slot.id}
+                              onClick={() => handleSlotSelect(slot.id)}
+                              disabled={isBooked}
+                              className={`
+                                p-3 md:p-4 rounded-xl text-left transition-all duration-200
+                                ${isSelectedSlot
+                                  ? "bg-gradient-to-br from-orange-500 to-amber-500 text-white"
+                                  : isBooked
+                                    ? "bg-white/5 text-white/30 cursor-not-allowed"
+                                    : "bg-white/5 text-white hover:bg-white/10 border border-transparent hover:border-orange-500/30"
+                                }
+                              `}
+                              whileHover={!isBooked ? { scale: 1.02 } : {}}
+                              whileTap={!isBooked ? { scale: 0.98 } : {}}
+                            >
+                              <div className="text-base md:text-lg font-semibold">{slot.time}</div>
+                              <div className={`text-xs ${isSelectedSlot ? "text-white/80" : "text-white/50"}`}>
+                                {isBooked ? "Booked" : slot.label}
+                              </div>
+                            </motion.button>
+                          )
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
-            )
-          )}
 
-          {step === "form" && selectedSlot && (
-            isMobile ? (
-              <div>
-                <Card className="p-4 sm:p-6 md:p-8 bg-card">
-                  <div className="mb-6">
-                    <button
-                      onClick={() => setStep("select")}
-                      className="text-sm text-muted-foreground hover:text-foreground mb-4"
-                    >
-                      ← Back to calendar
-                    </button>
-                    <h3 className="text-xl font-bold mb-2">Your Details</h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>{selectedSlot.date}</span>
-                      <span>•</span>
-                      <Clock className="h-4 w-4" />
-                      <span>{selectedSlot.time}</span>
+              {/* Booking Form Section */}
+              <motion.div
+                className="bg-white/5 backdrop-blur-sm rounded-3xl p-5 md:p-8 border border-white/10"
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+              >
+                <h3 className="text-lg md:text-xl font-semibold text-white mb-5">Your Details</h3>
+
+                {/* Selected Date/Time Summary */}
+                {selectedDate && selectedSlot && (
+                  <div className="mb-5 p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-500/10 border border-orange-500/20">
+                    <div className="text-sm text-white/50 mb-1">Selected Appointment</div>
+                    <div className="text-white font-semibold">
+                      {MONTH_NAME} {selectedDate}, {BOOKING_YEAR} at {selectedSlotDetails?.time}
                     </div>
                   </div>
+                )}
 
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <Input
-                        id="name"
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="John Doe"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="john@example.com"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        required
-                        value={formData.phone}
-                        onChange={handlePhoneChange}
-                        placeholder="10-digit phone number"
-                        maxLength={10}
-                      />
-                      {phoneError && <p className="text-sm text-destructive">{phoneError}</p>}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="purpose">What Experience Are You Looking For?</Label>
-                      <Input
-                        id="purpose"
-                        required
-                        value={formData.purpose}
-                        onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-                        placeholder="Museum installation, corporate lobby, exhibition, etc."
-                      />
-                    </div>
-
-                    <Button
-                      type="submit"
-                      size="lg"
-                      disabled={isSubmitting}
-                      className="w-full rounded-full bg-gradient-to-r from-sunbeam to-amber text-black font-bold hover:shadow-[0_0_30px_rgba(255,204,1,0.4)] transition-all"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Submitting...
-                        </>
-                      ) : (
-                        "Confirm My Demo Slot"
-                      )}
-                    </Button>
-                  </form>
-                </Card>
-              </div>
-            ) : (
-              <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
-                <Card className="p-4 sm:p-6 md:p-8 bg-card">
-                  <div className="mb-6">
-                    <button
-                      onClick={() => setStep("select")}
-                      className="text-sm text-muted-foreground hover:text-foreground mb-4"
-                    >
-                      ← Back to calendar
-                    </button>
-                    <h3 className="text-xl font-bold mb-2">Your Details</h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>{selectedSlot.date}</span>
-                      <span>•</span>
-                      <Clock className="h-4 w-4" />
-                      <span>{selectedSlot.time}</span>
-                    </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Name Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-white/70 mb-2">
+                      <User className="h-4 w-4 inline mr-2 text-orange-500" />
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                      placeholder="John Doe"
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/50 transition-all"
+                    />
                   </div>
 
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <Input
-                        id="name"
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="John Doe"
-                      />
-                    </div>
+                  {/* Email Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-white/70 mb-2">
+                      <Mail className="h-4 w-4 inline mr-2 text-orange-500" />
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                      placeholder="john@example.com"
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/50 transition-all"
+                    />
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="john@example.com"
-                      />
-                    </div>
+                  {/* Phone Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-white/70 mb-2">
+                      <Phone className="h-4 w-4 inline mr-2 text-orange-500" />
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={handlePhoneChange}
+                      required
+                      placeholder="10-digit phone number"
+                      maxLength={10}
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/50 transition-all"
+                    />
+                    {phoneError && <p className="text-sm text-red-400 mt-1">{phoneError}</p>}
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        required
-                        value={formData.phone}
-                        onChange={handlePhoneChange}
-                        placeholder="10-digit phone number"
-                        maxLength={10}
-                      />
-                      {phoneError && <p className="text-sm text-destructive">{phoneError}</p>}
-                    </div>
+                  {/* Company Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-white/70 mb-2">
+                      <Building2 className="h-4 w-4 inline mr-2 text-orange-500" />
+                      Company / What You Do
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.company}
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      required
+                      placeholder="Your company or business"
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/50 transition-all"
+                    />
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="purpose">What Experience Are You Looking For?</Label>
-                      <Input
-                        id="purpose"
-                        required
-                        value={formData.purpose}
-                        onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-                        placeholder="Museum installation, corporate lobby, exhibition, etc."
-                      />
-                    </div>
-
-                    <Button
-                      type="submit"
-                      size="lg"
-                      disabled={isSubmitting}
-                      className="w-full rounded-full bg-gradient-to-r from-sunbeam to-amber text-black font-bold hover:shadow-[0_0_30px_rgba(255,204,1,0.4)] transition-all relative overflow-hidden"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Submitting...
-                        </>
-                      ) : (
-                        <>
+                  {/* Submit Button */}
+                  <motion.button
+                    type="submit"
+                    disabled={!selectedDate || !selectedSlot || isSubmitting || !formData.name || !formData.email || !formData.phone || formData.phone.length !== 10 || !formData.company}
+                    className={`
+                      w-full py-4 rounded-xl font-semibold text-white mt-4 transition-all duration-300 relative overflow-hidden
+                      ${selectedDate && selectedSlot && formData.name && formData.email && formData.phone.length === 10 && formData.company
+                        ? "bg-gradient-to-r from-orange-600 to-amber-500 hover:shadow-lg hover:shadow-orange-500/30"
+                        : "bg-white/10 cursor-not-allowed"
+                      }
+                    `}
+                    whileHover={selectedDate && selectedSlot && formData.phone.length === 10 && formData.company ? { scale: 1.02 } : {}}
+                    whileTap={selectedDate && selectedSlot && formData.phone.length === 10 && formData.company ? { scale: 0.98 } : {}}
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Confirming...
+                      </span>
+                    ) : !selectedDate ? (
+                      "Select a Date"
+                    ) : !selectedSlot ? (
+                      "Select a Time Slot"
+                    ) : (
+                      <>
+                        {selectedDate && selectedSlot && formData.name && formData.email && formData.phone.length === 10 && formData.company && (
                           <motion.span
-                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                             animate={{ x: ["-100%", "200%"] }}
                             transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
                           />
-                          <span className="relative">Confirm My Demo Slot</span>
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </Card>
+                        )}
+                        <span className="relative">Confirm Booking</span>
+                      </>
+                    )}
+                  </motion.button>
+                </form>
+
+                {/* Info */}
+                <p className="text-xs text-white/30 text-center mt-4">
+                  By booking, you agree to receive communication about your appointment.
+                </p>
               </motion.div>
-            )
+            </motion.div>
           )}
-
-          {step === "confirmation" && selectedSlot && (
-            isMobile ? (
-              <div>
-                <Card className="p-6 sm:p-8 md:p-12 bg-card text-center">
-                  <div className="mb-4 sm:mb-6 flex justify-center mobile-scale-in">
-                    <div className="bg-sunbeam/20 rounded-full p-3 sm:p-4">
-                      <CheckCircle2 className="h-12 w-12 sm:h-16 sm:w-16 text-sunbeam" />
-                    </div>
-                  </div>
-
-                  <h3 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Booking Confirmed!</h3>
-                  <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
-                    We'll get in touch with you soon.
-                  </p>
-
-                  <div className="bg-sunbeam/10 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 max-w-md mx-auto border border-sunbeam/20">
-                    <div className="grid gap-3 text-left">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Date:</span>
-                        <span className="font-semibold">{selectedSlot.date}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Time:</span>
-                        <span className="font-semibold">{selectedSlot.time}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Name:</span>
-                        <span className="font-semibold">{formData.name}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={() => {
-                      setStep("select")
-                      setSelectedSlot(null)
-                      setFormData({ name: "", email: "", phone: "", purpose: "" })
-                    }}
-                    variant="outline"
-                    className="rounded-full"
-                  >
-                    Book Another Demo
-                  </Button>
-                </Card>
-              </div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6 }}
-              >
-                <Card className="p-6 sm:p-8 md:p-12 bg-card text-center">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                    className="mb-4 sm:mb-6 flex justify-center"
-                  >
-                    <div className="bg-sunbeam/20 rounded-full p-3 sm:p-4">
-                      <CheckCircle2 className="h-12 w-12 sm:h-16 sm:w-16 text-sunbeam" />
-                    </div>
-                  </motion.div>
-
-                  <h3 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Booking Confirmed!</h3>
-                  <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
-                    We'll get in touch with you soon.
-                  </p>
-
-                  <div className="bg-sunbeam/10 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 max-w-md mx-auto border border-sunbeam/20">
-                    <div className="grid gap-3 text-left">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Date:</span>
-                        <span className="font-semibold">{selectedSlot.date}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Time:</span>
-                        <span className="font-semibold">{selectedSlot.time}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Name:</span>
-                        <span className="font-semibold">{formData.name}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={() => {
-                      setStep("select")
-                      setSelectedSlot(null)
-                      setFormData({ name: "", email: "", phone: "", purpose: "" })
-                    }}
-                    variant="outline"
-                    className="rounded-full"
-                  >
-                    Book Another Demo
-                  </Button>
-                </Card>
-              </motion.div>
-            )
-          )}
-        </div>
+        </AnimatePresence>
       </div>
     </section>
   )

@@ -339,8 +339,16 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
                 animate={isActive ? { rotateY: getRotation(pillarIndex, boxIndex) } : {}}
                 transition={{ duration: 1.5, delay: pillarIndex * 0.1 + boxIndex * 0.05 }}
                 style={{
-                  width: 72,
-                  height: 28,
+                  width: 56,
+                  height: 22,
+                  position: 'relative',
+                  transformStyle: 'preserve-3d',
+                }}
+              >
+                {/* Front face */}
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
                   background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)',
                   border: `1.5px solid ${HRMS_PRIMARY}`,
                   borderRadius: '3px',
@@ -348,10 +356,75 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transformStyle: 'preserve-3d',
-                }}
-              >
-                <span style={{ fontSize: 8, fontWeight: 800, color: HRMS_PRIMARY, letterSpacing: '0.4px' }}>{box.text}</span>
+                  transform: 'translateZ(6px)',
+                  backfaceVisibility: 'hidden',
+                }}>
+                  <span style={{ fontSize: 6, fontWeight: 800, color: HRMS_PRIMARY, letterSpacing: '0.3px' }}>{box.text}</span>
+                </div>
+                {/* Back face */}
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)',
+                  border: `1.5px solid ${HRMS_PRIMARY}`,
+                  borderRadius: '3px',
+                  boxShadow: `0 0 10px ${HRMS_GLOW}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transform: 'translateZ(-6px) rotateY(180deg)',
+                  backfaceVisibility: 'hidden',
+                }}>
+                  <span style={{ fontSize: 6, fontWeight: 800, color: HRMS_PRIMARY }}>{box.backText}</span>
+                </div>
+                {/* Left edge */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  width: '12px',
+                  transform: 'rotateY(-90deg)',
+                  transformOrigin: 'left center',
+                  background: `linear-gradient(to right, ${HRMS_DARK}, ${HRMS_SECONDARY})`,
+                  backfaceVisibility: 'hidden',
+                }} />
+                {/* Right edge */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  right: 0,
+                  width: '12px',
+                  transform: 'rotateY(90deg)',
+                  transformOrigin: 'right center',
+                  background: `linear-gradient(to left, ${HRMS_DARK}, ${HRMS_SECONDARY})`,
+                  backfaceVisibility: 'hidden',
+                }} />
+                {/* Top edge */}
+                <div style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: '12px',
+                  transform: 'rotateX(90deg)',
+                  transformOrigin: 'top center',
+                  background: HRMS_PRIMARY,
+                  backfaceVisibility: 'hidden',
+                }} />
+                {/* Bottom edge */}
+                <div style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: '12px',
+                  transform: 'rotateX(-90deg)',
+                  transformOrigin: 'bottom center',
+                  background: HRMS_DARK,
+                  backfaceVisibility: 'hidden',
+                }} />
               </motion.div>
             ))}
           </motion.div>
@@ -361,8 +434,8 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
       <div
         className="absolute bottom-6 left-1/2 -translate-x-1/2"
         style={{
-          width: 260,
-          height: 18,
+          width: 200,
+          height: 14,
           background: 'linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%)',
           border: `1.5px solid ${HRMS_PRIMARY}`,
           borderRadius: '3px',
@@ -452,16 +525,96 @@ function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () =>
 }
 
 // Mobile Bento Grid Layout
+// Hook to detect when element is in view (once only)
+function useInViewOnce(threshold = 0.5) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [hasAnimated, setHasAnimated] = useState(false)
+
+  useEffect(() => {
+    const element = ref.current
+    if (!element || hasAnimated) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated) {
+          setHasAnimated(true)
+          observer.disconnect()
+        }
+      },
+      { threshold }
+    )
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [hasAnimated, threshold])
+
+  return { ref, hasAnimated }
+}
+
+// Mobile Product Card wrapper with auto-animate on scroll
+function MobileProductCard({
+  productId,
+  children,
+  title,
+  subtitle,
+  gradient,
+  bgGradient,
+  borderColor,
+  height,
+  onAnimate,
+  isActive,
+}: {
+  productId: string
+  children: React.ReactNode
+  title: string
+  subtitle: string
+  gradient: string
+  bgGradient: string
+  borderColor: string
+  height: number
+  onAnimate: () => void
+  isActive: boolean
+}) {
+  const { ref, hasAnimated } = useInViewOnce(0.6)
+  const hasTriggeredRef = useRef(false)
+
+  useEffect(() => {
+    if (hasAnimated && !hasTriggeredRef.current) {
+      hasTriggeredRef.current = true
+      // Small delay before triggering animation
+      setTimeout(() => onAnimate(), 300)
+    }
+  }, [hasAnimated, onAnimate])
+
+  return (
+    <motion.div
+      ref={ref}
+      className="relative rounded-2xl overflow-hidden"
+      style={{
+        background: bgGradient,
+        border: `1px solid ${borderColor}`,
+        height,
+      }}
+      whileTap={{ scale: 0.99 }}
+      onClick={onAnimate}
+    >
+      {children}
+      <div className="absolute top-3 left-3">
+        <span className={`text-lg font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{title}</span>
+        <p className="text-[10px] text-white/50">{subtitle}</p>
+      </div>
+    </motion.div>
+  )
+}
+
 function MobileShowcase() {
   const [activeCard, setActiveCard] = useState<string | null>(null)
-  const [tapCount, setTapCount] = useState<Record<string, number>>({})
 
-  const handleTap = (productId: string) => {
+  const handleAnimate = useCallback((productId: string) => {
     setActiveCard(productId)
-    setTapCount(prev => ({ ...prev, [productId]: (prev[productId] || 0) + 1 }))
     // Reset after animation
     setTimeout(() => setActiveCard(null), 1500)
-  }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-black to-neutral-900 px-4 py-8">
@@ -474,72 +627,64 @@ function MobileShowcase() {
       {/* Single Column Layout - 1 product at a time, full width */}
       <div className="flex flex-col gap-4 max-w-lg mx-auto">
         {/* Triblock */}
-        <motion.div
-          className="relative rounded-2xl overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, rgba(225,121,36,0.1) 0%, rgba(0,0,0,0.8) 100%)',
-            border: '1px solid rgba(225,121,36,0.2)',
-            height: 300,
-          }}
-          whileTap={{ scale: 0.99 }}
+        <MobileProductCard
+          productId="triblock"
+          title="TRIBLOCK"
+          subtitle="Pixel Walls"
+          gradient="from-orange-500 to-amber-400"
+          bgGradient="linear-gradient(135deg, rgba(225,121,36,0.1) 0%, rgba(0,0,0,0.8) 100%)"
+          borderColor="rgba(225,121,36,0.2)"
+          height={300}
+          onAnimate={() => handleAnimate('triblock')}
+          isActive={activeCard === 'triblock'}
         >
-          <MobileTriblockCard isActive={activeCard === 'triblock'} onTap={() => handleTap('triblock')} />
-          <div className="absolute top-3 left-3">
-            <span className="text-lg font-bold bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent">TRIBLOCK</span>
-            <p className="text-[10px] text-white/50">Pixel Walls</p>
-          </div>
-        </motion.div>
+          <MobileTriblockCard isActive={activeCard === 'triblock'} onTap={() => handleAnimate('triblock')} />
+        </MobileProductCard>
 
-        {/* Flap - Full width */}
-        <motion.div
-          className="relative rounded-2xl overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(0,0,0,0.8) 100%)',
-            border: '1px solid rgba(245,158,11,0.2)',
-            height: 290,
-          }}
-          whileTap={{ scale: 0.99 }}
+        {/* Flap */}
+        <MobileProductCard
+          productId="flap"
+          title="FLAP"
+          subtitle="Split Flap Display"
+          gradient="from-orange-500 to-yellow-400"
+          bgGradient="linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(0,0,0,0.8) 100%)"
+          borderColor="rgba(245,158,11,0.2)"
+          height={290}
+          onAnimate={() => handleAnimate('flap')}
+          isActive={activeCard === 'flap'}
         >
-          <MobileFlapCard isActive={activeCard === 'flap'} onTap={() => handleTap('flap')} />
-          <div className="absolute top-3 left-3">
-            <span className="text-lg font-bold bg-gradient-to-r from-orange-500 to-yellow-400 bg-clip-text text-transparent">FLAP</span>
-            <p className="text-[10px] text-white/50">Split Flap Display</p>
-          </div>
-        </motion.div>
+          <MobileFlapCard isActive={activeCard === 'flap'} onTap={() => handleAnimate('flap')} />
+        </MobileProductCard>
 
-        {/* HRMS - Full width */}
-        <motion.div
-          className="relative rounded-2xl overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(0,0,0,0.8) 100%)',
-            border: '1px solid rgba(139,92,246,0.2)',
-            height: 220,
-          }}
-          whileTap={{ scale: 0.99 }}
+        {/* HRMS */}
+        <MobileProductCard
+          productId="hrms"
+          title="HRMS"
+          subtitle="HR Management System"
+          gradient="from-violet-500 to-purple-400"
+          bgGradient="linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(0,0,0,0.8) 100%)"
+          borderColor="rgba(139,92,246,0.2)"
+          height={220}
+          onAnimate={() => handleAnimate('hrms')}
+          isActive={activeCard === 'hrms'}
         >
-          <MobileHRMSCard isActive={activeCard === 'hrms'} onTap={() => handleTap('hrms')} />
-          <div className="absolute top-3 left-3">
-            <span className="text-lg font-bold bg-gradient-to-r from-violet-500 to-purple-400 bg-clip-text text-transparent">HRMS</span>
-            <p className="text-[10px] text-white/50">HR Management System</p>
-          </div>
-        </motion.div>
+          <MobileHRMSCard isActive={activeCard === 'hrms'} onTap={() => handleAnimate('hrms')} />
+        </MobileProductCard>
 
-        {/* Matrix - Full width */}
-        <motion.div
-          className="relative rounded-2xl overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, rgba(6,182,212,0.1) 0%, rgba(0,0,0,0.8) 100%)',
-            border: '1px solid rgba(6,182,212,0.2)',
-            height: 230,
-          }}
-          whileTap={{ scale: 0.99 }}
+        {/* Matrix */}
+        <MobileProductCard
+          productId="matrix"
+          title="MATRIX"
+          subtitle="Kinetic Screens"
+          gradient="from-cyan-500 to-teal-400"
+          bgGradient="linear-gradient(135deg, rgba(6,182,212,0.1) 0%, rgba(0,0,0,0.8) 100%)"
+          borderColor="rgba(6,182,212,0.2)"
+          height={230}
+          onAnimate={() => handleAnimate('matrix')}
+          isActive={activeCard === 'matrix'}
         >
-          <MobileMatrixCard isActive={activeCard === 'matrix'} onTap={() => handleTap('matrix')} />
-          <div className="absolute top-3 left-3">
-            <span className="text-lg font-bold bg-gradient-to-r from-cyan-500 to-teal-400 bg-clip-text text-transparent">MATRIX</span>
-            <p className="text-[10px] text-white/50">Kinetic Screens</p>
-          </div>
-        </motion.div>
+          <MobileMatrixCard isActive={activeCard === 'matrix'} onTap={() => handleAnimate('matrix')} />
+        </MobileProductCard>
       </div>
 
       {/* CTA */}
@@ -548,7 +693,7 @@ function MobileShowcase() {
           href="#booking"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-orange-600 to-amber-500 text-white text-sm font-semibold"
         >
-          <span>Explore All Products</span>
+          <span>Request a Demo</span>
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
@@ -746,16 +891,16 @@ function HRMSPillar({ towerIndex, isHovered, rotationCycle }: { towerIndex: numb
       {HRMS_BOXES.map((box, index) => (
         <div key={box.id} style={{ marginTop: index === 0 ? 0 : -2, zIndex: HRMS_BOXES.length - index, transformStyle: 'preserve-3d', transform: `rotateY(${getRotation(index + 1, rotationCycle)}deg)`, transition: `transform ${isHovered ? 2.5 : 2}s ease-in-out` }}>
           <div className="w-[130px] h-[46px]" style={{ transformStyle: 'preserve-3d' }}>
-            <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(10px)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 15px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="font-black text-[13px] tracking-wider" style={{ color: HRMS_PRIMARY }}>{box.text}</span>
+            <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(10px)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 15px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
+              <span className="font-black text-[10px] tracking-wider" style={{ color: HRMS_PRIMARY }}>{box.text}</span>
             </div>
-            <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(-12px) rotateY(180deg)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 15px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="font-black text-[14px]" style={{ color: HRMS_PRIMARY }}>{box.backText}</span>
+            <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(-12px) rotateY(180deg)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 15px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
+              <span className="font-black text-[10px]" style={{ color: HRMS_PRIMARY }}>{box.backText}</span>
             </div>
-            <div className="absolute top-0 bottom-0" style={{ left: 0, width: '24px', transform: 'rotateY(-90deg)', transformOrigin: 'left center', background: `linear-gradient(to right, ${HRMS_DARK}, ${HRMS_SECONDARY})` }} />
-            <div className="absolute top-0 bottom-0" style={{ right: 0, width: '24px', transform: 'rotateY(90deg)', transformOrigin: 'right center', background: `linear-gradient(to left, ${HRMS_DARK}, ${HRMS_SECONDARY})` }} />
-            <div className="absolute left-0 right-0" style={{ top: 0, height: '24px', transform: 'rotateX(90deg)', transformOrigin: 'top center', background: HRMS_PRIMARY }} />
-            <div className="absolute left-0 right-0" style={{ bottom: 0, height: '24px', transform: 'rotateX(-90deg)', transformOrigin: 'bottom center', background: HRMS_DARK }} />
+            <div className="absolute top-0 bottom-0" style={{ left: 0, width: '24px', transform: 'rotateY(-90deg)', transformOrigin: 'left center', background: `linear-gradient(to right, ${HRMS_DARK}, ${HRMS_SECONDARY})`, backfaceVisibility: 'hidden' }} />
+            <div className="absolute top-0 bottom-0" style={{ right: 0, width: '24px', transform: 'rotateY(90deg)', transformOrigin: 'right center', background: `linear-gradient(to left, ${HRMS_DARK}, ${HRMS_SECONDARY})`, backfaceVisibility: 'hidden' }} />
+            <div className="absolute left-0 right-0" style={{ top: 0, height: '24px', transform: 'rotateX(90deg)', transformOrigin: 'top center', background: HRMS_PRIMARY, backfaceVisibility: 'hidden' }} />
+            <div className="absolute left-0 right-0" style={{ bottom: 0, height: '24px', transform: 'rotateX(-90deg)', transformOrigin: 'bottom center', background: HRMS_DARK, backfaceVisibility: 'hidden' }} />
           </div>
         </div>
       ))}
@@ -1378,12 +1523,22 @@ function BentoHRMSVisual({ isActive }: { isActive: boolean }) {
                 }}
               >
                 <div className="w-[90px] h-[32px]" style={{ transformStyle: 'preserve-3d' }}>
-                  <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(8px)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `1.5px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 12px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span className="font-black text-[10px] tracking-wider" style={{ color: HRMS_PRIMARY }}>{box.text}</span>
+                  {/* Front face */}
+                  <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(8px)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `1.5px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 12px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
+                    <span className="font-black text-[8px] tracking-wider" style={{ color: HRMS_PRIMARY }}>{box.text}</span>
                   </div>
-                  <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(-8px) rotateY(180deg)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `1.5px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 12px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span className="font-black text-[11px]" style={{ color: HRMS_PRIMARY }}>{box.backText}</span>
+                  {/* Back face */}
+                  <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(-8px) rotateY(180deg)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `1.5px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 12px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
+                    <span className="font-black text-[8px]" style={{ color: HRMS_PRIMARY }}>{box.backText}</span>
                   </div>
+                  {/* Left edge */}
+                  <div className="absolute top-0 bottom-0" style={{ left: 0, width: '16px', transform: 'rotateY(-90deg)', transformOrigin: 'left center', background: `linear-gradient(to right, ${HRMS_DARK}, ${HRMS_SECONDARY})`, backfaceVisibility: 'hidden' }} />
+                  {/* Right edge */}
+                  <div className="absolute top-0 bottom-0" style={{ right: 0, width: '16px', transform: 'rotateY(90deg)', transformOrigin: 'right center', background: `linear-gradient(to left, ${HRMS_DARK}, ${HRMS_SECONDARY})`, backfaceVisibility: 'hidden' }} />
+                  {/* Top edge */}
+                  <div className="absolute left-0 right-0" style={{ top: 0, height: '16px', transform: 'rotateX(90deg)', transformOrigin: 'top center', background: HRMS_PRIMARY, backfaceVisibility: 'hidden' }} />
+                  {/* Bottom edge */}
+                  <div className="absolute left-0 right-0" style={{ bottom: 0, height: '16px', transform: 'rotateX(-90deg)', transformOrigin: 'bottom center', background: HRMS_DARK, backfaceVisibility: 'hidden' }} />
                 </div>
               </div>
             ))}
