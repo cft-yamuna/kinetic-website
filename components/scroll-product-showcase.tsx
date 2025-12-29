@@ -5,13 +5,13 @@ import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import { ArrowRight, Sparkles } from "lucide-react"
 import Link from "next/link"
 
-// Triblock colors
+// Triblock colors - 3 distinct faces per triangular prism for visible rotation
 const TRIBLOCK_COLORS = [
-  { face1: '#E17924', face2: '#C0C0C0', face3: '#A8A8A8' },
-  { face1: '#BA5617', face2: '#B8B8B8', face3: '#A0A0A0' },
-  { face1: '#D4650E', face2: '#CACACA', face3: '#B0B0B0' },
-  { face1: '#F28C38', face2: '#D0D0D0', face3: '#B8B8B8' },
-  { face1: '#994E1F', face2: '#BEBEBE', face3: '#A8A8A8' },
+  { face1: '#C9A227', face2: '#1A1A1A', face3: '#E17924' }, // Gold, Black, Orange
+  { face1: '#B8860B', face2: '#2C2C2C', face3: '#BA5617' }, // Dark Gold, Charcoal, Rust
+  { face1: '#DAA520', face2: '#0F0F0F', face3: '#D4650E' }, // Goldenrod, Deep Black, Amber
+  { face1: '#CD853F', face2: '#252525', face3: '#F28C38' }, // Peru/Copper, Dark gray, Light Orange
+  { face1: '#D4A84B', face2: '#1F1F1F', face3: '#994E1F' }, // Brass, Near black, Brown
 ]
 
 // Flap colors
@@ -139,59 +139,153 @@ const products = [
 
 // ============ MOBILE COMPONENTS ============
 
+// Mobile Triangular Prism Component (Toblerone shape - 3 sided)
+function MobileTriangularPrism({
+  colors,
+  size,
+  rotation,
+  delay
+}: {
+  colors: { face1: string; face2: string; face3: string }
+  size: number
+  rotation: number
+  delay: number
+}) {
+  const faceWidth = size
+  const faceHeight = size * 0.85
+  const apothem = faceHeight * 0.32
+
+  return (
+    <div
+      style={{
+        width: faceWidth,
+        height: faceHeight,
+        position: 'relative',
+        transformStyle: 'preserve-3d',
+        transform: `rotateX(${rotation}deg)`,
+        transition: `transform 1.2s cubic-bezier(0.25, 0.1, 0.25, 1) ${delay}ms`,
+      }}
+    >
+      {/* Face 1 - Front (cream) */}
+      <div
+        style={{
+          position: 'absolute',
+          width: faceWidth,
+          height: faceHeight,
+          background: `linear-gradient(180deg, ${adjustColor(colors.face1, 18)} 0%, ${colors.face1} 40%, ${adjustColor(colors.face1, -12)} 100%)`,
+          transform: `translateZ(${apothem}px)`,
+          backfaceVisibility: 'hidden',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.08)',
+        }}
+      />
+      {/* Face 2 - Upper right (dark) */}
+      <div
+        style={{
+          position: 'absolute',
+          width: faceWidth,
+          height: faceHeight,
+          background: `linear-gradient(180deg, ${adjustColor(colors.face2, 20)} 0%, ${colors.face2} 50%, ${adjustColor(colors.face2, -12)} 100%)`,
+          transform: `rotateX(-120deg) translateZ(${apothem}px)`,
+          backfaceVisibility: 'hidden',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
+        }}
+      />
+      {/* Face 3 - Upper left (orange) */}
+      <div
+        style={{
+          position: 'absolute',
+          width: faceWidth,
+          height: faceHeight,
+          background: `linear-gradient(180deg, ${adjustColor(colors.face3, 25)} 0%, ${colors.face3} 45%, ${adjustColor(colors.face3, -10)} 100%)`,
+          transform: `rotateX(-240deg) translateZ(${apothem}px)`,
+          backfaceVisibility: 'hidden',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3)',
+        }}
+      />
+    </div>
+  )
+}
+
 // Mobile Triblock Visual
 function MobileTriblockCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
-  const [blocks] = useState(() => generateTriblocks(MOBILE_TRIBLOCK_ROWS, MOBILE_TRIBLOCK_COLS))
-  const [waveCenter, setWaveCenter] = useState<{ row: number; col: number } | null>(null)
+  const rows = MOBILE_TRIBLOCK_ROWS
+  const cols = MOBILE_TRIBLOCK_COLS
+  const blockSize = 24
+  const [blocks] = useState(() => generateTriblocks(rows, cols))
+  const [rotations, setRotations] = useState<number[][]>(() =>
+    Array(rows).fill(null).map(() => Array(cols).fill(0))
+  )
+  const [wavePattern, setWavePattern] = useState(0)
 
   useEffect(() => {
     if (isActive) {
-      // Trigger wave animation from center
-      setWaveCenter({ row: Math.floor(MOBILE_TRIBLOCK_ROWS / 2), col: Math.floor(MOBILE_TRIBLOCK_COLS / 2) })
-      const timeout = setTimeout(() => setWaveCenter(null), 1500)
-      return () => clearTimeout(timeout)
+      // Trigger cascading rotation animation
+      const pattern = wavePattern % 3
+
+      setRotations(prev => prev.map((rowArr, row) =>
+        rowArr.map((rot, col) => {
+          // Different rotation amounts for visual interest
+          const variation = ((row + col) % 3) * 120
+          return rot + 120 + (pattern === 2 ? variation : 0)
+        })
+      ))
+
+      setWavePattern(prev => prev + 1)
     }
   }, [isActive])
 
-  const getBlockIntensity = (row: number, col: number) => {
-    if (!waveCenter) return 0
-    const distance = Math.sqrt(Math.pow(row - waveCenter.row, 2) + Math.pow(col - waveCenter.col, 2))
-    const maxDist = Math.sqrt(Math.pow(MOBILE_TRIBLOCK_ROWS, 2) + Math.pow(MOBILE_TRIBLOCK_COLS, 2)) / 2
-    const time = Date.now() % 1500
-    const wavePosition = (time / 1500) * maxDist * 2
-    const proximity = Math.abs(distance - wavePosition)
-    return proximity < 2 ? Math.max(0, 1 - proximity / 2) : 0
+  // Get delay for cascading effect (top to bottom wave) - slower cascade
+  const getDelay = (row: number, col: number) => {
+    return row * 70 + col * 25
   }
 
   return (
     <motion.div
-      className="relative w-full h-full flex items-center justify-center cursor-pointer pt-8"
+      className="relative w-full h-full flex items-center justify-center cursor-pointer pt-6"
       onClick={onTap}
       whileTap={{ scale: 0.98 }}
     >
-      <div style={{ transform: 'rotateX(-12deg) rotateY(15deg)', transformStyle: 'preserve-3d' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${MOBILE_TRIBLOCK_COLS}, 22px)`, gap: '2px' }}>
-          {blocks.map((block) => {
-            const intensity = isActive ? getBlockIntensity(block.row, block.col) : 0
-            return (
-              <motion.div
-                key={block.id}
-                animate={{ y: intensity > 0.1 ? -4 : 0 }}
-                transition={{ duration: 0.2 }}
-                style={{
-                  width: 22,
-                  height: 22,
-                  background: `linear-gradient(145deg, ${adjustColor(block.colors.face1, 30)} 0%, ${block.colors.face1} 50%, ${adjustColor(block.colors.face1, -20)} 100%)`,
-                  borderRadius: '2px',
-                  boxShadow: intensity > 0.1
-                    ? `0 6px 12px rgba(0,0,0,0.4), 0 0 15px rgba(225,121,36,${intensity * 0.6})`
-                    : '0 2px 4px rgba(0,0,0,0.3)',
-                }}
-              />
-            )
-          })}
+      <div style={{ perspective: '600px' }}>
+        <div style={{ transform: 'rotateX(12deg) rotateY(-5deg)', transformStyle: 'preserve-3d' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${cols}, ${blockSize}px)`,
+            gap: '2px',
+            transformStyle: 'preserve-3d',
+          }}>
+            {blocks.map((block, index) => {
+              const row = Math.floor(index / cols)
+              const col = index % cols
+              const rotation = rotations[row]?.[col] || 0
+
+              return (
+                <MobileTriangularPrism
+                  key={block.id}
+                  colors={block.colors}
+                  size={blockSize}
+                  rotation={rotation}
+                  delay={getDelay(row, col)}
+                />
+              )
+            })}
+          </div>
         </div>
       </div>
+
+      {/* Dark frame behind */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 20,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: cols * (blockSize + 2) + 20,
+          height: rows * (blockSize + 2) + 20,
+          background: '#1a1a1a',
+          borderRadius: '6px',
+          zIndex: -1,
+        }}
+      />
     </motion.div>
   )
 }
@@ -906,23 +1000,61 @@ function MobileShowcase() {
 // Desktop Triblock Visual
 function TriPrismBlock({ colors, intensity }: { colors: { face1: string; face2: string; face3: string }; intensity: number }) {
   const size = 38
-  const lift = intensity > 0.1 ? -4 : 0
+  const faceHeight = size * 0.9
+  const apothem = faceHeight * 0.35
+  const rotation = intensity > 0.1 ? 80 : 0
 
   return (
-    <div style={{ width: size, height: size }}>
+    <div style={{ width: size, height: faceHeight, perspective: '250px' }}>
       <div
         style={{
           width: '100%',
           height: '100%',
-          background: `linear-gradient(145deg, ${adjustColor(colors.face1, 30)} 0%, ${colors.face1} 50%, ${adjustColor(colors.face1, -20)} 100%)`,
-          borderRadius: '3px',
-          transform: `translateY(${lift}px)`,
-          transition: 'transform 0.3s ease-out, box-shadow 0.3s ease-out',
-          boxShadow: intensity > 0.1
-            ? `0 8px 20px rgba(0,0,0,0.4), 0 0 20px rgba(225,121,36,${intensity * 0.6}), inset 0 1px 2px rgba(255,255,255,0.3)`
-            : '0 2px 4px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.2)',
+          position: 'relative',
+          transformStyle: 'preserve-3d',
+          transform: `rotateX(${rotation}deg)`,
+          transition: 'transform 1s cubic-bezier(0.25, 0.1, 0.25, 1)',
         }}
-      />
+      >
+        {/* Face 1 - Front (cream) */}
+        <div
+          style={{
+            position: 'absolute',
+            width: size,
+            height: faceHeight,
+            background: `linear-gradient(180deg, ${adjustColor(colors.face1, 18)} 0%, ${colors.face1} 40%, ${adjustColor(colors.face1, -12)} 100%)`,
+            transform: `translateZ(${apothem}px)`,
+            backfaceVisibility: 'hidden',
+            boxShadow: intensity > 0.1
+              ? `inset 0 2px 0 rgba(255,255,255,0.6), 0 6px 15px rgba(0,0,0,0.4)`
+              : 'inset 0 2px 0 rgba(255,255,255,0.5), 0 2px 4px rgba(0,0,0,0.2)',
+          }}
+        />
+        {/* Face 2 - Upper right (dark) */}
+        <div
+          style={{
+            position: 'absolute',
+            width: size,
+            height: faceHeight,
+            background: `linear-gradient(180deg, ${adjustColor(colors.face2, 22)} 0%, ${colors.face2} 50%, ${adjustColor(colors.face2, -12)} 100%)`,
+            transform: `rotateX(-120deg) translateZ(${apothem}px)`,
+            backfaceVisibility: 'hidden',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
+          }}
+        />
+        {/* Face 3 - Upper left (orange) */}
+        <div
+          style={{
+            position: 'absolute',
+            width: size,
+            height: faceHeight,
+            background: `linear-gradient(180deg, ${adjustColor(colors.face3, 25)} 0%, ${colors.face3} 45%, ${adjustColor(colors.face3, -10)} 100%)`,
+            transform: `rotateX(-240deg) translateZ(${apothem}px)`,
+            backfaceVisibility: 'hidden',
+            boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.3)',
+          }}
+        />
+      </div>
     </div>
   )
 }
@@ -1275,62 +1407,110 @@ function BentoCard({
   )
 }
 
-// Scaled-down visuals for Bento cards
+// Scaled-down visuals for Bento cards - Triangular Prisms
 function BentoTriblockVisual({ isActive }: { isActive: boolean }) {
-  const [blocks] = useState(() => generateTriblocks(8, 12))
-  const [activatedBlocks, setActivatedBlocks] = useState<Map<string, number>>(new Map())
-  const gridRef = useRef<HTMLDivElement>(null)
+  const rows = 8
+  const cols = 12
+  const blockSize = 30
+  const faceHeight = blockSize * 0.85
+  const apothem = faceHeight * 0.32
+  const [blocks] = useState(() => generateTriblocks(rows, cols))
+  const [rotations, setRotations] = useState<number[][]>(() =>
+    Array(rows).fill(null).map(() => Array(cols).fill(0))
+  )
+  const isHoveringRef = useRef(false)
+  const [waveCount, setWaveCount] = useState(0)
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!gridRef.current) return
-    const rect = gridRef.current.getBoundingClientRect()
-    const mouseX = e.clientX - rect.left
-    const mouseY = e.clientY - rect.top
-    const blockSize = 34
-    const maxRadius = 110
-    const newActivated = new Map<string, number>()
-    const centerCol = Math.floor(mouseX / blockSize)
-    const centerRow = Math.floor(mouseY / blockSize)
-    const checkRadius = Math.ceil(maxRadius / blockSize) + 1
-    for (let row = Math.max(0, centerRow - checkRadius); row < Math.min(8, centerRow + checkRadius + 1); row++) {
-      for (let col = Math.max(0, centerCol - checkRadius); col < Math.min(12, centerCol + checkRadius + 1); col++) {
-        const blockCenterX = col * blockSize + blockSize / 2
-        const blockCenterY = row * blockSize + blockSize / 2
-        const distance = Math.sqrt(Math.pow(mouseX - blockCenterX, 2) + Math.pow(mouseY - blockCenterY, 2))
-        if (distance < maxRadius) {
-          newActivated.set(`${row}-${col}`, Math.pow(1 - distance / maxRadius, 1.5))
-        }
+  const runWaveAnimation = useCallback(() => {
+    if (!isHoveringRef.current) return
+
+    setRotations(prev => prev.map((rowArr, row) =>
+      rowArr.map((rot) => rot + 120)
+    ))
+    setWaveCount(prev => prev + 1)
+
+    setTimeout(() => {
+      if (isHoveringRef.current) {
+        runWaveAnimation()
       }
-    }
-    setActivatedBlocks(newActivated)
+    }, 3000)
   }, [])
+
+  const handleHover = useCallback(() => {
+    if (isHoveringRef.current) return
+    isHoveringRef.current = true
+    runWaveAnimation()
+  }, [runWaveAnimation])
+
+  const handleHoverEnd = useCallback(() => {
+    isHoveringRef.current = false
+  }, [])
+
+  const getDelay = (row: number, col: number) => row * 70 + col * 35
 
   return (
     <div
-      className="relative"
+      className="relative cursor-pointer"
       style={{ perspective: '800px' }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => setActivatedBlocks(new Map())}
+      onMouseEnter={handleHover}
+      onMouseLeave={handleHoverEnd}
     >
-      <div ref={gridRef} style={{ transformStyle: 'preserve-3d', transform: 'rotateX(-15deg) rotateY(20deg)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(12, 30px)`, gap: '4px' }}>
-          {blocks.map((block) => {
-            const intensity = activatedBlocks.get(block.id) || 0
+      <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(12deg) rotateY(-5deg)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${blockSize}px)`, gap: '3px', transformStyle: 'preserve-3d' }}>
+          {blocks.map((block, index) => {
+            const row = Math.floor(index / cols)
+            const col = index % cols
+            const rotation = rotations[row]?.[col] || 0
+
             return (
               <div
                 key={block.id}
                 style={{
-                  width: 30,
-                  height: 30,
-                  background: `linear-gradient(145deg, ${adjustColor(block.colors.face1, 40)} 0%, ${block.colors.face1} 50%, ${adjustColor(block.colors.face1, -15)} 100%)`,
-                  borderRadius: '3px',
-                  transform: `translateY(${intensity > 0.1 ? -5 : 0}px)`,
-                  transition: 'transform 0.2s ease-out, box-shadow 0.2s ease-out',
-                  boxShadow: intensity > 0.1
-                    ? `0 8px 18px rgba(0,0,0,0.5), 0 0 20px rgba(225,121,36,${intensity * 0.6})`
-                    : '0 3px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+                  width: blockSize,
+                  height: faceHeight,
+                  position: 'relative',
+                  transformStyle: 'preserve-3d',
+                  transform: `rotateX(${rotation}deg)`,
+                  transition: `transform 1.2s cubic-bezier(0.25, 0.1, 0.25, 1) ${getDelay(row, col)}ms`,
                 }}
-              />
+              >
+                {/* Face 1 - Front (gold) */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    width: blockSize,
+                    height: faceHeight,
+                    background: `linear-gradient(180deg, ${adjustColor(block.colors.face1, 15)} 0%, ${block.colors.face1} 40%, ${adjustColor(block.colors.face1, -10)} 100%)`,
+                    transform: `translateZ(${apothem}px)`,
+                    backfaceVisibility: 'hidden',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
+                  }}
+                />
+                {/* Face 2 - Upper right (dark) */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    width: blockSize,
+                    height: faceHeight,
+                    background: `linear-gradient(180deg, ${adjustColor(block.colors.face2, 18)} 0%, ${block.colors.face2} 50%, ${adjustColor(block.colors.face2, -10)} 100%)`,
+                    transform: `rotateX(-120deg) translateZ(${apothem}px)`,
+                    backfaceVisibility: 'hidden',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
+                  }}
+                />
+                {/* Face 3 - Upper left (orange) */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    width: blockSize,
+                    height: faceHeight,
+                    background: `linear-gradient(180deg, ${adjustColor(block.colors.face3, 22)} 0%, ${block.colors.face3} 45%, ${adjustColor(block.colors.face3, -8)} 100%)`,
+                    transform: `rotateX(-240deg) translateZ(${apothem}px)`,
+                    backfaceVisibility: 'hidden',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25)',
+                  }}
+                />
+              </div>
             )
           })}
         </div>
@@ -1847,66 +2027,240 @@ const VISUAL_ROWS = 10
 const VISUAL_COLS = 14
 
 // Large-scale visuals for scroll sections
-function LargeTriblockVisual() {
-  const [blocks] = useState(() => generateTriblocks(VISUAL_ROWS, VISUAL_COLS))
-  const [activatedBlocks, setActivatedBlocks] = useState<Map<string, number>>(new Map())
-  const gridRef = useRef<HTMLDivElement>(null)
-  const blockSize = 36
-  const gap = 4
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!gridRef.current) return
-    const rect = gridRef.current.getBoundingClientRect()
-    const mouseX = e.clientX - rect.left
-    const mouseY = e.clientY - rect.top
-    const maxRadius = 120
-    const newActivated = new Map<string, number>()
-    const centerCol = Math.floor(mouseX / (blockSize + gap))
-    const centerRow = Math.floor(mouseY / (blockSize + gap))
-    const checkRadius = Math.ceil(maxRadius / blockSize) + 1
-    for (let row = Math.max(0, centerRow - checkRadius); row < Math.min(VISUAL_ROWS, centerRow + checkRadius + 1); row++) {
-      for (let col = Math.max(0, centerCol - checkRadius); col < Math.min(VISUAL_COLS, centerCol + checkRadius + 1); col++) {
-        const blockCenterX = col * (blockSize + gap) + blockSize / 2
-        const blockCenterY = row * (blockSize + gap) + blockSize / 2
-        const distance = Math.sqrt(Math.pow(mouseX - blockCenterX, 2) + Math.pow(mouseY - blockCenterY, 2))
-        if (distance < maxRadius) {
-          newActivated.set(`${row}-${col}`, Math.pow(1 - distance / maxRadius, 1.5))
-        }
-      }
-    }
-    setActivatedBlocks(newActivated)
-  }, [])
+// 3D Triangular Prism Component (Toblerone shape - 3 sided)
+function TriangularPrism({
+  colors,
+  size,
+  rotation,
+  delay
+}: {
+  colors: { face1: string; face2: string; face3: string }
+  size: number
+  rotation: number
+  delay: number
+}) {
+  // Triangle geometry - equilateral triangle cross-section
+  const faceWidth = size
+  const faceHeight = size * 0.85
+  // Distance from center to face (apothem of triangle) - increased for visibility
+  const apothem = faceHeight * 0.5
 
   return (
     <div
-      className="relative"
-      style={{ perspective: '1200px' }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => setActivatedBlocks(new Map())}
+      style={{
+        width: faceWidth,
+        height: faceHeight,
+        position: 'relative',
+        transformStyle: 'preserve-3d',
+        transform: `rotateX(${rotation}deg)`,
+        transition: `transform 1.4s cubic-bezier(0.25, 0.1, 0.25, 1) ${delay}ms`,
+      }}
     >
-      <div ref={gridRef} style={{ transformStyle: 'preserve-3d', transform: 'rotateX(-12deg) rotateY(18deg)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${VISUAL_COLS}, ${blockSize}px)`, gap: `${gap}px` }}>
-          {blocks.map((block) => {
-            const intensity = activatedBlocks.get(block.id) || 0
+      {/* Face 1 - Front (cream - visible at 0 degrees) */}
+      <div
+        style={{
+          position: 'absolute',
+          width: faceWidth,
+          height: faceHeight,
+          background: `linear-gradient(180deg, ${adjustColor(colors.face1, 20)} 0%, ${colors.face1} 40%, ${adjustColor(colors.face1, -15)} 100%)`,
+          transform: `translateZ(${apothem}px)`,
+          backfaceVisibility: 'hidden',
+          boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.6), inset 0 -2px 0 rgba(0,0,0,0.1)',
+          borderLeft: '1px solid rgba(0,0,0,0.08)',
+          borderRight: '1px solid rgba(0,0,0,0.08)',
+        }}
+      />
+      {/* Face 2 - Upper right (dark - visible at 120 degrees) */}
+      <div
+        style={{
+          position: 'absolute',
+          width: faceWidth,
+          height: faceHeight,
+          background: `linear-gradient(180deg, ${adjustColor(colors.face2, 25)} 0%, ${colors.face2} 50%, ${adjustColor(colors.face2, -15)} 100%)`,
+          transform: `rotateX(-120deg) translateZ(${apothem}px)`,
+          backfaceVisibility: 'hidden',
+          boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.2)',
+          borderLeft: '1px solid rgba(0,0,0,0.15)',
+          borderRight: '1px solid rgba(0,0,0,0.15)',
+        }}
+      />
+      {/* Face 3 - Upper left (orange - visible at 240 degrees) */}
+      <div
+        style={{
+          position: 'absolute',
+          width: faceWidth,
+          height: faceHeight,
+          background: `linear-gradient(180deg, ${adjustColor(colors.face3, 30)} 0%, ${colors.face3} 45%, ${adjustColor(colors.face3, -12)} 100%)`,
+          transform: `rotateX(-240deg) translateZ(${apothem}px)`,
+          backfaceVisibility: 'hidden',
+          boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -2px 0 rgba(0,0,0,0.15)',
+          borderLeft: '1px solid rgba(0,0,0,0.08)',
+          borderRight: '1px solid rgba(0,0,0,0.08)',
+        }}
+      />
+      {/* Left triangle cap */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: '50%',
+          width: 0,
+          height: 0,
+          borderTop: `${faceHeight/2}px solid transparent`,
+          borderBottom: `${faceHeight/2}px solid transparent`,
+          borderRight: `${apothem * 1.5}px solid ${adjustColor(colors.face1, -30)}`,
+          transform: `translateY(-50%) translateX(-${apothem}px) rotateY(-90deg)`,
+          transformOrigin: 'right center',
+        }}
+      />
+      {/* Right triangle cap */}
+      <div
+        style={{
+          position: 'absolute',
+          right: 0,
+          top: '50%',
+          width: 0,
+          height: 0,
+          borderTop: `${faceHeight/2}px solid transparent`,
+          borderBottom: `${faceHeight/2}px solid transparent`,
+          borderLeft: `${apothem * 1.5}px solid ${adjustColor(colors.face1, -25)}`,
+          transform: `translateY(-50%) translateX(${apothem}px) rotateY(90deg)`,
+          transformOrigin: 'left center',
+        }}
+      />
+    </div>
+  )
+}
+
+function LargeTriblockVisual() {
+  const rows = 8
+  const cols = 14
+  const blockSize = 42
+  const gap = 8
+  const [rotations, setRotations] = useState<number[][]>(() =>
+    Array(rows).fill(null).map(() => Array(cols).fill(0))
+  )
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [wavePattern, setWavePattern] = useState(0)
+  const isHoveringRef = useRef(false)
+  const [blocks] = useState(() => generateTriblocks(rows, cols))
+
+  // Wave animation from top to bottom with different patterns
+  const runWaveAnimation = useCallback(() => {
+    if (!isHoveringRef.current) return
+
+    setIsAnimating(true)
+    const pattern = wavePattern % 4
+
+    // Calculate new rotations based on wave pattern
+    const newRotations = Array(rows).fill(null).map((_, row) =>
+      Array(cols).fill(null).map((_, col) => {
+        let baseRotation = 120 // Rotate to next face
+
+        // Add variation based on pattern
+        switch (pattern) {
+          case 0: // All rotate same direction
+            return baseRotation
+          case 1: // Alternating columns
+            return col % 2 === 0 ? baseRotation : baseRotation * 2
+          case 2: // Diagonal wave
+            return ((row + col) % 3) * 120
+          case 3: // Center outward
+            const centerRow = rows / 2
+            const centerCol = cols / 2
+            const dist = Math.sqrt(Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2))
+            return Math.floor(dist) % 3 * 120
+          default:
+            return baseRotation
+        }
+      })
+    )
+
+    setRotations(prev => prev.map((rowArr, row) =>
+      rowArr.map((rot, col) => rot + newRotations[row][col])
+    ))
+
+    setWavePattern(prev => prev + 1)
+
+    // Continue animation while hovering
+    setTimeout(() => {
+      setIsAnimating(false)
+      if (isHoveringRef.current) {
+        setTimeout(() => runWaveAnimation(), 1000)
+      }
+    }, 2800)
+  }, [wavePattern, rows, cols])
+
+  const handleHover = useCallback(() => {
+    if (isHoveringRef.current) return
+    isHoveringRef.current = true
+    runWaveAnimation()
+  }, [runWaveAnimation])
+
+  const handleHoverEnd = useCallback(() => {
+    isHoveringRef.current = false
+  }, [])
+
+  // Get wave delay for cascading effect (top to bottom) - slower cascade
+  const getDelay = (row: number, col: number) => {
+    const pattern = wavePattern % 3
+    switch (pattern) {
+      case 0: return row * 80 + col * 30 // Top-left to bottom-right
+      case 1: return row * 120 // Row by row
+      case 2: return (rows - 1 - row) * 80 + col * 30 // Bottom to top
+      default: return row * 80
+    }
+  }
+
+  return (
+    <div
+      className="relative cursor-pointer"
+      style={{ perspective: '1200px' }}
+      onMouseEnter={handleHover}
+      onMouseLeave={handleHoverEnd}
+    >
+      <div style={{
+        transformStyle: 'preserve-3d',
+        transform: 'rotateX(15deg) rotateY(-5deg)',
+      }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${cols}, ${blockSize}px)`,
+          gap: `${gap}px`,
+          transformStyle: 'preserve-3d',
+        }}>
+          {blocks.map((block, index) => {
+            const row = Math.floor(index / cols)
+            const col = index % cols
+            const rotation = rotations[row]?.[col] || 0
+
             return (
-              <div
+              <TriangularPrism
                 key={block.id}
-                style={{
-                  width: blockSize,
-                  height: blockSize,
-                  background: `linear-gradient(145deg, ${adjustColor(block.colors.face1, 35)} 0%, ${block.colors.face1} 50%, ${adjustColor(block.colors.face1, -20)} 100%)`,
-                  borderRadius: '3px',
-                  transform: `translateY(${intensity > 0.1 ? -5 : 0}px)`,
-                  transition: 'transform 0.2s ease-out, box-shadow 0.2s ease-out',
-                  boxShadow: intensity > 0.1
-                    ? `0 8px 20px rgba(0,0,0,0.5), 0 0 20px rgba(225,121,36,${intensity * 0.6})`
-                    : '0 2px 6px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.2)',
-                }}
+                colors={block.colors}
+                size={blockSize}
+                rotation={rotation}
+                delay={getDelay(row, col)}
               />
             )
           })}
         </div>
       </div>
+
+      {/* Dark frame/mount behind the blocks */}
+      <div
+        style={{
+          position: 'absolute',
+          top: -20,
+          left: -20,
+          right: -20,
+          bottom: -20,
+          background: '#1a1a1a',
+          borderRadius: '8px',
+          zIndex: -1,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+        }}
+      />
     </div>
   )
 }
