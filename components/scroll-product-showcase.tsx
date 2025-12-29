@@ -192,8 +192,6 @@ function MobileTriblockCard({ isActive, onTap }: { isActive: boolean; onTap: () 
           })}
         </div>
       </div>
-      {/* Glow */}
-      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[280px] h-[50px]" style={{ background: 'radial-gradient(ellipse, rgba(225,121,36,0.4) 0%, transparent 70%)', filter: 'blur(15px)' }} />
     </motion.div>
   )
 }
@@ -971,7 +969,6 @@ function TriblockVisual({ isActive }: { isActive: boolean }) {
             <TriPrismBlock key={block.id} colors={block.colors} intensity={activatedBlocks.get(block.id) || 0} />
           ))}
         </div>
-        <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-[700px] h-[120px]" style={{ background: 'radial-gradient(ellipse, rgba(225,121,36,0.5) 0%, transparent 70%)', filter: 'blur(25px)' }} />
       </div>
     </div>
   )
@@ -1076,7 +1073,6 @@ function FlapVisual({ isActive }: { isActive: boolean }) {
           ))}
         </div>
       </div>
-      <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-[780px] h-[100px]" style={{ background: 'radial-gradient(ellipse, rgba(225,121,36,0.5) 0%, transparent 70%)', filter: 'blur(30px)' }} />
     </div>
   )
 }
@@ -1130,7 +1126,6 @@ function HRMSVisual({ isActive }: { isActive: boolean }) {
   return (
     <div className="relative scale-[0.75] lg:scale-100 origin-center" onMouseEnter={() => isActive && setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       <div className="flex flex-col items-center">
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[700px] h-[200px] pointer-events-none" style={{ background: `radial-gradient(ellipse, ${HRMS_GLOW} 0%, transparent 70%)`, filter: 'blur(40px)' }} />
         <div className="flex items-end justify-center gap-8 mb-4">
           {[0, 1, 2].map((i) => (
             <div key={i} style={{ transform: `translateX(${getOffset(i)}px)`, transition: 'transform 1.8s ease-in-out' }}>
@@ -1188,7 +1183,6 @@ function MatrixVisual({ isActive }: { isActive: boolean }) {
           })}
         </div>
         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2" style={{ width: '90%', height: '20px', background: 'linear-gradient(180deg, #2a2a40 0%, #1a1a2e 100%)', borderRadius: '0 0 8px 8px' }} />
-        <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[700px] h-[100px]" style={{ background: 'radial-gradient(ellipse, rgba(245,166,35,0.35) 0%, transparent 70%)', filter: 'blur(25px)' }} />
       </div>
     </div>
   )
@@ -1340,7 +1334,6 @@ function BentoTriblockVisual({ isActive }: { isActive: boolean }) {
             )
           })}
         </div>
-        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-[380px] h-[70px]" style={{ background: 'radial-gradient(ellipse, rgba(225,121,36,0.5) 0%, transparent 70%)', filter: 'blur(20px)' }} />
       </div>
     </div>
   )
@@ -1386,11 +1379,14 @@ const FLAP_CONTENTS = [
   { type: 'text', value: '0', bg: '#1a1a1a', color: '#F59E0B' },
   { type: 'text', value: '2', bg: '#1a1a1a', color: '#D97706' },
   { type: 'text', value: '4', bg: '#1a1a1a', color: '#FBBF24' },
-  // Extra letters KINE (31-34)
+  // Letters for "KINETIC" (31-37)
   { type: 'text', value: 'K', bg: '#E17924', color: '#fff' },
   { type: 'text', value: 'I', bg: '#D97706', color: '#fff' },
   { type: 'text', value: 'N', bg: '#B45309', color: '#fff' },
   { type: 'text', value: 'E', bg: '#F59E0B', color: '#fff' },
+  { type: 'text', value: 'T', bg: '#FBBF24', color: '#fff' },
+  { type: 'text', value: 'I', bg: '#E17924', color: '#fff' },
+  { type: 'text', value: 'C', bg: '#D97706', color: '#fff' },
 ]
 
 // Different settled patterns that cycle - 5 rows x 8 cols - each shows words
@@ -1419,12 +1415,12 @@ const SETTLED_PATTERNS = [
     [10, 10, 10, 10, 10, 10, 10, 10],
     [8, 10, 2, 10, 10, 3, 10, 9],
   ],
-  // Pattern 4: Checkered with KINE and FLAP
+  // Pattern 4: KINETIC displayed
   [
-    [0, 10, 1, 10, 2, 10, 3, 10],
-    [10, 31, 10, 32, 10, 33, 10, 34],
-    [4, 10, 5, 10, 0, 10, 1, 10],
-    [10, 18, 10, 19, 10, 20, 10, 21],
+    [10, 31, 32, 33, 34, 35, 36, 37],
+    [0, 10, 10, 10, 10, 10, 10, 1],
+    [10, 10, 10, 10, 10, 10, 10, 10],
+    [2, 10, 18, 19, 20, 21, 10, 3],
     [6, 10, 7, 10, 8, 10, 9, 10],
   ],
   // Pattern 5: Wave with HELLO
@@ -1483,9 +1479,9 @@ function BentoFlapBlock({
             setFlipAngle(prev => prev + 180)
             setCurrentColor(null)
             setShowFinalContent(true)
-          }, 400)
+          }, 250)
         }
-      }, 450) // 450ms per flip
+      }, 280) // 280ms per flip - faster cascade
 
       return () => clearInterval(flipTimer)
     }, delay)
@@ -1509,7 +1505,7 @@ function BentoFlapBlock({
           position: 'relative',
           transformStyle: 'preserve-3d',
           transform: `rotateX(${flipAngle}deg)`,
-          transition: 'transform 0.38s ease-out',
+          transition: 'transform 0.25s ease-out',
         }}
       >
         {/* Front face */}
@@ -1749,7 +1745,6 @@ function BentoHRMSVisual({ isActive }: { isActive: boolean }) {
       </div>
       {/* Base */}
       <div className="mt-3 mx-auto w-[340px] h-[24px]" style={{ background: 'linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%)', border: `1.5px solid ${HRMS_PRIMARY}`, borderRadius: '4px', boxShadow: `0 0 20px ${HRMS_GLOW}` }} />
-      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[400px] h-[70px]" style={{ background: `radial-gradient(ellipse, ${HRMS_GLOW} 0%, transparent 70%)`, filter: 'blur(25px)' }} />
     </div>
   )
 }
@@ -1801,7 +1796,6 @@ function BentoMatrixVisual({ isActive }: { isActive: boolean }) {
           ))}
         </div>
       </div>
-      <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[300px] h-[50px]" style={{ background: 'radial-gradient(ellipse, rgba(245,166,35,0.35) 0%, transparent 70%)', filter: 'blur(15px)' }} />
     </div>
   )
 }
@@ -1912,7 +1906,6 @@ function LargeTriblockVisual() {
             )
           })}
         </div>
-        <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[550px] h-[100px]" style={{ background: 'radial-gradient(ellipse, rgba(225,121,36,0.5) 0%, transparent 70%)', filter: 'blur(25px)' }} />
       </div>
     </div>
   )
@@ -1925,31 +1918,48 @@ function LargeFlapVisual() {
   const gap = 4
   const [animationCycle, setAnimationCycle] = useState(0)
   const [patternIndex, setPatternIndex] = useState(0)
+  const [waveDirection, setWaveDirection] = useState(0)
+  const isHoveringRef = useRef(false)
 
-  const getWaveDelay = useCallback((row: number, col: number, patternIdx: number) => {
-    switch (patternIdx % 5) {
-      case 0: return (row + col) * 60
-      case 1: return Math.sqrt(Math.pow(row - rows/2, 2) + Math.pow(col - cols/2, 2)) * 80
-      case 2: return ((rows - 1 - row) + (cols - 1 - col)) * 60
-      case 3: return (row + (cols - 1 - col)) * 60
-      case 4: return ((rows - 1 - row) + col) * 60
+  // Sequential wave patterns - each block waits for previous to finish
+  // Each block takes ~600ms to flip, so delay by 80ms creates cascading effect
+  const getWaveDelay = useCallback((row: number, col: number, direction: number) => {
+    const delayPerBlock = 40 // Small delay between blocks for smooth cascade
+    switch (direction % 6) {
+      case 0: return (row + col) * delayPerBlock // Top-left to bottom-right diagonal
+      case 1: return ((rows - 1 - row) + (cols - 1 - col)) * delayPerBlock // Bottom-right to top-left
+      case 2: return col * delayPerBlock // Left to right (column by column)
+      case 3: return (cols - 1 - col) * delayPerBlock // Right to left
+      case 4: return row * delayPerBlock * 2 // Top to bottom (row by row, slower)
+      case 5: return (rows - 1 - row) * delayPerBlock * 2 // Bottom to top
       default: return 0
     }
   }, [rows, cols])
 
-  useEffect(() => {
-    const runAnimation = () => {
-      setAnimationCycle(prev => prev + 1)
-      setPatternIndex(prev => (prev + 1) % SETTLED_PATTERNS.length)
-    }
+  // Run animation loop while hovering
+  const runAnimation = useCallback(() => {
+    if (!isHoveringRef.current) return
 
-    const initialTimeout = setTimeout(runAnimation, 500)
-    const interval = setInterval(runAnimation, 7000)
+    setAnimationCycle(prev => prev + 1)
+    setPatternIndex(prev => (prev + 1) % SETTLED_PATTERNS.length)
+    setWaveDirection(prev => prev + 1)
 
-    return () => {
-      clearTimeout(initialTimeout)
-      clearInterval(interval)
-    }
+    // Loop again after animation completes (around 4 seconds for all blocks to flip)
+    setTimeout(() => {
+      if (isHoveringRef.current) {
+        runAnimation()
+      }
+    }, 5000)
+  }, [])
+
+  const handleHover = useCallback(() => {
+    if (isHoveringRef.current) return
+    isHoveringRef.current = true
+    runAnimation()
+  }, [runAnimation])
+
+  const handleHoverEnd = useCallback(() => {
+    isHoveringRef.current = false
   }, [])
 
   const getExtendedContent = (row: number, col: number) => {
@@ -1960,7 +1970,12 @@ function LargeFlapVisual() {
   }
 
   return (
-    <div className="relative" style={{ perspective: '1000px' }}>
+    <div
+      className="relative cursor-pointer"
+      style={{ perspective: '1000px' }}
+      onMouseEnter={handleHover}
+      onMouseLeave={handleHoverEnd}
+    >
       <div style={{
         padding: '0',
         transform: 'rotateX(8deg)',
@@ -1974,15 +1989,14 @@ function LargeFlapVisual() {
             return (
               <BentoFlapBlock
                 key={`${row}-${col}-${animationCycle}`}
-                delay={getWaveDelay(row, col, patternIndex)}
+                delay={getWaveDelay(row, col, waveDirection)}
                 finalContent={finalContent}
-                flipCount={4 + (index % 3)}
+                flipCount={2}
               />
             )
           })}
         </div>
       </div>
-      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[550px] h-[100px]" style={{ background: 'radial-gradient(ellipse, rgba(245,158,11,0.5) 0%, transparent 70%)', filter: 'blur(25px)' }} />
     </div>
   )
 }
@@ -2307,7 +2321,6 @@ function LargeHRMSVisual() {
         </div>
         <div className="mt-4 mx-auto h-[35px]" style={{ width: `${boxWidth * 3 + pillarGap * 2 + 40}px`, background: 'linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%)', border: `2px solid ${HRMS_PRIMARY}`, borderRadius: '6px', boxShadow: `0 0 30px ${HRMS_GLOW}` }} />
       </div>
-      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[550px] h-[100px]" style={{ background: `radial-gradient(ellipse, ${HRMS_GLOW} 0%, transparent 70%)`, filter: 'blur(25px)' }} />
     </div>
   )
 }
@@ -2415,14 +2428,6 @@ function LargeMatrixVisual() {
           </div>
         </div>
       </div>
-      {/* Floor reflection */}
-      <div
-        className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-[600px] h-[80px]"
-        style={{
-          background: `radial-gradient(ellipse, ${colors.glow} 0%, transparent 70%)`,
-          filter: 'blur(20px)',
-        }}
-      />
     </div>
   )
 }
