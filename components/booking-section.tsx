@@ -6,10 +6,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Calendar, Clock, CheckCircle2, Loader2, User, Mail, Phone, Building2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
-// Time slots available each day
+// Single time slot per day at 5 PM
 const TIME_SLOTS = [
-  { id: "morning", time: "11:30 AM", label: "Morning Session" },
-  { id: "afternoon", time: "3:00 PM", label: "Afternoon Session" },
+  { id: "evening", time: "5:00 PM", label: "Evening Session" },
 ]
 
 // Booking month configuration
@@ -68,6 +67,47 @@ export default function BookingSection() {
 
   const calendarDays = useMemo(() => generateCalendarDays(), [])
 
+  // Fetch existing bookings from Supabase on mount
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("kinetic-data")
+          .select("work")
+          .like("work", `Booking: ${MONTH_NAME}%${BOOKING_YEAR}%`)
+
+        if (error) {
+          console.error("Error fetching bookings:", error)
+          return
+        }
+
+        if (data) {
+          const bookedDates: Record<string, string[]> = {}
+
+          data.forEach((booking) => {
+            // Parse the booking string to extract date
+            // Format: "Booking: January 15, 2026 at 5:00 PM | Company: ..."
+            const match = booking.work.match(/Booking: \w+ (\d+), (\d+) at/)
+            if (match) {
+              const day = parseInt(match[1], 10)
+              const dateKey = `${BOOKING_YEAR}-${String(BOOKING_MONTH + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+              if (!bookedDates[dateKey]) {
+                bookedDates[dateKey] = []
+              }
+              bookedDates[dateKey].push("evening")
+            }
+          })
+
+          setBookedSlots(bookedDates)
+        }
+      } catch (err) {
+        console.error("Error fetching bookings:", err)
+      }
+    }
+
+    fetchBookings()
+  }, [])
+
   const formatDateKey = (day: number) => {
     return `${BOOKING_YEAR}-${String(BOOKING_MONTH + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
   }
@@ -80,7 +120,7 @@ export default function BookingSection() {
   const isDayFullyBooked = (day: number) => {
     const dateKey = formatDateKey(day)
     const booked = bookedSlots[dateKey] || []
-    return booked.length >= 2
+    return booked.length >= 1 // Only one session per day at 5 PM
   }
 
   const handleDateSelect = (day: number) => {
@@ -299,28 +339,33 @@ export default function BookingSection() {
                     const isSelected = selectedDate === day
 
                     return (
-                      <motion.button
-                        key={day}
-                        onClick={() => !isFullyBooked && handleDateSelect(day)}
-                        disabled={isFullyBooked}
-                        className={`
-                          aspect-square rounded-lg md:rounded-xl text-xs md:text-sm font-medium transition-all duration-200
-                          flex items-center justify-center relative
-                          ${isSelected
-                            ? "bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30"
-                            : isFullyBooked
-                              ? "bg-white/5 text-white/20 cursor-not-allowed"
-                              : "bg-white/5 text-white hover:bg-white/10"
-                          }
-                        `}
-                        whileHover={!isFullyBooked ? { scale: 1.05 } : {}}
-                        whileTap={!isFullyBooked ? { scale: 0.95 } : {}}
-                      >
-                        {day}
+                      <div key={day} className="relative group">
+                        <motion.button
+                          onClick={() => !isFullyBooked && handleDateSelect(day)}
+                          disabled={isFullyBooked}
+                          className={`
+                            aspect-square rounded-lg md:rounded-xl text-xs md:text-sm font-medium transition-all duration-200
+                            flex items-center justify-center relative w-full
+                            ${isSelected
+                              ? "bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30"
+                              : isFullyBooked
+                                ? "bg-red-500/20 text-white/40 cursor-not-allowed border border-red-500/30"
+                                : "bg-white/5 text-white hover:bg-white/10"
+                            }
+                          `}
+                          whileHover={!isFullyBooked ? { scale: 1.05 } : {}}
+                          whileTap={!isFullyBooked ? { scale: 0.95 } : {}}
+                        >
+                          {day}
+                        </motion.button>
+                        {/* Tooltip for booked dates */}
                         {isFullyBooked && (
-                          <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-red-500 text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                            Already Booked
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-red-500" />
+                          </div>
                         )}
-                      </motion.button>
+                      </div>
                     )
                   })}
                 </div>
@@ -355,9 +400,9 @@ export default function BookingSection() {
                     >
                       <h4 className="text-sm font-medium text-white/70 mb-3 flex items-center gap-2">
                         <Clock className="h-4 w-4 text-orange-500" />
-                        Available Times for {MONTH_NAME} {selectedDate}
+                        Session Time for {MONTH_NAME} {selectedDate}
                       </h4>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3">
                         {TIME_SLOTS.map((slot) => {
                           const isBooked = isSlotBooked(selectedDate, slot.id)
                           const isSelectedSlot = selectedSlot === slot.id

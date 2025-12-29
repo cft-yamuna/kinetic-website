@@ -115,8 +115,8 @@ const products = [
     id: "trihelix",
     title: "TRI-HELIX",
     subtitle: "Panoramic Display",
-    gradient: "from-yellow-400 via-amber-400 to-orange-500",
-    accentColor: "#FECC00",
+    gradient: "from-orange-500 via-amber-500 to-orange-600",
+    accentColor: "#E17924",
     type: "trihelix",
   },
   {
@@ -621,18 +621,18 @@ function MobileTriHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () 
                 style={{
                   width: panelWidth,
                   height: layerHeight,
-                  background: 'linear-gradient(180deg, #e8e8e8 0%, #c0c0c0 100%)',
-                  border: '1.5px solid #999',
+                  background: 'linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%)',
+                  border: '1.5px solid #E17924',
                   borderRadius: '3px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
                   transform: 'translateZ(10px)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <div style={{ width: '85%', height: '65%', background: '#0a0a15', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                  <span style={{ color: '#FECC00', fontSize: '8px', fontWeight: 'bold', letterSpacing: '0.5px', textShadow: '0 0 6px #FECC00' }}>{displayText}</span>
+                <div style={{ width: '85%', height: '65%', background: '#0a0a0a', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <span style={{ color: '#E17924', fontSize: '8px', fontWeight: 'bold', letterSpacing: '0.5px' }}>{displayText}</span>
                 </div>
               </div>
               {/* Left Wing */}
@@ -646,17 +646,17 @@ function MobileTriHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () 
                   transformOrigin: 'right center',
                   transform: `translateX(-${panelWidth}px) translateZ(10px) rotateY(${-120 + wingAngle}deg)`,
                   transition: 'transform 2s ease-in-out',
-                  background: 'linear-gradient(180deg, #e8e8e8 0%, #c0c0c0 100%)',
-                  border: '1.5px solid #999',
+                  background: 'linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%)',
+                  border: '1.5px solid #BA5617',
                   borderRadius: '3px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <div style={{ width: '85%', height: '65%', background: '#0a0a15', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                  <span style={{ color: '#FECC00', fontSize: '7px', fontWeight: 'bold', letterSpacing: '0.5px', textShadow: '0 0 5px #FECC00' }}>
+                <div style={{ width: '85%', height: '65%', background: '#0a0a0a', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <span style={{ color: '#E17924', fontSize: '7px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
                     {['KINETIC', 'MOTION', 'VISUAL', 'IMPACT', 'WOW'][layerIndex]}
                   </span>
                 </div>
@@ -672,17 +672,17 @@ function MobileTriHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () 
                   transformOrigin: 'left center',
                   transform: `translateX(${panelWidth}px) translateZ(10px) rotateY(${120 - wingAngle}deg)`,
                   transition: 'transform 2s ease-in-out',
-                  background: 'linear-gradient(180deg, #e8e8e8 0%, #c0c0c0 100%)',
-                  border: '1.5px solid #999',
+                  background: 'linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%)',
+                  border: '1.5px solid #BA5617',
                   borderRadius: '3px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <div style={{ width: '85%', height: '65%', background: '#0a0a15', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                  <span style={{ color: '#FECC00', fontSize: '7px', fontWeight: 'bold', letterSpacing: '0.5px', textShadow: '0 0 5px #FECC00' }}>
+                <div style={{ width: '85%', height: '65%', background: '#0a0a0a', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <span style={{ color: '#E17924', fontSize: '7px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
                     {['SCREENS', 'DISPLAY', 'CONTENT', 'BRANDS', 'AMAZE'][layerIndex]}
                   </span>
                 </div>
@@ -700,8 +700,8 @@ function MobileTriHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () 
           marginLeft: '25px',
           width: panelWidth * 1.6,
           height: 12,
-          background: 'linear-gradient(180deg, #444 0%, #222 100%)',
-          border: '1.5px solid #555',
+          background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
+          border: '1.5px solid #E17924',
           borderRadius: '3px',
           boxShadow: '0 4px 15px rgba(0,0,0,0.6)',
         }}
@@ -2128,10 +2128,10 @@ function LargeTriHelixVisual() {
                     width: panelWidth,
                     height: layerHeight,
                     transform: 'translateZ(35px)',
-                    background: 'linear-gradient(180deg, #f0f0f0 0%, #d0d0d0 50%, #b0b0b0 100%)',
-                    border: '2px solid #999',
+                    background: 'linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 50%, #0f0f0f 100%)',
+                    border: '2px solid #E17924',
                     borderRadius: '4px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 2px 15px rgba(255,255,255,0.4)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -2142,22 +2142,20 @@ function LargeTriHelixVisual() {
                     style={{
                       width: '88%',
                       height: '75%',
-                      background: 'linear-gradient(180deg, #151520 0%, #0a0a12 100%)',
+                      background: '#0a0a0a',
                       borderRadius: '3px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: 'inset 0 0 25px rgba(254,204,0,0.25)',
                       overflow: 'hidden',
                     }}
                   >
                     <span
                       style={{
-                        color: '#FECC00',
+                        color: '#E17924',
                         fontSize: '14px',
                         fontWeight: 'bold',
                         letterSpacing: '2px',
-                        textShadow: '0 0 10px #FECC00, 0 0 20px rgba(254,204,0,0.5)',
                         transition: 'opacity 0.5s ease-in-out',
                       }}
                     >
@@ -2175,17 +2173,17 @@ function LargeTriHelixVisual() {
                     transformOrigin: 'right center',
                     transform: `translateZ(35px) translateX(-${panelWidth}px) rotateY(${-120 + wingAngle}deg)`,
                     transition: 'transform 2.5s ease-in-out',
-                    background: 'linear-gradient(180deg, #f0f0f0 0%, #d0d0d0 50%, #b0b0b0 100%)',
-                    border: '2px solid #999',
+                    background: 'linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 50%, #0f0f0f 100%)',
+                    border: '2px solid #BA5617',
                     borderRadius: '4px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 2px 15px rgba(255,255,255,0.4)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <div style={{ width: '88%', height: '75%', background: 'linear-gradient(180deg, #151520 0%, #0a0a12 100%)', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 25px rgba(254,204,0,0.25)', overflow: 'hidden' }}>
-                    <span style={{ color: '#FECC00', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px', textShadow: '0 0 8px #FECC00' }}>
+                  <div style={{ width: '88%', height: '75%', background: '#0a0a0a', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    <span style={{ color: '#E17924', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>
                       {['KINETIC', 'DYNAMIC', 'MOTION', 'VISUAL', 'IMPACT', 'ENGAGE'][layerIndex]}
                     </span>
                   </div>
@@ -2200,17 +2198,17 @@ function LargeTriHelixVisual() {
                     transformOrigin: 'left center',
                     transform: `translateZ(35px) translateX(${panelWidth}px) rotateY(${120 - wingAngle}deg)`,
                     transition: 'transform 2.5s ease-in-out',
-                    background: 'linear-gradient(180deg, #f0f0f0 0%, #d0d0d0 50%, #b0b0b0 100%)',
-                    border: '2px solid #999',
+                    background: 'linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 50%, #0f0f0f 100%)',
+                    border: '2px solid #BA5617',
                     borderRadius: '4px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 2px 15px rgba(255,255,255,0.4)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <div style={{ width: '88%', height: '75%', background: 'linear-gradient(180deg, #151520 0%, #0a0a12 100%)', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 25px rgba(254,204,0,0.25)', overflow: 'hidden' }}>
-                    <span style={{ color: '#FECC00', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px', textShadow: '0 0 8px #FECC00' }}>
+                  <div style={{ width: '88%', height: '75%', background: '#0a0a0a', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    <span style={{ color: '#E17924', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>
                       {['SCREENS', 'DISPLAY', 'CONTENT', 'STORIES', 'BRANDS', 'CROWDS'][layerIndex]}
                     </span>
                   </div>
@@ -2230,19 +2228,10 @@ function LargeTriHelixVisual() {
           transform: 'translateX(-50%) rotateX(8deg)',
           width: 200,
           height: 30,
-          background: 'linear-gradient(180deg, #444 0%, #222 100%)',
-          border: '2px solid #555',
+          background: 'linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%)',
+          border: '2px solid #E17924',
           borderRadius: '5px',
           boxShadow: '0 8px 30px rgba(0,0,0,0.7)',
-        }}
-      />
-
-      {/* Glow effect */}
-      <div
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[450px] h-[120px]"
-        style={{
-          background: 'radial-gradient(ellipse, rgba(254,204,0,0.45) 0%, transparent 70%)',
-          filter: 'blur(35px)',
         }}
       />
     </div>
@@ -2437,19 +2426,60 @@ function DesktopShowcase() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [direction, setDirection] = useState(0)
-  const prevIndexRef = useRef(0)
+  const displayedIndexRef = useRef(0)
+  const targetIndexRef = useRef(0)
+  const animationFrameRef = useRef<number | null>(null)
+
+  // Animate step by step using requestAnimationFrame
+  useEffect(() => {
+    let lastStepTime = 0
+    const stepInterval = 350 // ms between each product step
+
+    const animate = (timestamp: number) => {
+      const current = displayedIndexRef.current
+      const target = targetIndexRef.current
+
+      if (current !== target) {
+        // Only step if enough time has passed
+        if (timestamp - lastStepTime >= stepInterval) {
+          const step = target > current ? 1 : -1
+          const nextIndex = current + step
+
+          displayedIndexRef.current = nextIndex
+          setDirection(step)
+          setActiveIndex(nextIndex)
+          lastStepTime = timestamp
+        }
+      }
+
+      animationFrameRef.current = requestAnimationFrame(animate)
+    }
+
+    animationFrameRef.current = requestAnimationFrame(animate)
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
       if (!containerRef.current) return
       const rect = containerRef.current.getBoundingClientRect()
-      const progress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)))
-      const newIndex = Math.min(Math.floor(progress * products.length), products.length - 1)
-      if (newIndex !== prevIndexRef.current) {
-        setDirection(newIndex > prevIndexRef.current ? 1 : -1)
-        setActiveIndex(newIndex)
-        prevIndexRef.current = newIndex
-      }
+      const scrollableHeight = rect.height - window.innerHeight
+      const scrolled = -rect.top
+
+      // Calculate which product section we're in
+      const sectionHeight = scrollableHeight / products.length
+      const rawIndex = scrolled / sectionHeight
+
+      // Clamp to valid range
+      const newTargetIndex = Math.max(0, Math.min(products.length - 1, Math.round(rawIndex)))
+
+      // Just update the target - the animation loop will handle stepping
+      targetIndexRef.current = newTargetIndex
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
