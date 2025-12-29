@@ -2065,7 +2065,7 @@ function TriangularPrism({
           position: 'relative',
           transformStyle: 'preserve-3d',
           transform: `rotateX(${rotation}deg)`,
-          transition: `transform 1.2s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms`,
+          transition: `transform 1.8s cubic-bezier(0.25, 0.1, 0.25, 1) ${delay}ms`,
         }}
       >
         {/* Face 1 - Front (gold) */}
@@ -2121,31 +2121,81 @@ function LargeTriblockVisual() {
     Array(rows).fill(null).map(() => Array(cols).fill(0))
   )
   const [isAnimating, setIsAnimating] = useState(false)
-  const [wavePattern, setWavePattern] = useState(0)
+  const [animationPhase, setAnimationPhase] = useState(0) // 0: home, 1: rotated
+  const [patternType, setPatternType] = useState(0)
   const isHoveringRef = useRef(false)
   const [blocks] = useState(() => generateTriblocks(rows, cols))
 
-  // Wave animation from top to bottom with different patterns
+  // Pattern counter ref to avoid stale closure
+  const patternRef = useRef(0)
+
+  // Determine which blocks to animate based on pattern
+  const shouldAnimate = useCallback((row: number, col: number, pattern: number): boolean => {
+    switch (pattern % 8) {
+      case 0: // Middle rows, center columns
+        return row >= 2 && row <= 5 && col >= 4 && col <= 9
+      case 1: // Top and bottom edges
+        return (row <= 1 || row >= 6) && col >= 2 && col <= 11
+      case 2: // Diagonal stripe
+        return (row + col) % 3 === 0
+      case 3: // Left half middle
+        return row >= 2 && row <= 5 && col < 7
+      case 4: // Right half middle
+        return row >= 2 && row <= 5 && col >= 7
+      case 5: // Checkerboard in middle
+        return row >= 2 && row <= 5 && (row + col) % 2 === 0
+      case 6: // Vertical stripes
+        return col % 3 === 0
+      case 7: // Center diamond
+        const centerRow = rows / 2
+        const centerCol = cols / 2
+        return Math.abs(row - centerRow) + Math.abs(col - centerCol) < 5
+      default:
+        return row >= 2 && row <= 5
+    }
+  }, [rows, cols])
+
+  // Different animation patterns that cycle continuously on hover
   const runWaveAnimation = useCallback(() => {
     if (!isHoveringRef.current) return
 
-    setIsAnimating(true)
+    const currentPattern = patternRef.current
 
-    // Always rotate by exactly 120 degrees (to next face) - no variation to prevent jitter
-    setRotations(prev => prev.map((rowArr) =>
-      rowArr.map((rot) => rot + 120)
+    // Phase 1: Rotate forward
+    setRotations(prev => prev.map((rowArr, row) =>
+      rowArr.map((rot, col) => {
+        if (shouldAnimate(row, col, currentPattern)) {
+          return rot + 120
+        }
+        return rot
+      })
     ))
 
-    setWavePattern(prev => prev + 1)
-
-    // Continue animation while hovering
+    // Come back to home after delay, then next pattern
     setTimeout(() => {
-      setIsAnimating(false)
-      if (isHoveringRef.current) {
-        setTimeout(() => runWaveAnimation(), 1200)
-      }
+      if (!isHoveringRef.current) return
+
+      // Phase 2: Return to home position
+      setRotations(prev => prev.map((rowArr, row) =>
+        rowArr.map((rot, col) => {
+          if (shouldAnimate(row, col, currentPattern)) {
+            return rot - 120
+          }
+          return rot
+        })
+      ))
+
+      // Move to next pattern
+      patternRef.current = (patternRef.current + 1) % 8
+
+      // Continue loop with next pattern after returning home
+      setTimeout(() => {
+        if (isHoveringRef.current) {
+          runWaveAnimation()
+        }
+      }, 2000)
     }, 2500)
-  }, [])
+  }, [shouldAnimate])
 
   const handleHover = useCallback(() => {
     if (isHoveringRef.current) return
@@ -2157,15 +2207,11 @@ function LargeTriblockVisual() {
     isHoveringRef.current = false
   }, [])
 
-  // Get wave delay for cascading effect (top to bottom) - slower cascade
+  // Get wave delay for cascading effect - slower
   const getDelay = (row: number, col: number) => {
-    const pattern = wavePattern % 3
-    switch (pattern) {
-      case 0: return row * 80 + col * 30 // Top-left to bottom-right
-      case 1: return row * 120 // Row by row
-      case 2: return (rows - 1 - row) * 80 + col * 30 // Bottom to top
-      default: return row * 80
-    }
+    const isMiddle = row >= 2 && row <= 5
+    if (!isMiddle) return 0
+    return col * 60 // Slow cascade from left to right
   }
 
   return (
