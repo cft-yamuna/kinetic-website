@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tri-Helix Kinetic Display - Wall Mode</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        canvas {
+            display: block;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #status-box {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #444;
+            padding: 10px 20px;
+            border-radius: 4px;
+            color: #00ffcc;
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+            transition: all 0.3s ease;
+        }
+        #replay-btn {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 20, 0.8);
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            padding: 12px 24px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 2px;
+            font-family: 'Courier New', Courier, monospace;
+            transition: all 0.2s;
+            pointer-events: auto;
+            z-index: 20;
+        }
+        #replay-btn:hover {
+            background: #00ffcc;
+            color: black;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <div id="status-box">SYSTEM STATE: PANORAMIC WALL (UNFOLDING)</div>
+    </div>
+
+    <button id="replay-btn">Replay Sequence</button>
+
+    <!-- Import Three.js as an ES Module -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // --- CONFIGURATION ---
+        const CONFIG = {
+            layers: 6,            // 6 Stacks
+            radius: 3.5,          // Distance from center to vertex
+            height: 3.0,          // Tall Stacks
+            gap: 0.25,            // Gap between slices
+            rotationSpeed: 0.08,  // Snappier rotation
+            expansionSpeed: 0.08, // Snappier movement
+            ledBrightness: 1.2
+        };
+
+        // --- CALCULATED GEOMETRY ---
+        const sideLength = CONFIG.radius * Math.sqrt(3);
+        const apothem = CONFIG.radius * 0.5; 
+
+        // Animation Timing State
+        let startTime = 0;
+        const clock = new THREE.Clock();
+        const statusBox = document.getElementById('status-box');
+
+        // --- SCENE SETUP ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050505);
+        scene.fog = new THREE.FogExp2(0x050505, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2, 60); // Wide view for wall
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        // --- LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        scene.add(ambientLight);
+
+        const spotLight = new THREE.SpotLight(0xffffff, 80);
+        spotLight.position.set(20, 30, 40);
+        spotLight.angle = 0.5;
+        spotLight.penumbra = 0.5;
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+
+        const blueLight = new THREE.PointLight(0x0088ff, 40, 30);
+        blueLight.position.set(-20, 10, -10);
+        scene.add(blueLight);
+
+        const purpleLight = new THREE.PointLight(0xff00cc, 40, 30);
+        purpleLight.position.set(20, -5, -10);
+        scene.add(purpleLight);
+
+        // --- STATIC BASE PLINTH ---
+        const baseHeight = 2.0;
+        const lowestStackY = (0 * (CONFIG.height + CONFIG.gap)) - ((CONFIG.layers * (CONFIG.height + CONFIG.gap)) / 2);
+        
+        const baseGeo = new THREE.CylinderGeometry(CONFIG.radius * 1.3, CONFIG.radius * 1.5, baseHeight, 6);
+        const baseMat = new THREE.MeshStandardMaterial({ 
+            color: 0x111111, 
+            roughness: 0.3, 
+            metalness: 0.9 
+        });
+        const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+        baseMesh.position.y = lowestStackY - (CONFIG.height/2) - (baseHeight/2) - 0.1;
+        baseMesh.receiveShadow = true;
+        baseMesh.castShadow = true;
+        scene.add(baseMesh);
+
+        // --- DYNAMIC LED TEXTURE ---
+        const ledCanvas = document.createElement('canvas');
+        ledCanvas.width = 1024;
+        ledCanvas.height = 1024;
+        const ledCtx = ledCanvas.getContext('2d');
+        const ledTexture = new THREE.CanvasTexture(ledCanvas);
+        
+        function updateLEDContent(time) {
+            const hue = (time * 10) % 360;
+            const gradient = ledCtx.createLinearGradient(0, 0, 0, 1024);
+            gradient.addColorStop(0, `hsl(${hue}, 80%, 15%)`);
+            gradient.addColorStop(0.5, `hsl(${(hue + 60) % 360}, 80%, 30%)`);
+            gradient.addColorStop(1, `hsl(${(hue + 120) % 360}, 80%, 15%)`);
+            
+            ledCtx.fillStyle = gradient;
+            ledCtx.fillRect(0, 0, 1024, 1024);
+
+            ledCtx.fillStyle = "rgba(255, 255, 255, 0.15)";
+            for(let i=0; i<60; i++) {
+                const x = Math.random() * 1024;
+                const y = Math.random() * 1024;
+                const w = Math.random() * 40 + 5;
+                ledCtx.fillRect(x, y, w, 3);
+            }
+
+            ledCtx.lineWidth = 15;
+            ledCtx.strokeStyle = "#ffd700";
+            ledCtx.beginPath();
+            for (let y = 0; y < 1024; y += 20) {
+                const x = 512 + Math.sin(y * 0.01 + time * 2) * 300;
+                if (y===0) ledCtx.moveTo(x, y);
+                else ledCtx.lineTo(x, y);
+            }
+            ledCtx.stroke();
+
+            ledCtx.strokeStyle = "rgba(0, 255, 255, 0.3)";
+            ledCtx.lineWidth = 2;
+            ledCtx.beginPath();
+            ledCtx.arc(512, 512, 100 + Math.sin(time)*50, 0, Math.PI*2);
+            ledCtx.stroke();
+
+            ledCtx.fillStyle = "rgba(0,0,0,0.3)";
+            for(let y=0; y<1024; y+=4) ledCtx.fillRect(0, y, 1024, 1);
+
+            ledTexture.needsUpdate = true;
+        }
+
+        // --- GEOMETRY GENERATION ---
+        const panelGeoBase = new THREE.BoxGeometry(sideLength, CONFIG.height, 0.2); 
+        const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+        const ledMat = new THREE.MeshStandardMaterial({
+            color: 0x222222, map: ledTexture, emissive: 0xffffff, emissiveMap: ledTexture,
+            emissiveIntensity: CONFIG.ledBrightness, roughness: 0.2, metalness: 0.8
+        });
+        const materials = [darkMat, darkMat, darkMat, darkMat, ledMat, darkMat];
+
+        const geometries = [];
+        for(let i=0; i<3; i++) {
+            const geo = panelGeoBase.clone();
+            const uvs = geo.attributes.uv;
+            const normals = geo.attributes.normal;
+            for (let j = 0; j < uvs.count; j++) {
+                if (normals.getZ(j) > 0.9) {
+                    uvs.setX(j, (i / 3) + (uvs.getX(j) / 3));
+                }
+            }
+            geometries.push(geo);
+        }
+
+        const slices = [];
+        const towerGroup = new THREE.Group();
+
+        for (let i = 0; i < CONFIG.layers; i++) {
+            const layerGroup = new THREE.Group();
+            for (let side = 0; side < 3; side++) {
+                const mesh = new THREE.Mesh(geometries[side], materials);
+                const angle = (side * 120) * (Math.PI / 180);
+                const panelHolder = new THREE.Group();
+                panelHolder.rotation.y = angle;
+                mesh.position.z = apothem; 
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                panelHolder.add(mesh);
+                panelHolder.userData = { id: side, baseAngle: angle, basePos: new THREE.Vector3(0,0,0) };
+                layerGroup.add(panelHolder);
+            }
+            const yPos = (i * (CONFIG.height + CONFIG.gap)) - ((CONFIG.layers * (CONFIG.height + CONFIG.gap)) / 2);
+            layerGroup.position.y = yPos;
+            layerGroup.userData = { index: i, panels: layerGroup.children };
+            slices.push(layerGroup);
+            towerGroup.add(layerGroup);
+        }
+        scene.add(towerGroup);
+
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1, metalness: 0.8 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -15;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // --- CALCULATE TARGET POSITIONS ---
+
+        function getPanelTarget(isUnfolded, sideId) {
+            let holderRotY = 0; 
+            let holderPosX = 0;
+            let meshZ = apothem;
+
+            if (!isUnfolded) {
+                // CLOSED STATE (Triangle)
+                if (sideId === 0) holderRotY = 0;
+                else if (sideId === 1) holderRotY = (120 * Math.PI) / 180;
+                else if (sideId === 2) holderRotY = (240 * Math.PI) / 180;
+                holderPosX = 0;
+            } else {
+                // OPEN STATE (Wall)
+                if (sideId === 0) { // Front
+                    holderRotY = 0;
+                    holderPosX = 0;
+                }
+                else if (sideId === 1) { // Left Back
+                    holderRotY = 0; 
+                    holderPosX = -sideLength; 
+                }
+                else if (sideId === 2) { // Right Back
+                    holderRotY = Math.PI * 2; 
+                    holderPosX = sideLength; 
+                }
+            }
+
+            return { holderRotY, holderPosX, meshZ };
+        }
+
+        // --- ANIMATION LOOP ---
+        
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = clock.getElapsedTime();
+            const delta = clock.getDelta(); // keep clock running
+            
+            // Time relative to the start of the sequence
+            const seqTime = time - startTime;
+
+            updateLEDContent(time);
+
+            // Animate Layers
+            slices.forEach((layer) => {
+                const layerIndex = layer.userData.index;
+                const staggerDelay = 0.3; 
+                const triggerTime = layerIndex * staggerDelay; // Bottom layers first
+
+                // Determine if this specific layer should be unfolded yet
+                const isLayerActive = seqTime > triggerTime;
+                
+                // --- PRESENTATION TWIST LOGIC ---
+                let overrideRotation = 0;
+                if (isLayerActive) {
+                    const activeDuration = seqTime - triggerTime;
+                    if (activeDuration < 0.5) {
+                        // Twist effect when opening
+                        overrideRotation = Math.sin(activeDuration * Math.PI * 2) * 0.5;
+                    }
+                }
+
+                // Interpolate Layer Rotation (Base is 0 for both states, just the twist)
+                const targetLayerRot = overrideRotation;
+                layer.rotation.y += (targetLayerRot - layer.rotation.y) * CONFIG.rotationSpeed;
+
+                // Interpolate Panels
+                layer.userData.panels.forEach(holder => {
+                    // Get target based on whether this layer is active (Unfolded) or not (Closed)
+                    const target = getPanelTarget(isLayerActive, holder.userData.id);
+                    const mesh = holder.children[0];
+
+                    // Lerp Rotation
+                    let diff = target.holderRotY - holder.rotation.y;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    holder.rotation.y += diff * CONFIG.expansionSpeed;
+
+                    // Lerp Position
+                    holder.position.x += (target.holderPosX - holder.position.x) * CONFIG.expansionSpeed;
+                    
+                    // Z Position (Apothem is constant in this version, but lerp ensures stability)
+                    mesh.position.z += (target.meshZ - mesh.position.z) * CONFIG.expansionSpeed;
+                });
+            });
+
+            // Camera Motion
+            camera.position.x = Math.sin(time * 0.1) * 40;
+            camera.position.z = Math.cos(time * 0.1) * 60;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        // Replay Button Logic
+        document.getElementById('replay-btn').addEventListener('click', () => {
+            startTime = clock.getElapsedTime(); // Reset sequence timer
+            statusBox.innerText = "SYSTEM STATE: RESTARTING SEQUENCE...";
+            setTimeout(() => { statusBox.innerText = "SYSTEM STATE: PANORAMIC WALL (UNFOLDING)"; }, 1000);
+        });
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+
+    </script>
+</body>
+</html>

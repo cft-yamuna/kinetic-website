@@ -3,7 +3,9 @@
     "allow": [
       "Bash(npm run dev:*)",
       "mcp__ide__getDiagnostics",
-      "WebFetch(domain:in.pinterest.com)"
+      "WebFetch(domain:in.pinterest.com)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

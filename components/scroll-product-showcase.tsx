@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect, useCallback, useMemo } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import { ArrowRight, Sparkles } from "lucide-react"
 import Link from "next/link"
 
@@ -87,10 +87,11 @@ const HRMS_BOXES = [
   { id: 5, text: 'HRMS', backText: 'SYSTEM' },
 ]
 
-const HRMS_PRIMARY = '#8B5CF6'
-const HRMS_GLOW = 'rgba(139, 92, 246, 0.4)'
-const HRMS_DARK = '#5B21B6'
-const HRMS_SECONDARY = '#7C3AED'
+// HRMS uses warm amber from brand palette
+const HRMS_PRIMARY = '#EF9145'
+const HRMS_GLOW = 'rgba(239, 145, 69, 0.4)'
+const HRMS_DARK = '#994E1F'
+const HRMS_SECONDARY = '#BA5617'
 
 // Product data
 const products = [
@@ -111,19 +112,27 @@ const products = [
     type: "flap",
   },
   {
+    id: "trihelix",
+    title: "TRI-HELIX",
+    subtitle: "Panoramic Display",
+    gradient: "from-yellow-400 via-amber-400 to-orange-500",
+    accentColor: "#FECC00",
+    type: "trihelix",
+  },
+  {
     id: "hrms",
     title: "HRMS",
     subtitle: "HR Management",
-    gradient: "from-violet-600 via-purple-500 to-indigo-400",
-    accentColor: "#8B5CF6",
+    gradient: "from-orange-500 via-amber-500 to-yellow-500",
+    accentColor: "#EF9145",
     type: "hrms",
   },
   {
     id: "matrix",
     title: "MATRIX",
     subtitle: "Kinetic Screens",
-    gradient: "from-blue-600 via-cyan-500 to-teal-400",
-    accentColor: "#06b6d4",
+    gradient: "from-amber-500 via-yellow-400 to-orange-400",
+    accentColor: "#F5A623",
     type: "matrix",
   },
 ]
@@ -497,16 +506,16 @@ function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () =>
                   style={{
                     width: 46,
                     height: 42,
-                    background: 'linear-gradient(135deg, rgba(6,182,212,0.6) 0%, rgba(8,145,178,0.7) 50%, rgba(14,116,144,0.5) 100%)',
+                    background: 'linear-gradient(135deg, rgba(245,166,35,0.6) 0%, rgba(239,145,69,0.7) 50%, rgba(186,86,23,0.5) 100%)',
                     borderRadius: '3px',
-                    border: '1px solid rgba(6,182,212,0.5)',
-                    boxShadow: '0 0 12px rgba(6,182,212,0.4), inset 0 0 18px rgba(6,182,212,0.3)',
+                    border: '1px solid rgba(245,166,35,0.5)',
+                    boxShadow: '0 0 12px rgba(245,166,35,0.4), inset 0 0 18px rgba(245,166,35,0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.8) 0%, transparent 70%)' }} />
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,166,35,0.8) 0%, transparent 70%)' }} />
                 </motion.div>
               ))}
             </div>
@@ -524,7 +533,188 @@ function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () =>
   )
 }
 
-// Mobile Bento Grid Layout
+// Mobile TRI-HELIX Visual - Wings open/close, 360 rotation, fixed base
+function MobileTriHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
+  const [wingAngle, setWingAngle] = useState(0)
+  const [layerRotations, setLayerRotations] = useState<number[]>([0, 0, 0, 0, 0])
+  const [rotationCycle, setRotationCycle] = useState(0)
+  const [contentPhase, setContentPhase] = useState(0)
+  const layers = 5
+  const layerHeight = 30
+  const layerGap = 5
+  const panelWidth = 60
+
+  // Content for each layer
+  const layerContent = [
+    { closed: 'UNFOLD', open: 'YOUR', rotating: 'TRI' },
+    { closed: 'THE', open: 'BRAND', rotating: 'HELIX' },
+    { closed: 'FUTURE', open: 'IN', rotating: 'LED' },
+    { closed: 'OF', open: '3D', rotating: '360°' },
+    { closed: 'LED', open: 'SPACE', rotating: 'WOW' },
+  ]
+
+  useEffect(() => {
+    if (isActive) {
+      // Open wings slowly
+      setWingAngle(120)
+      setContentPhase(1)
+
+      // Close wings after holding (slower)
+      setTimeout(() => {
+        setWingAngle(0)
+      }, 2500)
+
+      // Rotate each layer like DNA (180 degree flip with stagger)
+      setTimeout(() => {
+        setContentPhase(2)
+        const nextCycle = rotationCycle + 1
+        setRotationCycle(nextCycle)
+        const baseRotation = nextCycle % 2 === 0 ? 0 : 180
+        const newRotations = [0, 1, 2, 3, 4].map((i) => {
+          const variation = ((i * 7) % 11 - 5)
+          return baseRotation + variation
+        })
+        setLayerRotations(newRotations)
+      }, 3500)
+
+      // Return to home position (all straight)
+      setTimeout(() => {
+        setLayerRotations([0, 0, 0, 0, 0])
+        setContentPhase(0)
+      }, 5500)
+    }
+  }, [isActive])
+
+  const totalHeight = layers * (layerHeight + layerGap)
+
+  return (
+    <motion.div
+      className="relative w-full h-full flex flex-col items-center justify-center cursor-pointer"
+      onClick={onTap}
+      whileTap={{ scale: 0.98 }}
+    >
+      <div style={{ perspective: '500px', marginTop: '10px', marginLeft: '25px' }}>
+        {/* Column container - faces straight front */}
+        <div
+          style={{
+            transformStyle: 'preserve-3d',
+            transform: 'rotateX(5deg)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: `${layerGap}px`,
+          }}
+        >
+          {Array.from({ length: layers }).map((_, layerIndex) => {
+            // Each layer has its own rotation - home position is straight (0)
+            const layerRotation = layerRotations[layerIndex]
+            const content = layerContent[layerIndex]
+            const displayText = contentPhase === 0 ? content.closed : contentPhase === 1 ? content.open : content.rotating
+
+            return (
+            <div
+              key={layerIndex}
+              style={{
+                position: 'relative',
+                transform: `rotateY(${layerRotation}deg)`,
+                transition: `transform 2s ease-in-out ${layerIndex * 0.1}s`,
+                transformStyle: 'preserve-3d',
+              }}
+            >
+              {/* Center Panel */}
+              <div
+                style={{
+                  width: panelWidth,
+                  height: layerHeight,
+                  background: 'linear-gradient(180deg, #e8e8e8 0%, #c0c0c0 100%)',
+                  border: '1.5px solid #999',
+                  borderRadius: '3px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  transform: 'translateZ(10px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <div style={{ width: '85%', height: '65%', background: '#0a0a15', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <span style={{ color: '#FECC00', fontSize: '8px', fontWeight: 'bold', letterSpacing: '0.5px', textShadow: '0 0 6px #FECC00' }}>{displayText}</span>
+                </div>
+              </div>
+              {/* Left Wing */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: panelWidth,
+                  height: layerHeight,
+                  transformOrigin: 'right center',
+                  transform: `translateX(-${panelWidth}px) translateZ(10px) rotateY(${-120 + wingAngle}deg)`,
+                  transition: 'transform 2s ease-in-out',
+                  background: 'linear-gradient(180deg, #e8e8e8 0%, #c0c0c0 100%)',
+                  border: '1.5px solid #999',
+                  borderRadius: '3px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <div style={{ width: '85%', height: '65%', background: '#0a0a15', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <span style={{ color: '#FECC00', fontSize: '7px', fontWeight: 'bold', letterSpacing: '0.5px', textShadow: '0 0 5px #FECC00' }}>
+                    {['KINETIC', 'MOTION', 'VISUAL', 'IMPACT', 'WOW'][layerIndex]}
+                  </span>
+                </div>
+              </div>
+              {/* Right Wing */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  width: panelWidth,
+                  height: layerHeight,
+                  transformOrigin: 'left center',
+                  transform: `translateX(${panelWidth}px) translateZ(10px) rotateY(${120 - wingAngle}deg)`,
+                  transition: 'transform 2s ease-in-out',
+                  background: 'linear-gradient(180deg, #e8e8e8 0%, #c0c0c0 100%)',
+                  border: '1.5px solid #999',
+                  borderRadius: '3px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <div style={{ width: '85%', height: '65%', background: '#0a0a15', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <span style={{ color: '#FECC00', fontSize: '7px', fontWeight: 'bold', letterSpacing: '0.5px', textShadow: '0 0 5px #FECC00' }}>
+                    {['SCREENS', 'DISPLAY', 'CONTENT', 'BRANDS', 'AMAZE'][layerIndex]}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )
+          })}
+        </div>
+      </div>
+
+      {/* Base - Below the column */}
+      <div
+        style={{
+          marginTop: '8px',
+          marginLeft: '25px',
+          width: panelWidth * 1.6,
+          height: 12,
+          background: 'linear-gradient(180deg, #444 0%, #222 100%)',
+          border: '1.5px solid #555',
+          borderRadius: '3px',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.6)',
+        }}
+      />
+    </motion.div>
+  )
+}
+
 // Hook to detect when element is in view (once only)
 function useInViewOnce(threshold = 0.5) {
   const ref = useRef<HTMLDivElement>(null)
@@ -600,7 +790,7 @@ function MobileProductCard({
     >
       {children}
       <div className="absolute top-3 left-3">
-        <span className={`text-lg font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{title}</span>
+        <span className="text-lg font-bold text-white">{title}</span>
         <p className="text-[10px] text-white/50">{subtitle}</p>
       </div>
     </motion.div>
@@ -656,14 +846,29 @@ function MobileShowcase() {
           <MobileFlapCard isActive={activeCard === 'flap'} onTap={() => handleAnimate('flap')} />
         </MobileProductCard>
 
+        {/* TRI-HELIX */}
+        <MobileProductCard
+          productId="trihelix"
+          title="TRI-HELIX"
+          subtitle="Panoramic Display"
+          gradient="from-yellow-400 to-amber-500"
+          bgGradient="linear-gradient(135deg, rgba(254,204,0,0.1) 0%, rgba(0,0,0,0.8) 100%)"
+          borderColor="rgba(254,204,0,0.2)"
+          height={250}
+          onAnimate={() => handleAnimate('trihelix')}
+          isActive={activeCard === 'trihelix'}
+        >
+          <MobileTriHelixCard isActive={activeCard === 'trihelix'} onTap={() => handleAnimate('trihelix')} />
+        </MobileProductCard>
+
         {/* HRMS */}
         <MobileProductCard
           productId="hrms"
           title="HRMS"
           subtitle="HR Management System"
-          gradient="from-violet-500 to-purple-400"
-          bgGradient="linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(0,0,0,0.8) 100%)"
-          borderColor="rgba(139,92,246,0.2)"
+          gradient="from-orange-500 to-amber-400"
+          bgGradient="linear-gradient(135deg, rgba(239,145,69,0.1) 0%, rgba(0,0,0,0.8) 100%)"
+          borderColor="rgba(239,145,69,0.2)"
           height={220}
           onAnimate={() => handleAnimate('hrms')}
           isActive={activeCard === 'hrms'}
@@ -676,9 +881,9 @@ function MobileShowcase() {
           productId="matrix"
           title="MATRIX"
           subtitle="Kinetic Screens"
-          gradient="from-cyan-500 to-teal-400"
-          bgGradient="linear-gradient(135deg, rgba(6,182,212,0.1) 0%, rgba(0,0,0,0.8) 100%)"
-          borderColor="rgba(6,182,212,0.2)"
+          gradient="from-amber-500 to-orange-400"
+          bgGradient="linear-gradient(135deg, rgba(245,166,35,0.1) 0%, rgba(0,0,0,0.8) 100%)"
+          borderColor="rgba(245,166,35,0.2)"
           height={230}
           onAnimate={() => handleAnimate('matrix')}
           isActive={activeCard === 'matrix'}
@@ -977,8 +1182,8 @@ function MatrixVisual({ isActive }: { isActive: boolean }) {
             return (
               <div key={colIndex} className="flex flex-col" style={{ gap: '3px' }}>
                 {[0, 1, 2].map((rowIndex) => (
-                  <div key={rowIndex} style={{ width: 120, height: 100, transform: `translateY(${offsets[rowIndex] * 50}px)`, transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)', background: 'linear-gradient(135deg, rgba(6,182,212,0.6) 0%, rgba(8,145,178,0.7) 50%, rgba(14,116,144,0.5) 100%)', borderRadius: '4px', border: '1px solid rgba(6,182,212,0.5)', boxShadow: '0 0 25px rgba(6,182,212,0.5), inset 0 0 30px rgba(6,182,212,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.8) 0%, transparent 70%)' }} />
+                  <div key={rowIndex} style={{ width: 120, height: 100, transform: `translateY(${offsets[rowIndex] * 50}px)`, transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)', background: 'linear-gradient(135deg, rgba(245,166,35,0.6) 0%, rgba(239,145,69,0.7) 50%, rgba(186,86,23,0.5) 100%)', borderRadius: '4px', border: '1px solid rgba(245,166,35,0.5)', boxShadow: '0 0 25px rgba(245,166,35,0.5), inset 0 0 30px rgba(245,166,35,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,166,35,0.8) 0%, transparent 70%)' }} />
                   </div>
                 ))}
               </div>
@@ -986,7 +1191,7 @@ function MatrixVisual({ isActive }: { isActive: boolean }) {
           })}
         </div>
         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2" style={{ width: '90%', height: '20px', background: 'linear-gradient(180deg, #2a2a40 0%, #1a1a2e 100%)', borderRadius: '0 0 8px 8px' }} />
-        <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[700px] h-[100px]" style={{ background: 'radial-gradient(ellipse, rgba(6,182,212,0.35) 0%, transparent 70%)', filter: 'blur(25px)' }} />
+        <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[700px] h-[100px]" style={{ background: 'radial-gradient(ellipse, rgba(245,166,35,0.35) 0%, transparent 70%)', filter: 'blur(25px)' }} />
       </div>
     </div>
   )
@@ -1583,143 +1788,760 @@ function BentoMatrixVisual({ isActive }: { isActive: boolean }) {
                     height: 36,
                     transform: `translateY(${getOffset(colIndex) * 30}px)`,
                     transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-                    background: 'linear-gradient(135deg, rgba(6,182,212,0.5) 0%, rgba(8,145,178,0.6) 50%, rgba(14,116,144,0.4) 100%)',
+                    background: 'linear-gradient(135deg, rgba(245,166,35,0.5) 0%, rgba(239,145,69,0.6) 50%, rgba(186,86,23,0.4) 100%)',
                     borderRadius: '3px',
-                    border: '1px solid rgba(6,182,212,0.4)',
-                    boxShadow: '0 0 15px rgba(6,182,212,0.3), inset 0 0 15px rgba(6,182,212,0.2)',
+                    border: '1px solid rgba(245,166,35,0.4)',
+                    boxShadow: '0 0 15px rgba(245,166,35,0.3), inset 0 0 15px rgba(245,166,35,0.2)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.7) 0%, transparent 70%)' }} />
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,166,35,0.7) 0%, transparent 70%)' }} />
                 </div>
               ))}
             </div>
           ))}
         </div>
       </div>
-      <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[300px] h-[50px]" style={{ background: 'radial-gradient(ellipse, rgba(6,182,212,0.35) 0%, transparent 70%)', filter: 'blur(15px)' }} />
+      <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[300px] h-[50px]" style={{ background: 'radial-gradient(ellipse, rgba(245,166,35,0.35) 0%, transparent 70%)', filter: 'blur(15px)' }} />
     </div>
   )
 }
 
-// Desktop Bento Grid Showcase
-function DesktopShowcase() {
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null)
-  const sectionRef = useRef<HTMLDivElement>(null)
+// Product descriptions for the left side
+const productDescriptions: Record<string, { tagline: string; description: string; features: string[] }> = {
+  triblock: {
+    tagline: "Transform Any Surface",
+    description: "Revolutionary pixel wall technology that brings static surfaces to life with dynamic, responsive displays.",
+    features: ["360° Rotation", "Interactive Touch", "Modular Design"],
+  },
+  flap: {
+    tagline: "Retro Meets Modern",
+    description: "Classic split-flap aesthetics reimagined with cutting-edge mechanics for mesmerizing visual storytelling.",
+    features: ["Multi-layer Flip", "Wave Patterns", "Custom Content"],
+  },
+  trihelix: {
+    tagline: "Unfold The Future",
+    description: "Triangular prism towers that dramatically unfold into panoramic LED walls, creating breathtaking reveals.",
+    features: ["Unfolding Panels", "LED Displays", "Stacked Layers"],
+  },
+  hrms: {
+    tagline: "Intelligent Movement",
+    description: "Synchronized pillar systems that create stunning 3D kinetic sculptures for corporate and retail spaces.",
+    features: ["3D Rotation", "Pillar Movement", "Brand Integration"],
+  },
+  matrix: {
+    tagline: "Fluid Motion Displays",
+    description: "Wave-motion LED panels that create hypnotic patterns, perfect for immersive environments.",
+    features: ["Wave Motion", "Color Sync", "Ambient Sensing"],
+  },
+}
+
+// Animation variants for smooth transitions (from night commit)
+const contentVariants = {
+  enter: (d: number) => ({ y: d > 0 ? 80 : -80, opacity: 0 }),
+  center: { y: 0, opacity: 1 },
+  exit: (d: number) => ({ y: d < 0 ? 80 : -80, opacity: 0 }),
+}
+
+const visualVariants = {
+  enter: (d: number) => ({ scale: 0.85, opacity: 0, rotateY: d > 0 ? 20 : -20 }),
+  center: { scale: 1, opacity: 1, rotateY: 0 },
+  exit: (d: number) => ({ scale: 0.85, opacity: 0, rotateY: d < 0 ? 20 : -20 }),
+}
+
+// Consistent visual container size target: ~550px width, ~380px height
+const VISUAL_ROWS = 10
+const VISUAL_COLS = 14
+
+// Large-scale visuals for scroll sections
+function LargeTriblockVisual() {
+  const [blocks] = useState(() => generateTriblocks(VISUAL_ROWS, VISUAL_COLS))
+  const [activatedBlocks, setActivatedBlocks] = useState<Map<string, number>>(new Map())
+  const gridRef = useRef<HTMLDivElement>(null)
+  const blockSize = 36
+  const gap = 4
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!gridRef.current) return
+    const rect = gridRef.current.getBoundingClientRect()
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+    const maxRadius = 120
+    const newActivated = new Map<string, number>()
+    const centerCol = Math.floor(mouseX / (blockSize + gap))
+    const centerRow = Math.floor(mouseY / (blockSize + gap))
+    const checkRadius = Math.ceil(maxRadius / blockSize) + 1
+    for (let row = Math.max(0, centerRow - checkRadius); row < Math.min(VISUAL_ROWS, centerRow + checkRadius + 1); row++) {
+      for (let col = Math.max(0, centerCol - checkRadius); col < Math.min(VISUAL_COLS, centerCol + checkRadius + 1); col++) {
+        const blockCenterX = col * (blockSize + gap) + blockSize / 2
+        const blockCenterY = row * (blockSize + gap) + blockSize / 2
+        const distance = Math.sqrt(Math.pow(mouseX - blockCenterX, 2) + Math.pow(mouseY - blockCenterY, 2))
+        if (distance < maxRadius) {
+          newActivated.set(`${row}-${col}`, Math.pow(1 - distance / maxRadius, 1.5))
+        }
+      }
+    }
+    setActivatedBlocks(newActivated)
+  }, [])
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen bg-black py-20 px-6 lg:px-12 overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-neutral-900" />
+    <div
+      className="relative"
+      style={{ perspective: '1200px' }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setActivatedBlocks(new Map())}
+    >
+      <div ref={gridRef} style={{ transformStyle: 'preserve-3d', transform: 'rotateX(-12deg) rotateY(18deg)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${VISUAL_COLS}, ${blockSize}px)`, gap: `${gap}px` }}>
+          {blocks.map((block) => {
+            const intensity = activatedBlocks.get(block.id) || 0
+            return (
+              <div
+                key={block.id}
+                style={{
+                  width: blockSize,
+                  height: blockSize,
+                  background: `linear-gradient(145deg, ${adjustColor(block.colors.face1, 35)} 0%, ${block.colors.face1} 50%, ${adjustColor(block.colors.face1, -20)} 100%)`,
+                  borderRadius: '3px',
+                  transform: `translateY(${intensity > 0.1 ? -5 : 0}px)`,
+                  transition: 'transform 0.2s ease-out, box-shadow 0.2s ease-out',
+                  boxShadow: intensity > 0.1
+                    ? `0 8px 20px rgba(0,0,0,0.5), 0 0 20px rgba(225,121,36,${intensity * 0.6})`
+                    : '0 2px 6px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.2)',
+                }}
+              />
+            )
+          })}
+        </div>
+        <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[550px] h-[100px]" style={{ background: 'radial-gradient(ellipse, rgba(225,121,36,0.5) 0%, transparent 70%)', filter: 'blur(25px)' }} />
+      </div>
+    </div>
+  )
+}
 
-      {/* Ambient glows */}
-      <motion.div
-        className="absolute top-20 right-20 w-[500px] h-[500px] rounded-full blur-[150px] opacity-20"
-        animate={{
-          background: hoveredCard
-            ? `radial-gradient(circle, ${products.find(p => p.id === hoveredCard)?.accentColor || '#E17924'}, transparent)`
-            : 'radial-gradient(circle, #E17924, transparent)'
-        }}
-        transition={{ duration: 0.8 }}
-      />
-      <motion.div
-        className="absolute bottom-20 left-20 w-[400px] h-[400px] rounded-full blur-[120px] opacity-15"
-        animate={{
-          background: hoveredCard
-            ? `radial-gradient(circle, ${products.find(p => p.id === hoveredCard)?.accentColor || '#8B5CF6'}, transparent)`
-            : 'radial-gradient(circle, #8B5CF6, transparent)'
-        }}
-        transition={{ duration: 0.8 }}
-      />
+function LargeFlapVisual() {
+  const rows = 8
+  const cols = 14
+  const blockSize = 38
+  const gap = 4
+  const [animationCycle, setAnimationCycle] = useState(0)
+  const [patternIndex, setPatternIndex] = useState(0)
 
-      <div className="relative max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+  const getWaveDelay = useCallback((row: number, col: number, patternIdx: number) => {
+    switch (patternIdx % 5) {
+      case 0: return (row + col) * 60
+      case 1: return Math.sqrt(Math.pow(row - rows/2, 2) + Math.pow(col - cols/2, 2)) * 80
+      case 2: return ((rows - 1 - row) + (cols - 1 - col)) * 60
+      case 3: return (row + (cols - 1 - col)) * 60
+      case 4: return ((rows - 1 - row) + col) * 60
+      default: return 0
+    }
+  }, [rows, cols])
+
+  useEffect(() => {
+    const runAnimation = () => {
+      setAnimationCycle(prev => prev + 1)
+      setPatternIndex(prev => (prev + 1) % SETTLED_PATTERNS.length)
+    }
+
+    const initialTimeout = setTimeout(runAnimation, 500)
+    const interval = setInterval(runAnimation, 7000)
+
+    return () => {
+      clearTimeout(initialTimeout)
+      clearInterval(interval)
+    }
+  }, [])
+
+  const getExtendedContent = (row: number, col: number) => {
+    const basePattern = SETTLED_PATTERNS[patternIndex]
+    const baseRow = row % 5
+    const baseCol = col % 8
+    return basePattern[baseRow]?.[baseCol] ?? 10
+  }
+
+  return (
+    <div className="relative" style={{ perspective: '1000px' }}>
+      <div style={{
+        padding: '0',
+        transform: 'rotateX(8deg)',
+        transformStyle: 'preserve-3d'
+      }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${blockSize}px)`, gap: `${gap}px` }}>
+          {Array.from({ length: rows * cols }).map((_, index) => {
+            const row = Math.floor(index / cols)
+            const col = index % cols
+            const finalContent = getExtendedContent(row, col)
+            return (
+              <BentoFlapBlock
+                key={`${row}-${col}-${animationCycle}`}
+                delay={getWaveDelay(row, col, patternIndex)}
+                finalContent={finalContent}
+                flipCount={4 + (index % 3)}
+              />
+            )
+          })}
+        </div>
+      </div>
+      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[550px] h-[100px]" style={{ background: 'radial-gradient(ellipse, rgba(245,158,11,0.5) 0%, transparent 70%)', filter: 'blur(25px)' }} />
+    </div>
+  )
+}
+
+// TRI-HELIX: Triangular LED column - wings open, then 360 rotation, base stays fixed
+function LargeTriHelixVisual() {
+  const [wingAngle, setWingAngle] = useState(0)
+  const [layerRotations, setLayerRotations] = useState<number[]>([0, 0, 0, 0, 0, 0])
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [rotationCycle, setRotationCycle] = useState(0)
+  const [contentPhase, setContentPhase] = useState(0) // 0: closed, 1: open, 2: rotating
+  const layers = 6
+  const layerHeight = 58
+  const layerGap = 5
+  const panelWidth = 145 // Wider panels
+
+  // Content for each layer's LED screen (changes with animation phase)
+  const layerContent = [
+    { closed: 'UNFOLD', open: 'YOUR', rotating: 'TRI' },
+    { closed: 'THE', open: 'BRAND', rotating: 'HELIX' },
+    { closed: 'FUTURE', open: 'STORY', rotating: 'LED' },
+    { closed: 'OF', open: 'IN', rotating: 'DISPLAY' },
+    { closed: 'DISPLAY', open: '3D', rotating: 'SYSTEM' },
+    { closed: 'TECH', open: 'SPACE', rotating: '360°' },
+  ]
+
+  // Track if still hovering for loop
+  const isHoveringRef = useRef(false)
+
+  // Animation sequence - loops while hovering
+  const runAnimation = useCallback(() => {
+    if (!isHoveringRef.current) return
+
+    setIsAnimating(true)
+
+    // Phase 1: Open wings slowly
+    setWingAngle(120)
+    setContentPhase(1)
+
+    // Phase 2: Close wings (slower)
+    setTimeout(() => {
+      if (!isHoveringRef.current) return
+      setWingAngle(0)
+    }, 3000)
+
+    // Phase 3: Rotate each layer like DNA (180 degree flip with stagger)
+    setTimeout(() => {
+      if (!isHoveringRef.current) return
+      setContentPhase(2)
+      setRotationCycle(prev => prev + 1)
+      const newRotations = [0, 1, 2, 3, 4, 5].map((i) => {
+        const variation = ((i * 7) % 11 - 5)
+        return 180 + variation
+      })
+      setLayerRotations(newRotations)
+    }, 4500)
+
+    // Phase 4: Return to home position (all straight)
+    setTimeout(() => {
+      if (!isHoveringRef.current) return
+      setLayerRotations([0, 0, 0, 0, 0, 0])
+      setContentPhase(0)
+    }, 7500)
+
+    // Phase 5: Loop again if still hovering
+    setTimeout(() => {
+      setIsAnimating(false)
+      if (isHoveringRef.current) {
+        runAnimation()
+      }
+    }, 9000)
+  }, [])
+
+  const handleHover = useCallback(() => {
+    if (isAnimating) return
+    isHoveringRef.current = true
+    runAnimation()
+  }, [isAnimating, runAnimation])
+
+  const handleHoverEnd = useCallback(() => {
+    isHoveringRef.current = false
+  }, [])
+
+  const totalHeight = layers * (layerHeight + layerGap)
+
+  return (
+    <div
+      className="relative cursor-pointer flex items-center justify-center"
+      style={{ perspective: '1200px', height: totalHeight + 120 }}
+      onMouseEnter={handleHover}
+      onMouseLeave={handleHoverEnd}
+    >
+      {/* Column container - faces straight front */}
+      <div
+        style={{
+          transformStyle: 'preserve-3d',
+          transform: 'rotateX(8deg)',
+        }}
+      >
+        {/* Triangular Column Structure */}
+        <div
+          className="relative"
+          style={{
+            transformStyle: 'preserve-3d',
+            width: panelWidth,
+            height: totalHeight,
+          }}
         >
-          <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">
-            Our <span className="bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-500 bg-clip-text text-transparent">Products</span>
-          </h2>
-          <p className="text-lg text-white/50 max-w-2xl mx-auto">
-            Interactive kinetic displays that captivate and engage. Hover to explore each product.
-          </p>
-        </motion.div>
+          {Array.from({ length: layers }).map((_, layerIndex) => {
+            const yPos = layerIndex * (layerHeight + layerGap)
+            // Each layer has its own rotation - home position is straight (0)
+            const layerRotation = layerRotations[layerIndex]
+            // Get content based on current phase
+            const content = layerContent[layerIndex]
+            const displayText = contentPhase === 0 ? content.closed : contentPhase === 1 ? content.open : content.rotating
 
-        {/* Bento Grid */}
-        <div className="grid grid-cols-3 grid-rows-[360px_280px] gap-5">
-          {/* TRIBLOCK - Large Featured (spans 2 cols, 1 row) */}
-          <BentoCard
-            product={products[0]}
-            className="col-span-2 row-span-1"
-            isHovered={hoveredCard === 'triblock'}
-            onHover={() => setHoveredCard('triblock')}
-            onLeave={() => setHoveredCard(null)}
-            delay={0}
-          >
-            <BentoTriblockVisual isActive={hoveredCard === 'triblock' || hoveredCard === null} />
-          </BentoCard>
+            return (
+              <div
+                key={layerIndex}
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  transformStyle: 'preserve-3d',
+                  transform: `translateX(-50%) translateY(${yPos}px) rotateY(${layerRotation}deg)`,
+                  transition: `transform 2.5s ease-in-out ${layerIndex * 0.15}s`,
+                  width: panelWidth,
+                  height: layerHeight,
+                }}
+              >
+                {/* Front Panel (Center) */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    width: panelWidth,
+                    height: layerHeight,
+                    transform: 'translateZ(35px)',
+                    background: 'linear-gradient(180deg, #f0f0f0 0%, #d0d0d0 50%, #b0b0b0 100%)',
+                    border: '2px solid #999',
+                    borderRadius: '4px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 2px 15px rgba(255,255,255,0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {/* LED screen with dynamic content */}
+                  <div
+                    style={{
+                      width: '88%',
+                      height: '75%',
+                      background: 'linear-gradient(180deg, #151520 0%, #0a0a12 100%)',
+                      borderRadius: '3px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: 'inset 0 0 25px rgba(254,204,0,0.25)',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: '#FECC00',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        letterSpacing: '2px',
+                        textShadow: '0 0 10px #FECC00, 0 0 20px rgba(254,204,0,0.5)',
+                        transition: 'opacity 0.5s ease-in-out',
+                      }}
+                    >
+                      {displayText}
+                    </span>
+                  </div>
+                </div>
 
-          {/* FLAP - Medium (1 col, 1 row) */}
-          <BentoCard
-            product={products[1]}
-            className="col-span-1 row-span-1"
-            isHovered={hoveredCard === 'flap'}
-            onHover={() => setHoveredCard('flap')}
-            onLeave={() => setHoveredCard(null)}
-            delay={0.1}
-          >
-            <BentoFlapVisual isActive={hoveredCard === 'flap' || hoveredCard === null} />
-          </BentoCard>
+                {/* Left Wing Panel */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    width: panelWidth,
+                    height: layerHeight,
+                    transformOrigin: 'right center',
+                    transform: `translateZ(35px) translateX(-${panelWidth}px) rotateY(${-120 + wingAngle}deg)`,
+                    transition: 'transform 2.5s ease-in-out',
+                    background: 'linear-gradient(180deg, #f0f0f0 0%, #d0d0d0 50%, #b0b0b0 100%)',
+                    border: '2px solid #999',
+                    borderRadius: '4px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 2px 15px rgba(255,255,255,0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <div style={{ width: '88%', height: '75%', background: 'linear-gradient(180deg, #151520 0%, #0a0a12 100%)', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 25px rgba(254,204,0,0.25)', overflow: 'hidden' }}>
+                    <span style={{ color: '#FECC00', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px', textShadow: '0 0 8px #FECC00' }}>
+                      {['KINETIC', 'DYNAMIC', 'MOTION', 'VISUAL', 'IMPACT', 'ENGAGE'][layerIndex]}
+                    </span>
+                  </div>
+                </div>
 
-          {/* MATRIX - Medium (1 col, 1 row) */}
-          <BentoCard
-            product={products[3]}
-            className="col-span-1 row-span-1"
-            isHovered={hoveredCard === 'matrix'}
-            onHover={() => setHoveredCard('matrix')}
-            onLeave={() => setHoveredCard(null)}
-            delay={0.2}
-          >
-            <BentoMatrixVisual isActive={hoveredCard === 'matrix' || hoveredCard === null} />
-          </BentoCard>
+                {/* Right Wing Panel */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    width: panelWidth,
+                    height: layerHeight,
+                    transformOrigin: 'left center',
+                    transform: `translateZ(35px) translateX(${panelWidth}px) rotateY(${120 - wingAngle}deg)`,
+                    transition: 'transform 2.5s ease-in-out',
+                    background: 'linear-gradient(180deg, #f0f0f0 0%, #d0d0d0 50%, #b0b0b0 100%)',
+                    border: '2px solid #999',
+                    borderRadius: '4px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 2px 15px rgba(255,255,255,0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <div style={{ width: '88%', height: '75%', background: 'linear-gradient(180deg, #151520 0%, #0a0a12 100%)', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 25px rgba(254,204,0,0.25)', overflow: 'hidden' }}>
+                    <span style={{ color: '#FECC00', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px', textShadow: '0 0 8px #FECC00' }}>
+                      {['SCREENS', 'DISPLAY', 'CONTENT', 'STORIES', 'BRANDS', 'CROWDS'][layerIndex]}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
 
-          {/* HRMS - Wide (spans 2 cols, 1 row) for pillar movement */}
-          <BentoCard
-            product={products[2]}
-            className="col-span-2 row-span-1"
-            isHovered={hoveredCard === 'hrms'}
-            onHover={() => setHoveredCard('hrms')}
-            onLeave={() => setHoveredCard(null)}
-            delay={0.3}
-          >
-            <BentoHRMSVisual isActive={hoveredCard === 'hrms' || hoveredCard === null} />
-          </BentoCard>
+      {/* Base platform - FIXED, does not rotate */}
+      <div
+        className="absolute"
+        style={{
+          bottom: 20,
+          left: '50%',
+          transform: 'translateX(-50%) rotateX(8deg)',
+          width: 200,
+          height: 30,
+          background: 'linear-gradient(180deg, #444 0%, #222 100%)',
+          border: '2px solid #555',
+          borderRadius: '5px',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.7)',
+        }}
+      />
+
+      {/* Glow effect */}
+      <div
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[450px] h-[120px]"
+        style={{
+          background: 'radial-gradient(ellipse, rgba(254,204,0,0.45) 0%, transparent 70%)',
+          filter: 'blur(35px)',
+        }}
+      />
+    </div>
+  )
+}
+
+function LargeHRMSVisual() {
+  const [rotationCycle, setRotationCycle] = useState(0)
+  const [movementPhase, setMovementPhase] = useState(0)
+  const boxWidth = 150
+  const boxHeight = 55
+  const pillarGap = 12
+
+  useEffect(() => {
+    setRotationCycle(1)
+    setMovementPhase(1)
+    const r = setInterval(() => setRotationCycle(prev => prev + 1), 2600)
+    const m = setInterval(() => setMovementPhase(prev => (prev % 2) + 1), 2200)
+    return () => { clearInterval(r); clearInterval(m) }
+  }, [])
+
+  const getRotation = (pillarIndex: number, boxIndex: number, cycle: number) => {
+    if (cycle === 0) return [0, 25, -30, 35, -25][boxIndex] || 0
+    return (cycle % 2 === 0 ? 180 : 0) + ((boxIndex * 5 + pillarIndex * 3) % 8 - 4)
+  }
+
+  const getOffset = (pillarIndex: number) => {
+    if (movementPhase === 0) return 0
+    if (pillarIndex === 0) return movementPhase === 1 ? -80 : 0
+    if (pillarIndex === 2) return movementPhase === 1 ? 80 : 0
+    return 0
+  }
+
+  return (
+    <div className="relative" style={{ perspective: '1000px' }}>
+      <div style={{ transform: 'rotateX(5deg)', transformStyle: 'preserve-3d' }}>
+        <div className="flex items-end justify-center" style={{ gap: `${pillarGap}px` }}>
+          {[0, 1, 2].map((pillarIndex) => (
+            <div
+              key={pillarIndex}
+              className="flex flex-col-reverse items-center"
+              style={{
+                perspective: '800px',
+                transformStyle: 'preserve-3d',
+                transform: `translateX(${getOffset(pillarIndex)}px)`,
+                transition: 'transform 1.5s ease-in-out',
+              }}
+            >
+              {HRMS_BOXES.map((box, boxIndex) => (
+                <div
+                  key={box.id}
+                  style={{
+                    marginTop: boxIndex === 0 ? 0 : -2,
+                    zIndex: 5 - boxIndex,
+                    transformStyle: 'preserve-3d',
+                    transform: `rotateY(${getRotation(pillarIndex, boxIndex, rotationCycle)}deg)`,
+                    transition: 'transform 2s ease-in-out',
+                  }}
+                >
+                  <div style={{ width: boxWidth, height: boxHeight, transformStyle: 'preserve-3d' }}>
+                    <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(12px)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 18px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
+                      <span className="font-black text-[11px] tracking-wider" style={{ color: HRMS_PRIMARY }}>{box.text}</span>
+                    </div>
+                    <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(-12px) rotateY(180deg)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 18px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
+                      <span className="font-black text-[11px]" style={{ color: HRMS_PRIMARY }}>{box.backText}</span>
+                    </div>
+                    <div className="absolute top-0 bottom-0" style={{ left: 0, width: '24px', transform: 'rotateY(-90deg)', transformOrigin: 'left center', background: `linear-gradient(to right, ${HRMS_DARK}, ${HRMS_SECONDARY})`, backfaceVisibility: 'hidden' }} />
+                    <div className="absolute top-0 bottom-0" style={{ right: 0, width: '24px', transform: 'rotateY(90deg)', transformOrigin: 'right center', background: `linear-gradient(to left, ${HRMS_DARK}, ${HRMS_SECONDARY})`, backfaceVisibility: 'hidden' }} />
+                    <div className="absolute left-0 right-0" style={{ top: 0, height: '24px', transform: 'rotateX(90deg)', transformOrigin: 'top center', background: HRMS_PRIMARY, backfaceVisibility: 'hidden' }} />
+                    <div className="absolute left-0 right-0" style={{ bottom: 0, height: '24px', transform: 'rotateX(-90deg)', transformOrigin: 'bottom center', background: HRMS_DARK, backfaceVisibility: 'hidden' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 mx-auto h-[35px]" style={{ width: `${boxWidth * 3 + pillarGap * 2 + 40}px`, background: 'linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%)', border: `2px solid ${HRMS_PRIMARY}`, borderRadius: '6px', boxShadow: `0 0 30px ${HRMS_GLOW}` }} />
+      </div>
+      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[550px] h-[100px]" style={{ background: `radial-gradient(ellipse, ${HRMS_GLOW} 0%, transparent 70%)`, filter: 'blur(25px)' }} />
+    </div>
+  )
+}
+
+function LargeMatrixVisual() {
+  const [pattern, setPattern] = useState(0)
+  const cols = 10
+  const rows = 6
+  const cellWidth = 52
+  const cellHeight = 52
+  const colGap = 6
+  const rowGap = 6
+
+  // Simple curve patterns - predefined Y offsets for each column
+  const patterns = [
+    // Pattern 0: Flat (default)
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    // Pattern 1: Smooth curve (smile)
+    [18, 10, 4, 0, -2, -2, 0, 4, 10, 18],
+    // Pattern 2: Inverted curve (frown)
+    [-16, -8, -3, 0, 2, 2, 0, -3, -8, -16],
+    // Pattern 3: Wave
+    [12, 6, -6, -12, -6, 6, 12, 6, -6, -12],
+  ]
+
+  // Change pattern on hover
+  const handleHover = () => {
+    setPattern(prev => (prev + 1) % 4)
+  }
+
+  return (
+    <div
+      className="relative cursor-pointer"
+      style={{ perspective: '1000px' }}
+      onMouseEnter={handleHover}
+    >
+      <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(8deg) rotateY(-10deg)' }}>
+        <div style={{
+          display: 'flex',
+          gap: `${colGap}px`,
+          padding: '35px 30px',
+          background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)',
+          borderRadius: '10px',
+          border: '2px solid #2a2a40',
+          boxShadow: '0 30px 60px rgba(0,0,0,0.6)'
+        }}>
+          {Array.from({ length: cols }).map((_, colIndex) => (
+            <div key={colIndex} className="flex flex-col" style={{ gap: `${rowGap}px` }}>
+              {Array.from({ length: rows }).map((_, rowIndex) => (
+                <div
+                  key={rowIndex}
+                  style={{
+                    width: cellWidth,
+                    height: cellHeight,
+                    transform: `translateY(${patterns[pattern][colIndex]}px)`,
+                    transition: 'transform 1.2s ease-in-out',
+                    background: 'linear-gradient(135deg, rgba(245,166,35,0.5) 0%, rgba(239,145,69,0.6) 50%, rgba(186,86,23,0.4) 100%)',
+                    borderRadius: '5px',
+                    border: '1.5px solid rgba(245,166,35,0.5)',
+                    boxShadow: '0 0 22px rgba(245,166,35,0.4), inset 0 0 22px rgba(245,166,35,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,166,35,0.8) 0%, transparent 70%)' }} />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[550px] h-[100px]" style={{ background: 'radial-gradient(ellipse, rgba(245,166,35,0.4) 0%, transparent 70%)', filter: 'blur(25px)' }} />
+    </div>
+  )
+}
+
+// Desktop Scroll-Based Showcase - Sticky with AnimatePresence swap
+function DesktopShowcase() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [direction, setDirection] = useState(0)
+  const prevIndexRef = useRef(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      const progress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)))
+      const newIndex = Math.min(Math.floor(progress * products.length), products.length - 1)
+      if (newIndex !== prevIndexRef.current) {
+        setDirection(newIndex > prevIndexRef.current ? 1 : -1)
+        setActiveIndex(newIndex)
+        prevIndexRef.current = newIndex
+      }
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const product = products[activeIndex]
+  const desc = productDescriptions[product.id]
+
+  const renderVisual = () => {
+    switch (product.type) {
+      case 'triblock': return <LargeTriblockVisual />
+      case 'flap': return <LargeFlapVisual />
+      case 'trihelix': return <LargeTriHelixVisual />
+      case 'hrms': return <LargeHRMSVisual />
+      case 'matrix': return <LargeMatrixVisual />
+      default: return null
+    }
+  }
+
+  return (
+    <div ref={containerRef} className="relative bg-black" style={{ height: `${products.length * 100}vh` }}>
+      <div className="sticky top-0 h-screen overflow-hidden">
+        {/* Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-neutral-900" />
+
+        {/* Animated background glows */}
+        <motion.div
+          className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-[180px] opacity-20"
+          animate={{ background: `radial-gradient(circle, ${product.accentColor}, transparent)` }}
+          transition={{ duration: 0.8 }}
+        />
+        <motion.div
+          className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full blur-[150px] opacity-15"
+          animate={{ background: `radial-gradient(circle, ${product.accentColor}, transparent)` }}
+          transition={{ duration: 0.8 }}
+        />
+
+        {/* Content - Full Width Split Layout */}
+        <div className="relative h-full flex w-full">
+          {/* Left Side - Product Info (40%) */}
+          <div className="w-[40%] h-full flex flex-col justify-center px-12 lg:px-20 relative z-10">
+            <AnimatePresence mode="wait" custom={direction}>
+              <motion.div
+                key={product.id}
+                custom={direction}
+                variants={contentVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+                className="w-full"
+                style={{ fontFamily: 'Helvetica, "Polysans", Arial, sans-serif' }}
+              >
+                {/* Accent line */}
+                <div className="h-1 w-16 rounded-full mb-6" style={{ background: product.accentColor }} />
+
+                {/* Title */}
+                <h2 className="text-5xl lg:text-6xl font-bold text-white mb-2">
+                  {product.title}
+                </h2>
+                <p className="text-lg text-white/60 font-medium mb-4 uppercase tracking-wider">{product.subtitle}</p>
+
+                {/* Tagline */}
+                <p className="text-xl lg:text-2xl text-white font-light mb-3 leading-snug">{desc.tagline}</p>
+
+                {/* Description */}
+                <p className="text-sm lg:text-base text-white/50 leading-relaxed mb-6 max-w-md">
+                  {desc.description}
+                </p>
+
+                {/* Features */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {desc.features.map((feature, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 rounded-full text-xs font-medium uppercase tracking-wide bg-white/10 border border-white/20 text-white/80"
+                    >
+                      {feature}
+                    </span>
+                  ))}
+                </div>
+
+                {/* CTA Button */}
+                <Link
+                  href="#booking"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:scale-105 transition-transform shadow-lg"
+                >
+                  <span>Explore Product</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Right Side - Product Visual (60%) */}
+          <div className="w-[60%] h-full flex items-center justify-center relative overflow-hidden">
+            <AnimatePresence mode="wait" custom={direction}>
+              <motion.div
+                key={product.id}
+                custom={direction}
+                variants={visualVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+                className="absolute inset-0 flex items-center justify-center"
+                style={{ perspective: '1000px' }}
+              >
+                {renderVisual()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
 
-        {/* Bottom CTA */}
+        {/* Scroll indicator */}
         <motion.div
-          className="text-center mt-12"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.4 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/40"
+          animate={{ opacity: activeIndex === products.length - 1 ? 0 : 1 }}
         >
-          <Link
-            href="#booking"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-500 text-white font-semibold text-lg hover:scale-105 transition-transform shadow-lg shadow-orange-500/25"
+          <span className="text-xs uppercase tracking-widest">Scroll</span>
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className="w-5 h-8 rounded-full border-2 border-white/20 flex items-start justify-center p-1"
           >
-            <span>Request a Demo</span>
-            <ArrowRight className="h-5 w-5" />
-          </Link>
+            <div className="w-1 h-2 rounded-full bg-white/40" />
+          </motion.div>
         </motion.div>
       </div>
-    </section>
+    </div>
   )
 }
 
