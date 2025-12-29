@@ -462,21 +462,34 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
   )
 }
 
-// Mobile Matrix Visual - All columns visible with smaller blocks
+// Mobile Matrix Visual - Color pulse animation only
 function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
-  const [wavePhase, setWavePhase] = useState(0)
+  const [colorPhase, setColorPhase] = useState(0)
 
   useEffect(() => {
     if (isActive) {
-      setWavePhase(prev => prev + 1)
+      // Cycle through color phases
+      const interval = setInterval(() => {
+        setColorPhase(prev => (prev + 1) % 4)
+      }, 800)
+      return () => clearInterval(interval)
+    } else {
+      setColorPhase(0)
     }
   }, [isActive])
 
-  const getOffset = (colIndex: number) => {
-    if (wavePhase === 0) return 0
-    const directions = [-1, 0, 1, 1, 0, -1]
-    const multiplier = wavePhase % 2 === 0 ? 1 : -1
-    return (directions[colIndex % 6] || 0) * multiplier * 20
+  // Different color schemes - warm tones
+  const colorSchemes = [
+    { bg: 'rgba(255,200,0,0.7)', border: 'rgba(255,200,0,0.6)', glow: 'rgba(255,200,0,0.5)' },      // Golden yellow
+    { bg: 'rgba(255,100,50,0.7)', border: 'rgba(255,100,50,0.6)', glow: 'rgba(255,100,50,0.5)' },   // Orange red
+    { bg: 'rgba(245,166,35,0.7)', border: 'rgba(245,166,35,0.6)', glow: 'rgba(245,166,35,0.5)' },   // Amber
+    { bg: 'rgba(255,80,120,0.7)', border: 'rgba(255,80,120,0.6)', glow: 'rgba(255,80,120,0.5)' },   // Pink/magenta
+  ]
+
+  const getColor = (colIndex: number, rowIndex: number) => {
+    if (!isActive) return colorSchemes[1] // Default orange
+    const cellPhase = (colorPhase + colIndex + rowIndex) % 4
+    return colorSchemes[cellPhase]
   }
 
   return (
@@ -498,26 +511,34 @@ function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () =>
         >
           {Array.from({ length: MOBILE_MATRIX_COLS }).map((_, colIndex) => (
             <div key={colIndex} className="flex flex-col" style={{ gap: '3px' }}>
-              {[0, 1, 2].map((rowIndex) => (
-                <motion.div
-                  key={rowIndex}
-                  animate={isActive ? { y: getOffset(colIndex) } : { y: 0 }}
-                  transition={{ duration: 0.8, delay: colIndex * 0.05 }}
-                  style={{
-                    width: 46,
-                    height: 42,
-                    background: 'linear-gradient(135deg, rgba(245,166,35,0.6) 0%, rgba(239,145,69,0.7) 50%, rgba(186,86,23,0.5) 100%)',
-                    borderRadius: '3px',
-                    border: '1px solid rgba(245,166,35,0.5)',
-                    boxShadow: '0 0 12px rgba(245,166,35,0.4), inset 0 0 18px rgba(245,166,35,0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,166,35,0.8) 0%, transparent 70%)' }} />
-                </motion.div>
-              ))}
+              {[0, 1, 2].map((rowIndex) => {
+                const colors = getColor(colIndex, rowIndex)
+                return (
+                  <div
+                    key={rowIndex}
+                    style={{
+                      width: 46,
+                      height: 42,
+                      background: `linear-gradient(135deg, ${colors.bg} 0%, ${colors.bg} 100%)`,
+                      borderRadius: '3px',
+                      border: `1px solid ${colors.border}`,
+                      boxShadow: `0 0 12px ${colors.glow}, inset 0 0 18px ${colors.glow}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.5s ease-in-out',
+                    }}
+                  >
+                    <div style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: '50%',
+                      background: `radial-gradient(circle, ${colors.bg} 0%, transparent 70%)`,
+                      boxShadow: `0 0 8px ${colors.glow}`,
+                    }} />
+                  </div>
+                )
+              })}
             </div>
           ))}
         </div>
@@ -527,7 +548,7 @@ function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () =>
         animate={{ opacity: [0.4, 0.8, 0.4] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
-        Tap to wave
+        Tap for colors
       </motion.div>
     </motion.div>
   )
@@ -2015,7 +2036,7 @@ function LargeTriHelixVisual() {
   // Track if still hovering for loop
   const isHoveringRef = useRef(false)
 
-  // Animation sequence - loops while hovering
+  // Animation sequence - loops while hovering (wings only, no center rotation)
   const runAnimation = useCallback(() => {
     if (!isHoveringRef.current) return
 
@@ -2025,38 +2046,26 @@ function LargeTriHelixVisual() {
     setWingAngle(120)
     setContentPhase(1)
 
-    // Phase 2: Close wings (slower)
-    setTimeout(() => {
-      if (!isHoveringRef.current) return
-      setWingAngle(0)
-    }, 3000)
-
-    // Phase 3: Rotate each layer like DNA (180 degree flip with stagger)
+    // Phase 2: Hold open
     setTimeout(() => {
       if (!isHoveringRef.current) return
       setContentPhase(2)
-      setRotationCycle(prev => prev + 1)
-      const newRotations = [0, 1, 2, 3, 4, 5].map((i) => {
-        const variation = ((i * 7) % 11 - 5)
-        return 180 + variation
-      })
-      setLayerRotations(newRotations)
-    }, 4500)
+    }, 2500)
 
-    // Phase 4: Return to home position (all straight)
+    // Phase 3: Close wings
     setTimeout(() => {
       if (!isHoveringRef.current) return
-      setLayerRotations([0, 0, 0, 0, 0, 0])
+      setWingAngle(0)
       setContentPhase(0)
-    }, 7500)
+    }, 4500)
 
-    // Phase 5: Loop again if still hovering
+    // Phase 4: Loop again if still hovering
     setTimeout(() => {
       setIsAnimating(false)
       if (isHoveringRef.current) {
         runAnimation()
       }
-    }, 9000)
+    }, 6500)
   }, [])
 
   const handleHover = useCallback(() => {
@@ -2322,28 +2331,50 @@ function LargeHRMSVisual() {
 
 function LargeMatrixVisual() {
   const [pattern, setPattern] = useState(0)
-  const cols = 10
-  const rows = 6
-  const cellWidth = 52
-  const cellHeight = 52
-  const colGap = 6
-  const rowGap = 6
+  const isHoveringRef = useRef(false)
 
-  // Simple curve patterns - predefined Y offsets for each column
+  const cols = 8
+  const rows = 4
+  const cellWidth = 70
+  const cellHeight = 55
+  const colGap = 4
+  const rowGap = 4
+
+  // Wave patterns - Y offsets for each column (screens slide up/down)
   const patterns = [
-    // Pattern 0: Flat (default)
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    // Pattern 1: Smooth curve (smile)
-    [18, 10, 4, 0, -2, -2, 0, 4, 10, 18],
-    // Pattern 2: Inverted curve (frown)
-    [-16, -8, -3, 0, 2, 2, 0, -3, -8, -16],
-    // Pattern 3: Wave
-    [12, 6, -6, -12, -6, 6, 12, 6, -6, -12],
+    // Pattern 0: Flat
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    // Pattern 1: Wave right
+    [-25, -15, 0, 15, 25, 15, 0, -15],
+    // Pattern 2: Center dip
+    [20, 10, -5, -15, -15, -5, 10, 20],
+    // Pattern 3: Alternating
+    [-20, 15, -20, 15, -20, 15, -20, 15],
+    // Pattern 4: Wave left
+    [15, 0, -15, -25, -15, 0, 15, 25],
   ]
 
-  // Change pattern on hover
+  // Cycle through patterns while hovering
+  const cyclePattern = useCallback(() => {
+    if (!isHoveringRef.current) return
+
+    setPattern(prev => (prev + 1) % patterns.length)
+
+    setTimeout(() => {
+      if (isHoveringRef.current) {
+        cyclePattern()
+      }
+    }, 2500)
+  }, [])
+
   const handleHover = () => {
-    setPattern(prev => (prev + 1) % 4)
+    isHoveringRef.current = true
+    cyclePattern()
+  }
+
+  const handleHoverEnd = () => {
+    isHoveringRef.current = false
+    setPattern(0)
   }
 
   return (
@@ -2351,44 +2382,86 @@ function LargeMatrixVisual() {
       className="relative cursor-pointer"
       style={{ perspective: '1000px' }}
       onMouseEnter={handleHover}
+      onMouseLeave={handleHoverEnd}
     >
-      <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(8deg) rotateY(-10deg)' }}>
+      <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(10deg) rotateY(-8deg)' }}>
+        {/* Back frame */}
         <div style={{
-          display: 'flex',
-          gap: `${colGap}px`,
-          padding: '35px 30px',
-          background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)',
-          borderRadius: '10px',
-          border: '2px solid #2a2a40',
-          boxShadow: '0 30px 60px rgba(0,0,0,0.6)'
+          padding: '20px',
+          background: 'linear-gradient(180deg, #2a2a35 0%, #1a1a22 100%)',
+          borderRadius: '8px',
+          border: '3px solid #3a3a45',
+          boxShadow: '0 30px 60px rgba(0,0,0,0.7)'
         }}>
-          {Array.from({ length: cols }).map((_, colIndex) => (
-            <div key={colIndex} className="flex flex-col" style={{ gap: `${rowGap}px` }}>
-              {Array.from({ length: rows }).map((_, rowIndex) => (
-                <div
-                  key={rowIndex}
-                  style={{
-                    width: cellWidth,
-                    height: cellHeight,
-                    transform: `translateY(${patterns[pattern][colIndex]}px)`,
-                    transition: 'transform 1.2s ease-in-out',
-                    background: 'linear-gradient(135deg, rgba(245,166,35,0.5) 0%, rgba(239,145,69,0.6) 50%, rgba(186,86,23,0.4) 100%)',
-                    borderRadius: '5px',
-                    border: '1.5px solid rgba(245,166,35,0.5)',
-                    boxShadow: '0 0 22px rgba(245,166,35,0.4), inset 0 0 22px rgba(245,166,35,0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,166,35,0.8) 0%, transparent 70%)' }} />
-                </div>
-              ))}
-            </div>
-          ))}
+          <div style={{ display: 'flex', gap: `${colGap}px` }}>
+            {Array.from({ length: cols }).map((_, colIndex) => (
+              <div key={colIndex} className="flex flex-col" style={{ gap: `${rowGap}px` }}>
+                {Array.from({ length: rows }).map((_, rowIndex) => (
+                  <div
+                    key={rowIndex}
+                    style={{
+                      width: cellWidth,
+                      height: cellHeight,
+                      transform: `translateY(${patterns[pattern][colIndex]}px)`,
+                      transition: 'transform 1.8s ease-in-out',
+                      background: 'linear-gradient(135deg, #0a0a12 0%, #151522 50%, #0a0a12 100%)',
+                      borderRadius: '3px',
+                      border: '2px solid #333',
+                      boxShadow: '0 4px 15px rgba(0,0,0,0.5), inset 0 0 30px rgba(245,166,35,0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {/* Screen content - circuit pattern */}
+                    <div style={{
+                      width: '90%',
+                      height: '90%',
+                      background: 'linear-gradient(135deg, rgba(20,60,100,0.8) 0%, rgba(10,30,60,0.9) 100%)',
+                      borderRadius: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}>
+                      {/* Circuit lines */}
+                      <div style={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0.4,
+                        background: `
+                          linear-gradient(90deg, transparent 48%, rgba(100,180,255,0.3) 49%, rgba(100,180,255,0.3) 51%, transparent 52%),
+                          linear-gradient(0deg, transparent 48%, rgba(100,180,255,0.3) 49%, rgba(100,180,255,0.3) 51%, transparent 52%)
+                        `,
+                        backgroundSize: '20px 20px',
+                      }} />
+                      {/* Glow dot */}
+                      <div style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: 'radial-gradient(circle, rgba(100,180,255,0.9) 0%, transparent 70%)',
+                        boxShadow: '0 0 15px rgba(100,180,255,0.6)',
+                      }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[550px] h-[100px]" style={{ background: 'radial-gradient(ellipse, rgba(245,166,35,0.4) 0%, transparent 70%)', filter: 'blur(25px)' }} />
+      {/* Floor reflection */}
+      <div
+        className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-[600px] h-[80px]"
+        style={{
+          background: 'radial-gradient(ellipse, rgba(100,180,255,0.25) 0%, transparent 70%)',
+          filter: 'blur(20px)',
+        }}
+      />
     </div>
   )
 }
