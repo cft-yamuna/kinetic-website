@@ -561,35 +561,31 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
 
 // Mobile Telescopic Visual - Horizontal LED table with rising blocks
 function MobileTelescopicCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
-  const [colorWave, setColorWave] = useState(0)
   const [patternIndex, setPatternIndex] = useState(0)
-  const rows = 3
+  const rows = 4
   const cols = 6
+  const cellSize = 34
+  const gap = 3
 
-  // Brand colors
+  // Brand colors - static
   const brandColors = ['#E17924', '#FECC00', '#EF9145', '#BA5617', '#994E1F', '#6C2A00']
 
-  // Height patterns (negative = rise up)
+  // Height patterns (rise amounts in px) - increased for better 3D visibility
   const heightPatterns = [
     [0, 0, 0, 0, 0, 0],
-    [-10, -20, -28, -28, -20, -10],
-    [-28, -20, -12, -12, -20, -28],
-    [0, -18, -28, -28, -18, 0],
+    [15, 35, 50, 50, 35, 15],
+    [50, 35, 20, 20, 35, 50],
+    [5, 30, 50, 50, 30, 5],
   ]
 
-  // Auto-cycle animations
+  // Auto-cycle wave animation only
   useEffect(() => {
     const patternTimer = setInterval(() => {
       setPatternIndex(prev => (prev + 1) % heightPatterns.length)
     }, 1800)
 
-    const colorTimer = setInterval(() => {
-      setColorWave(prev => prev + 1)
-    }, 600)
-
     return () => {
       clearInterval(patternTimer)
-      clearInterval(colorTimer)
     }
   }, [])
 
@@ -600,127 +596,181 @@ function MobileTelescopicCard({ isActive, onTap }: { isActive: boolean; onTap: (
     }
   }, [isActive])
 
-  const getOffset = (col: number, row: number) => {
+  const getRiseAmount = (col: number, row: number) => {
     const base = heightPatterns[patternIndex][col]
-    const rowVar = Math.sin(row * 0.7) * 5
-    return base + rowVar
+    const rowVar = Math.sin(row * 0.7) * 4
+    return Math.max(0, base + rowVar)
   }
 
   const getColor = (row: number, col: number) => {
-    const waveOffset = (col + row + colorWave) % brandColors.length
-    return brandColors[waveOffset]
+    // Static color based on position only
+    return brandColors[(col + row) % brandColors.length]
   }
+
+  const tableWidth = cols * cellSize + (cols - 1) * gap + 20
+  const tableDepth = rows * cellSize + (rows - 1) * gap + 20
 
   return (
     <motion.div
       className="relative w-full flex items-center justify-center cursor-pointer"
-      style={{ minHeight: '220px', paddingTop: '50px', paddingBottom: '20px' }}
+      style={{ minHeight: '220px', paddingTop: '40px', paddingBottom: '20px', perspective: '800px' }}
       onClick={onTap}
       whileTap={{ scale: 0.98 }}
     >
-      {/* 3D perspective container */}
-      <div style={{ transform: 'rotateX(5deg) rotateY(-8deg)' }}>
+      {/* 3D Table Structure */}
+      <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(50deg) rotateZ(-2deg)' }}>
+
+        {/* TABLE TOP SURFACE */}
         <div
           style={{
-            display: 'flex',
-            gap: '3px',
+            position: 'relative',
             padding: '10px',
-            background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
+            background: 'linear-gradient(180deg, #1a1a22 0%, #0f0f15 100%)',
             borderRadius: '6px',
-            border: '1px solid #333',
+            border: '2px solid #2a2a35',
+            boxShadow: 'inset 0 1px 6px rgba(0,0,0,0.5)',
+            transformStyle: 'preserve-3d',
           }}
         >
-          {Array.from({ length: cols }).map((_, colIndex) => (
-            <div key={colIndex} className="flex flex-col" style={{ gap: '3px' }}>
-              {Array.from({ length: rows }).map((_, rowIndex) => {
-                const offset = getOffset(colIndex, rowIndex)
-                const riseAmount = Math.abs(offset)
-                const color = getColor(rowIndex, colIndex)
-                const nextColor = brandColors[(brandColors.indexOf(color) + 1) % brandColors.length]
+          {/* Grid of LED blocks */}
+          <div style={{ display: 'flex', gap: `${gap}px` }}>
+            {Array.from({ length: cols }).map((_, colIndex) => (
+              <div key={colIndex} className="flex flex-col" style={{ gap: `${gap}px` }}>
+                {Array.from({ length: rows }).map((_, rowIndex) => {
+                  const riseAmount = getRiseAmount(colIndex, rowIndex)
+                  const color = getColor(rowIndex, colIndex)
 
-                return (
-                  <div
-                    key={rowIndex}
-                    style={{
-                      width: 46,
-                      height: 40,
-                      position: 'relative',
-                      borderRadius: '3px',
-                      overflow: 'visible',
-                      transform: `translateY(${offset}px)`,
-                      transition: 'transform 1.2s ease-in-out',
-                    }}
-                  >
-                    {/* Block face with synced gradient */}
-                    <motion.div
-                      animate={{
-                        background: `linear-gradient(135deg, ${color} 0%, ${nextColor} 60%, ${adjustColor(color, -30)} 100%)`,
-                      }}
-                      transition={{ duration: 0.6 }}
+                  return (
+                    <div
+                      key={rowIndex}
                       style={{
-                        position: 'absolute',
-                        inset: 0,
-                        borderRadius: '3px',
-                        border: `1px solid ${adjustColor(color, -20)}`,
-                        boxShadow: `0 2px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15)`,
-                        overflow: 'hidden',
+                        width: cellSize,
+                        height: cellSize,
+                        position: 'relative',
+                        transformStyle: 'preserve-3d',
                       }}
                     >
-                      {/* Grid pattern */}
+                      {/* Block slot (hole in table) */}
                       <div
                         style={{
                           position: 'absolute',
-                          inset: 0,
-                          backgroundImage: `
-                            linear-gradient(0deg, rgba(0,0,0,0.1) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)
-                          `,
-                          backgroundSize: '6px 6px',
+                          width: '100%',
+                          height: '100%',
+                          background: '#08080c',
+                          borderRadius: '2px',
+                          boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.8)',
                         }}
                       />
-                      {/* Shine sweep */}
-                      <motion.div
-                        animate={{ x: ['-100%', '200%'] }}
-                        transition={{ duration: 2.5, repeat: Infinity, delay: (colIndex + rowIndex) * 0.1, repeatDelay: 1.5 }}
-                        style={{
-                          position: 'absolute',
-                          inset: 0,
-                          background: 'linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%)',
-                          width: '50%',
-                        }}
-                      />
-                      {/* Center glow pulse */}
-                      <motion.div
-                        animate={{ opacity: [0.2, 0.5, 0.2] }}
-                        transition={{ duration: 1.2, repeat: Infinity, delay: colIndex * 0.08 }}
-                        style={{
-                          position: 'absolute',
-                          inset: '25%',
-                          borderRadius: '3px',
-                          background: 'radial-gradient(circle, rgba(255,255,255,0.35) 0%, transparent 70%)',
-                        }}
-                      />
-                    </motion.div>
 
-                    {/* Block bottom side (visible when raised) */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        width: '100%',
-                        height: `${riseAmount}px`,
-                        top: '100%',
-                        background: `linear-gradient(180deg, ${adjustColor(color, -30)} 0%, ${adjustColor(color, -50)} 100%)`,
-                        borderRadius: '0 0 3px 3px',
-                        opacity: riseAmount > 3 ? 1 : 0,
-                        transition: 'height 1.2s ease-in-out, opacity 0.3s',
-                      }}
-                    />
-                  </div>
-                )
-              })}
-            </div>
-          ))}
+                      {/* Rising LED Block - uses CSS transform for smooth animation */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '100%',
+                          transform: `translateY(${-riseAmount}px)`,
+                          transition: 'transform 1.2s ease-in-out',
+                          willChange: 'transform',
+                        }}
+                      >
+                        {/* Block face with static grid */}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            width: '100%',
+                            height: '100%',
+                            borderRadius: '3px',
+                            border: `1px solid ${adjustColor(color, -20)}`,
+                            background: `linear-gradient(135deg, ${color} 0%, ${adjustColor(color, 15)} 60%, ${adjustColor(color, -30)} 100%)`,
+                            boxShadow: `0 -2px 12px ${color}40, inset 0 1px 0 rgba(255,255,255,0.15)`,
+                            backgroundImage: `
+                              linear-gradient(0deg, rgba(0,0,0,0.25) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0,0,0,0.25) 1px, transparent 1px)
+                            `,
+                            backgroundSize: '8px 8px',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* 4 TABLE LEGS */}
+        {/* Front Left */}
+        <div
+          style={{
+            position: 'absolute',
+            width: '10px',
+            height: '40px',
+            left: '10px',
+            bottom: '-25px',
+            background: 'linear-gradient(90deg, #1a1a22 0%, #252530 50%, #1a1a22 100%)',
+            transform: 'rotateX(-90deg)',
+            transformOrigin: 'top',
+            borderRadius: '2px',
+          }}
+        />
+        {/* Front Right */}
+        <div
+          style={{
+            position: 'absolute',
+            width: '10px',
+            height: '40px',
+            right: '10px',
+            bottom: '-25px',
+            background: 'linear-gradient(90deg, #1a1a22 0%, #252530 50%, #1a1a22 100%)',
+            transform: 'rotateX(-90deg)',
+            transformOrigin: 'top',
+            borderRadius: '2px',
+          }}
+        />
+        {/* Back Left */}
+        <div
+          style={{
+            position: 'absolute',
+            width: '10px',
+            height: '40px',
+            left: '10px',
+            top: '10px',
+            background: 'linear-gradient(90deg, #15151d 0%, #1f1f28 50%, #15151d 100%)',
+            transform: 'rotateX(-90deg)',
+            transformOrigin: 'top',
+            borderRadius: '2px',
+          }}
+        />
+        {/* Back Right */}
+        <div
+          style={{
+            position: 'absolute',
+            width: '10px',
+            height: '40px',
+            right: '10px',
+            top: '10px',
+            background: 'linear-gradient(90deg, #15151d 0%, #1f1f28 50%, #15151d 100%)',
+            transform: 'rotateX(-90deg)',
+            transformOrigin: 'top',
+            borderRadius: '2px',
+          }}
+        />
+
+        {/* Floor shadow */}
+        <div
+          style={{
+            position: 'absolute',
+            width: '120%',
+            height: '20px',
+            left: '-10%',
+            bottom: '-50px',
+            background: 'radial-gradient(ellipse, rgba(0,0,0,0.5) 0%, transparent 70%)',
+            transform: 'rotateX(-90deg)',
+            transformOrigin: 'top',
+            filter: 'blur(6px)',
+          }}
+        />
       </div>
     </motion.div>
   )
@@ -2866,201 +2916,216 @@ function LargeHRMSVisual() {
 // Desktop Telescopic Visual - Horizontal LED table with rising blocks
 function LargeTelescopicVisual() {
   const [patternIndex, setPatternIndex] = useState(0)
-  const [colorWave, setColorWave] = useState(0)
 
   const cols = 8
-  const rows = 4
-  const cellWidth = 70
-  const cellHeight = 55
+  const rows = 5
+  const cellWidth = 60
+  const cellHeight = 45
   const gap = 4
 
-  // Height patterns for wave animations (negative = rise up)
+  // Height patterns for wave animations - increased for better 3D visibility
   const heightPatterns = [
     [0, 0, 0, 0, 0, 0, 0, 0],
-    [-15, -35, -50, -60, -50, -35, -15, 0],
-    [-60, -45, -30, -15, -15, -30, -45, -60],
-    [0, -30, -45, -55, -55, -45, -30, 0],
-    [-40, -20, -50, -15, -40, -55, -25, -45],
-    [-55, -45, -35, -20, -20, -35, -45, -55],
+    [25, 55, 85, 100, 85, 55, 25, 10],
+    [100, 75, 50, 25, 25, 50, 75, 100],
+    [10, 50, 75, 95, 95, 75, 50, 10],
+    [70, 35, 90, 25, 70, 95, 45, 80],
+    [95, 80, 60, 35, 35, 60, 80, 95],
   ]
 
-  // Brand colors
+  // Brand colors - static assignment based on position
   const brandColors = ['#E17924', '#FECC00', '#EF9145', '#BA5617', '#994E1F', '#6C2A00']
 
-  // Get dynamic color based on wave position
   const getColor = (row: number, col: number) => {
-    const waveOffset = (col + row + colorWave) % brandColors.length
-    return brandColors[waveOffset]
+    // Static color based on position only - no animation
+    return brandColors[(col + row) % brandColors.length]
   }
 
-  // Get offset for animation (negative = moves up)
-  const getOffset = (col: number, row: number) => {
+  const getRiseAmount = (col: number, row: number) => {
     const base = heightPatterns[patternIndex][col]
-    const rowVar = Math.sin(row * 0.8) * 8
-    return base + rowVar
+    const rowVar = Math.sin(row * 0.6) * 8
+    return Math.max(0, base + rowVar)
   }
 
-  // Animation cycle
   useEffect(() => {
     const patternTimer = setInterval(() => {
       setPatternIndex(prev => (prev + 1) % heightPatterns.length)
     }, 2000)
 
-    const colorTimer = setInterval(() => {
-      setColorWave(prev => prev + 1)
-    }, 800)
-
     return () => {
       clearInterval(patternTimer)
-      clearInterval(colorTimer)
     }
   }, [])
 
+  const tableWidth = cols * cellWidth + (cols - 1) * gap + 40
+  const tableDepth = rows * cellHeight + (rows - 1) * gap + 40
+
   return (
-    <div className="relative cursor-pointer" style={{ perspective: '1000px' }}>
+    <div className="relative cursor-pointer" style={{ perspective: '1200px' }}>
       {/* Ambient glow */}
       <motion.div
         className="absolute inset-0 -m-10 rounded-full"
         animate={{ opacity: [0.3, 0.5, 0.3] }}
         transition={{ duration: 2, repeat: Infinity }}
         style={{
-          background: 'radial-gradient(ellipse at center, rgba(225, 121, 36, 0.5) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at center, rgba(225, 121, 36, 0.4) 0%, transparent 70%)',
           filter: 'blur(40px)',
         }}
       />
 
-      {/* 3D table container */}
-      <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(10deg) rotateY(-8deg)' }}>
+      {/* 3D Table Structure */}
+      <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(55deg) rotateZ(-2deg)' }}>
+
+        {/* TABLE TOP SURFACE */}
         <div
           style={{
-            display: 'flex',
-            gap: `${gap}px`,
+            position: 'relative',
+            width: tableWidth,
             padding: '20px',
-            background: 'linear-gradient(180deg, #2a2a35 0%, #1a1a22 100%)',
+            background: 'linear-gradient(180deg, #1a1a22 0%, #0f0f15 100%)',
             borderRadius: '8px',
-            border: '3px solid #3a3a45',
-            boxShadow: '0 30px 60px rgba(0,0,0,0.7)',
+            border: '3px solid #2a2a35',
+            boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)',
+            transformStyle: 'preserve-3d',
           }}
         >
-          {Array.from({ length: cols }).map((_, colIndex) => (
-            <div key={colIndex} className="flex flex-col" style={{ gap: `${gap}px` }}>
-              {Array.from({ length: rows }).map((_, rowIndex) => {
-                const offset = getOffset(colIndex, rowIndex)
-                const riseAmount = Math.abs(offset)
-                const color = getColor(rowIndex, colIndex)
-                const nextColor = brandColors[(brandColors.indexOf(color) + 1) % brandColors.length]
+          {/* Grid of LED blocks */}
+          <div style={{ display: 'flex', gap: `${gap}px`, position: 'relative', zIndex: 10 }}>
+            {Array.from({ length: cols }).map((_, colIndex) => (
+              <div key={colIndex} className="flex flex-col" style={{ gap: `${gap}px` }}>
+                {Array.from({ length: rows }).map((_, rowIndex) => {
+                  const riseAmount = getRiseAmount(colIndex, rowIndex)
+                  const color = getColor(rowIndex, colIndex)
 
-                return (
-                  <div
-                    key={rowIndex}
-                    style={{
-                      width: cellWidth,
-                      height: cellHeight,
-                      position: 'relative',
-                      transform: `translateY(${offset}px)`,
-                      transition: 'transform 1.8s ease-in-out',
-                    }}
-                  >
-                    {/* Block top face with synced grid pattern */}
-                    <motion.div
-                      animate={{
-                        background: `linear-gradient(135deg, ${color} 0%, ${nextColor} 50%, ${adjustColor(color, -30)} 100%)`,
-                      }}
-                      transition={{ duration: 0.8 }}
+                  return (
+                    <div
+                      key={rowIndex}
                       style={{
-                        position: 'absolute',
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: '4px',
-                        border: `2px solid ${adjustColor(color, -20)}`,
-                        boxShadow: `0 4px 15px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2), 0 0 ${15 + riseAmount * 0.3}px ${color}50`,
-                        overflow: 'hidden',
+                        width: cellWidth,
+                        height: cellHeight,
+                        position: 'relative',
+                        transformStyle: 'preserve-3d',
                       }}
                     >
-                      {/* Grid pattern overlay - synced across blocks */}
+                      {/* Block base slot (hole in table) */}
                       <div
                         style={{
                           position: 'absolute',
-                          inset: 0,
-                          backgroundImage: `
-                            linear-gradient(0deg, rgba(0,0,0,0.15) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(0,0,0,0.15) 1px, transparent 1px)
-                          `,
-                          backgroundSize: '8px 8px',
-                          backgroundPosition: `${colIndex * 8}px ${rowIndex * 8}px`,
+                          width: '100%',
+                          height: '100%',
+                          background: '#0a0a0f',
+                          borderRadius: '3px',
+                          boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.8)',
                         }}
                       />
-                      {/* Diagonal shine effect */}
-                      <motion.div
-                        animate={{ x: ['-100%', '200%'] }}
-                        transition={{ duration: 3, repeat: Infinity, delay: (colIndex + rowIndex) * 0.15, repeatDelay: 2 }}
+
+                      {/* Rising LED Block - uses CSS transform for smooth animation */}
+                      <div
                         style={{
                           position: 'absolute',
-                          inset: 0,
-                          background: 'linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
-                          width: '50%',
+                          width: '100%',
+                          height: '100%',
+                          transform: `translateY(${-riseAmount}px)`,
+                          transition: 'transform 1.5s ease-in-out',
+                          willChange: 'transform',
                         }}
-                      />
-                      {/* Inner glow pulse */}
-                      <motion.div
-                        animate={{ opacity: [0.3, 0.6, 0.3] }}
-                        transition={{ duration: 1.5, repeat: Infinity, delay: (colIndex * 0.1 + rowIndex * 0.15) }}
-                        style={{
-                          position: 'absolute',
-                          inset: '20%',
-                          borderRadius: '4px',
-                          background: `radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%)`,
-                        }}
-                      />
-                    </motion.div>
-
-                    {/* Block bottom side (visible when raised) */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        width: '100%',
-                        height: `${riseAmount}px`,
-                        top: '100%',
-                        background: `linear-gradient(180deg, ${adjustColor(color, -30)} 0%, ${adjustColor(color, -55)} 100%)`,
-                        borderRadius: '0 0 4px 4px',
-                        opacity: riseAmount > 5 ? 1 : 0,
-                        transition: 'height 1.8s ease-in-out, opacity 0.3s',
-                      }}
-                    />
-
-                    {/* Block right side (visible when raised) */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        width: '4px',
-                        height: `calc(100% + ${riseAmount}px)`,
-                        right: 0,
-                        top: 0,
-                        background: `linear-gradient(180deg, ${adjustColor(color, -20)} 0%, ${adjustColor(color, -45)} 100%)`,
-                        borderRadius: '0 4px 4px 0',
-                        opacity: riseAmount > 5 ? 1 : 0,
-                        transition: 'height 1.8s ease-in-out, opacity 0.3s',
-                      }}
-                    />
-                  </div>
-                )
-              })}
-            </div>
-          ))}
+                      >
+                        {/* Block face with static grid */}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            width: '100%',
+                            height: '100%',
+                            borderRadius: '4px',
+                            border: `2px solid ${adjustColor(color, -20)}`,
+                            background: `linear-gradient(135deg, ${color} 0%, ${adjustColor(color, 15)} 50%, ${adjustColor(color, -30)} 100%)`,
+                            boxShadow: `0 -4px 20px ${color}50, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                            backgroundImage: `
+                              linear-gradient(0deg, rgba(0,0,0,0.25) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0,0,0,0.25) 1px, transparent 1px)
+                            `,
+                            backgroundSize: '10px 10px',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Table shadow */}
+        {/* 4 TABLE LEGS */}
+        {/* Front Left Leg */}
         <div
           style={{
             position: 'absolute',
-            top: '50%',
-            left: '50%',
-            width: '90%',
-            height: '20px',
-            transform: 'translate(-50%, 30px)',
-            background: 'rgba(0,0,0,0.5)',
-            borderRadius: '50%',
-            filter: 'blur(15px)',
+            width: '15px',
+            height: '70px',
+            left: '20px',
+            bottom: '-45px',
+            background: 'linear-gradient(90deg, #1a1a22 0%, #2a2a35 50%, #1a1a22 100%)',
+            transform: 'rotateX(-90deg)',
+            transformOrigin: 'top',
+            borderRadius: '3px',
+          }}
+        />
+        {/* Front Right Leg */}
+        <div
+          style={{
+            position: 'absolute',
+            width: '15px',
+            height: '70px',
+            right: '20px',
+            bottom: '-45px',
+            background: 'linear-gradient(90deg, #1a1a22 0%, #2a2a35 50%, #1a1a22 100%)',
+            transform: 'rotateX(-90deg)',
+            transformOrigin: 'top',
+            borderRadius: '3px',
+          }}
+        />
+        {/* Back Left Leg */}
+        <div
+          style={{
+            position: 'absolute',
+            width: '15px',
+            height: '70px',
+            left: '20px',
+            top: '15px',
+            background: 'linear-gradient(90deg, #15151d 0%, #222230 50%, #15151d 100%)',
+            transform: 'rotateX(-90deg)',
+            transformOrigin: 'top',
+            borderRadius: '3px',
+          }}
+        />
+        {/* Back Right Leg */}
+        <div
+          style={{
+            position: 'absolute',
+            width: '15px',
+            height: '70px',
+            right: '20px',
+            top: '15px',
+            background: 'linear-gradient(90deg, #15151d 0%, #222230 50%, #15151d 100%)',
+            transform: 'rotateX(-90deg)',
+            transformOrigin: 'top',
+            borderRadius: '3px',
+          }}
+        />
+
+        {/* Floor shadow */}
+        <div
+          style={{
+            position: 'absolute',
+            width: '110%',
+            height: '30px',
+            left: '-5%',
+            bottom: '-80px',
+            background: 'radial-gradient(ellipse, rgba(0,0,0,0.5) 0%, transparent 70%)',
+            transform: 'rotateX(-90deg)',
+            transformOrigin: 'top',
+            filter: 'blur(10px)',
           }}
         />
       </div>
