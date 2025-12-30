@@ -139,6 +139,14 @@ const products = [
     type: "hrms",
   },
   {
+    id: "telescopic",
+    title: "TELESCOPIC",
+    subtitle: "Rising LED Table",
+    gradient: "from-amber-500 via-orange-500 to-yellow-500",
+    accentColor: "#E17924",
+    type: "telescopic",
+  },
+  {
     id: "matrix",
     title: "MATRIX",
     subtitle: "Kinetic Screens",
@@ -547,6 +555,173 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
           boxShadow: `0 0 15px ${HRMS_GLOW}`,
         }}
       />
+    </motion.div>
+  )
+}
+
+// Mobile Telescopic Visual - Horizontal LED table with rising blocks
+function MobileTelescopicCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
+  const [colorWave, setColorWave] = useState(0)
+  const [patternIndex, setPatternIndex] = useState(0)
+  const rows = 3
+  const cols = 6
+
+  // Brand colors
+  const brandColors = ['#E17924', '#FECC00', '#EF9145', '#BA5617', '#994E1F', '#6C2A00']
+
+  // Height patterns (negative = rise up)
+  const heightPatterns = [
+    [0, 0, 0, 0, 0, 0],
+    [-10, -20, -28, -28, -20, -10],
+    [-28, -20, -12, -12, -20, -28],
+    [0, -18, -28, -28, -18, 0],
+  ]
+
+  // Auto-cycle animations
+  useEffect(() => {
+    const patternTimer = setInterval(() => {
+      setPatternIndex(prev => (prev + 1) % heightPatterns.length)
+    }, 1800)
+
+    const colorTimer = setInterval(() => {
+      setColorWave(prev => prev + 1)
+    }, 600)
+
+    return () => {
+      clearInterval(patternTimer)
+      clearInterval(colorTimer)
+    }
+  }, [])
+
+  // Trigger extra animation on tap
+  useEffect(() => {
+    if (isActive) {
+      setPatternIndex(prev => (prev + 1) % heightPatterns.length)
+    }
+  }, [isActive])
+
+  const getOffset = (col: number, row: number) => {
+    const base = heightPatterns[patternIndex][col]
+    const rowVar = Math.sin(row * 0.7) * 5
+    return base + rowVar
+  }
+
+  const getColor = (row: number, col: number) => {
+    const waveOffset = (col + row + colorWave) % brandColors.length
+    return brandColors[waveOffset]
+  }
+
+  return (
+    <motion.div
+      className="relative w-full flex items-center justify-center cursor-pointer"
+      style={{ minHeight: '220px', paddingTop: '50px', paddingBottom: '20px' }}
+      onClick={onTap}
+      whileTap={{ scale: 0.98 }}
+    >
+      {/* 3D perspective container */}
+      <div style={{ transform: 'rotateX(5deg) rotateY(-8deg)' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '3px',
+            padding: '10px',
+            background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)',
+            borderRadius: '6px',
+            border: '1px solid #333',
+          }}
+        >
+          {Array.from({ length: cols }).map((_, colIndex) => (
+            <div key={colIndex} className="flex flex-col" style={{ gap: '3px' }}>
+              {Array.from({ length: rows }).map((_, rowIndex) => {
+                const offset = getOffset(colIndex, rowIndex)
+                const riseAmount = Math.abs(offset)
+                const color = getColor(rowIndex, colIndex)
+                const nextColor = brandColors[(brandColors.indexOf(color) + 1) % brandColors.length]
+
+                return (
+                  <div
+                    key={rowIndex}
+                    style={{
+                      width: 46,
+                      height: 40,
+                      position: 'relative',
+                      borderRadius: '3px',
+                      overflow: 'visible',
+                      transform: `translateY(${offset}px)`,
+                      transition: 'transform 1.2s ease-in-out',
+                    }}
+                  >
+                    {/* Block face with synced gradient */}
+                    <motion.div
+                      animate={{
+                        background: `linear-gradient(135deg, ${color} 0%, ${nextColor} 60%, ${adjustColor(color, -30)} 100%)`,
+                      }}
+                      transition={{ duration: 0.6 }}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '3px',
+                        border: `1px solid ${adjustColor(color, -20)}`,
+                        boxShadow: `0 2px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15)`,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {/* Grid pattern */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          backgroundImage: `
+                            linear-gradient(0deg, rgba(0,0,0,0.1) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)
+                          `,
+                          backgroundSize: '6px 6px',
+                        }}
+                      />
+                      {/* Shine sweep */}
+                      <motion.div
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ duration: 2.5, repeat: Infinity, delay: (colIndex + rowIndex) * 0.1, repeatDelay: 1.5 }}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: 'linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%)',
+                          width: '50%',
+                        }}
+                      />
+                      {/* Center glow pulse */}
+                      <motion.div
+                        animate={{ opacity: [0.2, 0.5, 0.2] }}
+                        transition={{ duration: 1.2, repeat: Infinity, delay: colIndex * 0.08 }}
+                        style={{
+                          position: 'absolute',
+                          inset: '25%',
+                          borderRadius: '3px',
+                          background: 'radial-gradient(circle, rgba(255,255,255,0.35) 0%, transparent 70%)',
+                        }}
+                      />
+                    </motion.div>
+
+                    {/* Block bottom side (visible when raised) */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: `${riseAmount}px`,
+                        top: '100%',
+                        background: `linear-gradient(180deg, ${adjustColor(color, -30)} 0%, ${adjustColor(color, -50)} 100%)`,
+                        borderRadius: '0 0 3px 3px',
+                        opacity: riseAmount > 3 ? 1 : 0,
+                        transition: 'height 1.2s ease-in-out, opacity 0.3s',
+                      }}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
     </motion.div>
   )
 }
@@ -975,6 +1150,21 @@ function MobileShowcase() {
           isActive={activeCard === 'hrms'}
         >
           <MobileHRMSCard isActive={activeCard === 'hrms'} onTap={() => handleAnimate('hrms')} />
+        </MobileProductCard>
+
+        {/* Telescopic */}
+        <MobileProductCard
+          productId="telescopic"
+          title="TELESCOPIC"
+          subtitle="Rising LED Table"
+          gradient="from-amber-500 to-orange-500"
+          bgGradient="linear-gradient(135deg, rgba(225,121,36,0.1) 0%, rgba(0,0,0,0.8) 100%)"
+          borderColor="rgba(225,121,36,0.2)"
+          height={230}
+          onAnimate={() => handleAnimate('telescopic')}
+          isActive={activeCard === 'telescopic'}
+        >
+          <MobileTelescopicCard isActive={activeCard === 'telescopic'} onTap={() => handleAnimate('telescopic')} />
         </MobileProductCard>
 
         {/* Matrix */}
@@ -2015,6 +2205,11 @@ const productDescriptions: Record<string, { tagline: string; description: string
     description: "Synchronized pillar systems that create stunning 3D kinetic sculptures for corporate and retail spaces.",
     features: ["3D Rotation", "Pillar Movement", "Brand Integration"],
   },
+  telescopic: {
+    tagline: "Rising LED Surface",
+    description: "Horizontal LED table display with individually rising blocks that create mesmerizing 3D wave patterns and dynamic landscapes.",
+    features: ["Vertical Motion", "Wave Patterns", "Surface Display"],
+  },
   matrix: {
     tagline: "Fluid Motion Displays",
     description: "Wave-motion LED panels that create hypnotic patterns, perfect for immersive environments.",
@@ -2668,6 +2863,211 @@ function LargeHRMSVisual() {
   )
 }
 
+// Desktop Telescopic Visual - Horizontal LED table with rising blocks
+function LargeTelescopicVisual() {
+  const [patternIndex, setPatternIndex] = useState(0)
+  const [colorWave, setColorWave] = useState(0)
+
+  const cols = 8
+  const rows = 4
+  const cellWidth = 70
+  const cellHeight = 55
+  const gap = 4
+
+  // Height patterns for wave animations (negative = rise up)
+  const heightPatterns = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [-15, -35, -50, -60, -50, -35, -15, 0],
+    [-60, -45, -30, -15, -15, -30, -45, -60],
+    [0, -30, -45, -55, -55, -45, -30, 0],
+    [-40, -20, -50, -15, -40, -55, -25, -45],
+    [-55, -45, -35, -20, -20, -35, -45, -55],
+  ]
+
+  // Brand colors
+  const brandColors = ['#E17924', '#FECC00', '#EF9145', '#BA5617', '#994E1F', '#6C2A00']
+
+  // Get dynamic color based on wave position
+  const getColor = (row: number, col: number) => {
+    const waveOffset = (col + row + colorWave) % brandColors.length
+    return brandColors[waveOffset]
+  }
+
+  // Get offset for animation (negative = moves up)
+  const getOffset = (col: number, row: number) => {
+    const base = heightPatterns[patternIndex][col]
+    const rowVar = Math.sin(row * 0.8) * 8
+    return base + rowVar
+  }
+
+  // Animation cycle
+  useEffect(() => {
+    const patternTimer = setInterval(() => {
+      setPatternIndex(prev => (prev + 1) % heightPatterns.length)
+    }, 2000)
+
+    const colorTimer = setInterval(() => {
+      setColorWave(prev => prev + 1)
+    }, 800)
+
+    return () => {
+      clearInterval(patternTimer)
+      clearInterval(colorTimer)
+    }
+  }, [])
+
+  return (
+    <div className="relative cursor-pointer" style={{ perspective: '1000px' }}>
+      {/* Ambient glow */}
+      <motion.div
+        className="absolute inset-0 -m-10 rounded-full"
+        animate={{ opacity: [0.3, 0.5, 0.3] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(225, 121, 36, 0.5) 0%, transparent 70%)',
+          filter: 'blur(40px)',
+        }}
+      />
+
+      {/* 3D table container */}
+      <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(10deg) rotateY(-8deg)' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: `${gap}px`,
+            padding: '20px',
+            background: 'linear-gradient(180deg, #2a2a35 0%, #1a1a22 100%)',
+            borderRadius: '8px',
+            border: '3px solid #3a3a45',
+            boxShadow: '0 30px 60px rgba(0,0,0,0.7)',
+          }}
+        >
+          {Array.from({ length: cols }).map((_, colIndex) => (
+            <div key={colIndex} className="flex flex-col" style={{ gap: `${gap}px` }}>
+              {Array.from({ length: rows }).map((_, rowIndex) => {
+                const offset = getOffset(colIndex, rowIndex)
+                const riseAmount = Math.abs(offset)
+                const color = getColor(rowIndex, colIndex)
+                const nextColor = brandColors[(brandColors.indexOf(color) + 1) % brandColors.length]
+
+                return (
+                  <div
+                    key={rowIndex}
+                    style={{
+                      width: cellWidth,
+                      height: cellHeight,
+                      position: 'relative',
+                      transform: `translateY(${offset}px)`,
+                      transition: 'transform 1.8s ease-in-out',
+                    }}
+                  >
+                    {/* Block top face with synced grid pattern */}
+                    <motion.div
+                      animate={{
+                        background: `linear-gradient(135deg, ${color} 0%, ${nextColor} 50%, ${adjustColor(color, -30)} 100%)`,
+                      }}
+                      transition={{ duration: 0.8 }}
+                      style={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '4px',
+                        border: `2px solid ${adjustColor(color, -20)}`,
+                        boxShadow: `0 4px 15px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2), 0 0 ${15 + riseAmount * 0.3}px ${color}50`,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {/* Grid pattern overlay - synced across blocks */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          backgroundImage: `
+                            linear-gradient(0deg, rgba(0,0,0,0.15) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(0,0,0,0.15) 1px, transparent 1px)
+                          `,
+                          backgroundSize: '8px 8px',
+                          backgroundPosition: `${colIndex * 8}px ${rowIndex * 8}px`,
+                        }}
+                      />
+                      {/* Diagonal shine effect */}
+                      <motion.div
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ duration: 3, repeat: Infinity, delay: (colIndex + rowIndex) * 0.15, repeatDelay: 2 }}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: 'linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                          width: '50%',
+                        }}
+                      />
+                      {/* Inner glow pulse */}
+                      <motion.div
+                        animate={{ opacity: [0.3, 0.6, 0.3] }}
+                        transition={{ duration: 1.5, repeat: Infinity, delay: (colIndex * 0.1 + rowIndex * 0.15) }}
+                        style={{
+                          position: 'absolute',
+                          inset: '20%',
+                          borderRadius: '4px',
+                          background: `radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%)`,
+                        }}
+                      />
+                    </motion.div>
+
+                    {/* Block bottom side (visible when raised) */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: `${riseAmount}px`,
+                        top: '100%',
+                        background: `linear-gradient(180deg, ${adjustColor(color, -30)} 0%, ${adjustColor(color, -55)} 100%)`,
+                        borderRadius: '0 0 4px 4px',
+                        opacity: riseAmount > 5 ? 1 : 0,
+                        transition: 'height 1.8s ease-in-out, opacity 0.3s',
+                      }}
+                    />
+
+                    {/* Block right side (visible when raised) */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        width: '4px',
+                        height: `calc(100% + ${riseAmount}px)`,
+                        right: 0,
+                        top: 0,
+                        background: `linear-gradient(180deg, ${adjustColor(color, -20)} 0%, ${adjustColor(color, -45)} 100%)`,
+                        borderRadius: '0 4px 4px 0',
+                        opacity: riseAmount > 5 ? 1 : 0,
+                        transition: 'height 1.8s ease-in-out, opacity 0.3s',
+                      }}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* Table shadow */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: '90%',
+            height: '20px',
+            transform: 'translate(-50%, 30px)',
+            background: 'rgba(0,0,0,0.5)',
+            borderRadius: '50%',
+            filter: 'blur(15px)',
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
 function LargeMatrixVisual() {
   const [pattern, setPattern] = useState(0)
   const isActiveRef = useRef(true) // Auto-start animation
@@ -2848,6 +3248,7 @@ function DesktopShowcase() {
       case 'flap': return <LargeFlapVisual />
       case 'trihelix': return <LargeTriHelixVisual />
       case 'hrms': return <LargeHRMSVisual />
+      case 'telescopic': return <LargeTelescopicVisual />
       case 'matrix': return <LargeMatrixVisual />
       default: return null
     }
