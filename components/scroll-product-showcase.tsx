@@ -2979,7 +2979,11 @@ export default function ScrollProductShowcase() {
 
   useEffect(() => { setMounted(true) }, [])
 
-  if (!mounted) return <div className="min-h-screen bg-black" />
+  if (!mounted) return <div id="products" className="min-h-screen bg-black" />
 
-  return isMobile ? <MobileShowcase /> : <DesktopShowcase />
+  return (
+    <div id="products">
+      {isMobile ? <MobileShowcase /> : <DesktopShowcase />}
+    </div>
+  )
 }
