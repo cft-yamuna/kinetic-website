@@ -1308,7 +1308,7 @@ export default function HeroSection() {
                       transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, delay: 4.5 }}
                     />
                     <span className="relative flex items-center">
-                      Book a Live Demo
+                      Book a Visit
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </span>
                   </Button>

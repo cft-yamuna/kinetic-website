@@ -14,9 +14,10 @@ const TIME_SLOTS = [
 // Location info for desktop view
 const locationInfo = {
   company: "Craftech360",
-  address: "Survey no 7/2, 1st floor Flower Garden, Divitigeramanahally, Mysore Rd, near BHEL",
+  address: "WGWP+WV6, Ranganathan Colony, Deepanjali Nagar",
   city: "Bengaluru, Karnataka 560026",
-  phone: "9739076766"
+  phone: "9739076766",
+  mapUrl: "https://www.google.com/maps/search/?api=1&query=WGWP%2BWV6%2C+Deepanjali+Nagar%2C+Bengaluru"
 }
 
 // Booking month configuration
@@ -192,6 +193,24 @@ export default function BookingSection() {
         ...prev,
         [dateKey]: [...(prev[dateKey] || []), selectedSlot],
       }))
+
+      // Send confirmation email
+      try {
+        await fetch('/api/send-confirmation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            company: formData.company,
+            date: `${MONTH_NAME} ${selectedDate}, ${BOOKING_YEAR}`,
+            time: slotDetails?.time
+          })
+        })
+      } catch (emailError) {
+        // Don't fail the booking if email fails, just log it
+        console.error("Email send error:", emailError)
+      }
 
       setIsSubmitted(true)
     } catch (err) {
@@ -585,7 +604,7 @@ export default function BookingSection() {
                     {/* Map */}
                     <div className="relative h-[200px] lg:h-auto">
                       <iframe
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.5!2d77.489!3d12.914!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae3f0a4f0a0001%3A0x1234567890!2sFlower%20Garden%2C%20Mysore%20Road%2C%20Bengaluru!5e0!3m2!1sen!2sin!4v1703123456789!5m2!1sen!2sin"
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.2!2d77.5089!3d12.9367!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae15b277a93807%3A0x88437a0ef6428454!2sDeepanjali%20Nagar%2C%20Bengaluru%2C%20Karnataka!5e0!3m2!1sen!2sin!4v1703900000000!5m2!1sen!2sin"
                         width="100%"
                         height="100%"
                         style={{ border: 0, position: 'absolute', inset: 0 }}
@@ -619,7 +638,7 @@ export default function BookingSection() {
                             <span className="text-white text-sm font-medium">+91 {locationInfo.phone}</span>
                           </a>
                           <a
-                            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(locationInfo.address + ', ' + locationInfo.city)}`}
+                            href={locationInfo.mapUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 px-4 py-3 rounded-xl transition-colors"

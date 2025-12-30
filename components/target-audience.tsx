@@ -95,7 +95,7 @@ export default function TargetAudience() {
               <div className="flex justify-center gap-8 mt-12">
                 <div className="text-center">
                   <div className="text-2xl md:text-3xl font-bold text-white">50+</div>
-                  <div className="text-white/40 text-xs uppercase tracking-wider">Installations</div>
+                  <div className="text-white/40 text-xs uppercase tracking-wider">Events Done</div>
                 </div>
                 <div className="w-px h-12 bg-white/10" />
                 <div className="text-center">

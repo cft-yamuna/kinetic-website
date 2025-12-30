@@ -6,9 +6,10 @@ import { Phone, Navigation, MapPin } from "lucide-react"
 
 const contactInfo = {
   company: "Craftech360",
-  address: "Survey no 7/2, 1st floor Flower Garden, Divitigeramanahally, Mysore Rd, near BHEL",
+  address: "WGWP+WV6, Ranganathan Colony, Deepanjali Nagar",
   city: "Bengaluru, Karnataka 560026",
-  phone: "9739076766"
+  phone: "9739076766",
+  mapUrl: "https://www.google.com/maps/search/?api=1&query=WGWP%2BWV6%2C+Deepanjali+Nagar%2C+Bengaluru"
 }
 
 export default function SocialProof() {
@@ -46,7 +47,7 @@ export default function SocialProof() {
             <div className="relative h-[180px] rounded-xl overflow-hidden border border-white/10 group mb-4">
               {/* Map */}
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.5!2d77.489!3d12.914!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae3f0a4f0a0001%3A0x1234567890!2sFlower%20Garden%2C%20Mysore%20Road%2C%20Bengaluru!5e0!3m2!1sen!2sin!4v1703123456789!5m2!1sen!2sin"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.2!2d77.5089!3d12.9367!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae15b277a93807%3A0x88437a0ef6428454!2sDeepanjali%20Nagar%2C%20Bengaluru%2C%20Karnataka!5e0!3m2!1sen!2sin!4v1703900000000!5m2!1sen!2sin"
                 width="100%"
                 height="100%"
                 style={{ border: 0, position: 'absolute', inset: 0 }}
@@ -61,7 +62,7 @@ export default function SocialProof() {
 
               {/* Get Directions Button */}
               <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(contactInfo.address + ', ' + contactInfo.city)}`}
+                href={contactInfo.mapUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-sunbeam flex items-center justify-center hover:scale-110 transition-transform shadow-lg"

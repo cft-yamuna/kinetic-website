@@ -6,7 +6,8 @@
       "WebFetch(domain:in.pinterest.com)",
       "Bash(tasklist:*)",
       "Bash(findstr:*)",
-      "WebFetch(domain:lazulite.ae)"
+      "WebFetch(domain:lazulite.ae)",
+      "Bash(npm install:*)"
     ]
   }
 }
