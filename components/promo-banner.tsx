@@ -23,16 +23,7 @@ function useIsMobile() {
 
 export default function PromoBanner() {
   const [isVisible, setIsVisible] = useState(true)
-  const [slotsLeft, setSlotsLeft] = useState(3)
   const isMobile = useIsMobile()
-
-  useEffect(() => {
-    // Simulate urgency - slots decrease occasionally
-    const timer = setInterval(() => {
-      setSlotsLeft(prev => prev > 1 ? prev : 1)
-    }, 60000)
-    return () => clearInterval(timer)
-  }, [])
 
   if (!isVisible) return null
 
@@ -55,7 +46,7 @@ export default function PromoBanner() {
 
             {/* Urgency text */}
             <span className="text-xs font-medium">
-              <span className="text-sunbeam font-bold">{slotsLeft} slots</span> left
+              <span className="text-sunbeam font-bold">Limited slots</span> per day
             </span>
 
    
@@ -104,7 +95,7 @@ export default function PromoBanner() {
             {/* Urgency text */}
             <div className="flex items-center gap-2 md:gap-3">
               <span className="text-xs md:text-sm font-medium">
-                Only <span className="text-sunbeam font-bold">{slotsLeft} demo slots</span> left this week
+                <span className="text-sunbeam font-bold">Limited slots</span> per day — Book your demo now
               </span>
             </div>
 

@@ -1,4 +1,5 @@
 import HeroSection from "@/components/hero-section"
+import TargetAudience from "@/components/target-audience"
 import ScrollProductShowcase from "@/components/scroll-product-showcase"
 import SocialProof from "@/components/social-proof"
 import BookingSection from "@/components/booking-section"
@@ -21,6 +22,7 @@ export default function HomePage() {
         <main>
           <HeroSection />
           <ScrollProductShowcase />
+          <TargetAudience />
           <SocialProof />
           <BookingSection />
         </main>

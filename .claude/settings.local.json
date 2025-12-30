@@ -5,7 +5,8 @@
       "mcp__ide__getDiagnostics",
       "WebFetch(domain:in.pinterest.com)",
       "Bash(tasklist:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "WebFetch(domain:lazulite.ae)"
     ]
   }
 }

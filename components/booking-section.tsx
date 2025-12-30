@@ -3,13 +3,21 @@
 import type React from "react"
 import { useState, useMemo, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Calendar, Clock, CheckCircle2, Loader2, User, Mail, Phone, Building2 } from "lucide-react"
+import { Calendar, Clock, CheckCircle2, Loader2, User, Mail, Phone, Building2, MapPin, Navigation } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
 // Single time slot per day at 5 PM
 const TIME_SLOTS = [
   { id: "evening", time: "5:00 PM", label: "Evening Session" },
 ]
+
+// Location info for desktop view
+const locationInfo = {
+  company: "Craftech360",
+  address: "Survey no 7/2, 1st floor Flower Garden, Divitigeramanahally, Mysore Rd, near BHEL",
+  city: "Bengaluru, Karnataka 560026",
+  phone: "9739076766"
+}
 
 // Booking month configuration
 const BOOKING_YEAR = 2026
@@ -220,13 +228,7 @@ export default function BookingSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 rounded-full px-4 py-1.5 mb-4">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-            </span>
-            <span className="text-sm font-medium text-orange-400">Limited slots for {MONTH_NAME} {BOOKING_YEAR}</span>
-          </div>
+       
 
           <h2 className="text-3xl lg:text-5xl font-bold text-white mb-4">
             Book a <span className="bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-500 bg-clip-text text-transparent">Demo</span>
@@ -300,8 +302,9 @@ export default function BookingSection() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="grid lg:grid-cols-2 gap-6 lg:gap-8"
+              className="space-y-6 lg:space-y-8"
             >
+              <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
               {/* Calendar Section */}
               <motion.div
                 className="bg-white/5 backdrop-blur-sm rounded-3xl p-5 md:p-8 border border-white/10"
@@ -566,6 +569,69 @@ export default function BookingSection() {
                 <p className="text-xs text-white/30 text-center mt-4">
                   By booking, you agree to receive communication about your appointment.
                 </p>
+              </motion.div>
+              </div>
+
+              {/* Location Section - Desktop Only */}
+              <motion.div
+                className="hidden lg:block"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
+                <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
+                  <div className="grid lg:grid-cols-3">
+                    {/* Map */}
+                    <div className="relative h-[200px] lg:h-auto">
+                      <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.5!2d77.489!3d12.914!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae3f0a4f0a0001%3A0x1234567890!2sFlower%20Garden%2C%20Mysore%20Road%2C%20Bengaluru!5e0!3m2!1sen!2sin!4v1703123456789!5m2!1sen!2sin"
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0, position: 'absolute', inset: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        className="grayscale hover:grayscale-0 transition-all duration-500"
+                      />
+                    </div>
+
+                    {/* Location Info */}
+                    <div className="lg:col-span-2 p-6 flex items-center">
+                      <div className="flex items-center justify-between w-full gap-6">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                            <MapPin className="w-6 h-6 text-orange-500" />
+                          </div>
+                          <div>
+                            <h4 className="text-white font-semibold text-lg mb-1">{locationInfo.company}</h4>
+                            <p className="text-white/50 text-sm leading-relaxed max-w-md">
+                              {locationInfo.address}, {locationInfo.city}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <a
+                            href={`tel:${locationInfo.phone}`}
+                            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-4 py-3 rounded-xl transition-colors border border-white/10"
+                          >
+                            <Phone className="h-4 w-4 text-orange-500" />
+                            <span className="text-white text-sm font-medium">+91 {locationInfo.phone}</span>
+                          </a>
+                          <a
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(locationInfo.address + ', ' + locationInfo.city)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 px-4 py-3 rounded-xl transition-colors"
+                          >
+                            <Navigation className="h-4 w-4 text-black" />
+                            <span className="text-black text-sm font-medium">Get Directions</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             </motion.div>
           )}

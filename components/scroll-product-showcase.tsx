@@ -2120,10 +2120,7 @@ function LargeTriblockVisual() {
   const [rotations, setRotations] = useState<number[][]>(() =>
     Array(rows).fill(null).map(() => Array(cols).fill(0))
   )
-  const [isAnimating, setIsAnimating] = useState(false)
-  const [animationPhase, setAnimationPhase] = useState(0) // 0: home, 1: rotated
-  const [patternType, setPatternType] = useState(0)
-  const isHoveringRef = useRef(false)
+  const isActiveRef = useRef(true) // Auto-start animation
   const [blocks] = useState(() => generateTriblocks(rows, cols))
 
   // Pattern counter ref to avoid stale closure
@@ -2155,9 +2152,9 @@ function LargeTriblockVisual() {
     }
   }, [rows, cols])
 
-  // Different animation patterns that cycle continuously on hover
+  // Different animation patterns that cycle continuously
   const runWaveAnimation = useCallback(() => {
-    if (!isHoveringRef.current) return
+    if (!isActiveRef.current) return
 
     const currentPattern = patternRef.current
 
@@ -2173,7 +2170,7 @@ function LargeTriblockVisual() {
 
     // Come back to home after delay, then next pattern
     setTimeout(() => {
-      if (!isHoveringRef.current) return
+      if (!isActiveRef.current) return
 
       // Phase 2: Return to home position
       setRotations(prev => prev.map((rowArr, row) =>
@@ -2190,21 +2187,26 @@ function LargeTriblockVisual() {
 
       // Continue loop with next pattern after returning home
       setTimeout(() => {
-        if (isHoveringRef.current) {
+        if (isActiveRef.current) {
           runWaveAnimation()
         }
       }, 2000)
     }, 2500)
   }, [shouldAnimate])
 
-  const handleHover = useCallback(() => {
-    if (isHoveringRef.current) return
-    isHoveringRef.current = true
-    runWaveAnimation()
+  // Auto-start animation on mount
+  useEffect(() => {
+    isActiveRef.current = true
+    const timer = setTimeout(() => runWaveAnimation(), 500)
+    return () => {
+      isActiveRef.current = false
+      clearTimeout(timer)
+    }
   }, [runWaveAnimation])
 
-  const handleHoverEnd = useCallback(() => {
-    isHoveringRef.current = false
+  const handleHover = useCallback(() => {
+    // Speed up animation on hover
+    isActiveRef.current = true
   }, [])
 
   // Get wave delay for cascading effect - slower
@@ -2219,7 +2221,6 @@ function LargeTriblockVisual() {
       className="relative cursor-pointer"
       style={{ perspective: '1000px' }}
       onMouseEnter={handleHover}
-      onMouseLeave={handleHoverEnd}
     >
       <div style={{
         transformStyle: 'preserve-3d',
@@ -2277,47 +2278,49 @@ function LargeFlapVisual() {
   const [animationCycle, setAnimationCycle] = useState(0)
   const [patternIndex, setPatternIndex] = useState(0)
   const [waveDirection, setWaveDirection] = useState(0)
-  const isHoveringRef = useRef(false)
+  const isActiveRef = useRef(true) // Auto-start animation
 
   // Sequential wave patterns - each block waits for previous to finish
-  // Each block takes ~600ms to flip, so delay by 80ms creates cascading effect
   const getWaveDelay = useCallback((row: number, col: number, direction: number) => {
-    const delayPerBlock = 40 // Small delay between blocks for smooth cascade
+    const delayPerBlock = 40
     switch (direction % 6) {
-      case 0: return (row + col) * delayPerBlock // Top-left to bottom-right diagonal
-      case 1: return ((rows - 1 - row) + (cols - 1 - col)) * delayPerBlock // Bottom-right to top-left
-      case 2: return col * delayPerBlock // Left to right (column by column)
-      case 3: return (cols - 1 - col) * delayPerBlock // Right to left
-      case 4: return row * delayPerBlock * 2 // Top to bottom (row by row, slower)
-      case 5: return (rows - 1 - row) * delayPerBlock * 2 // Bottom to top
+      case 0: return (row + col) * delayPerBlock
+      case 1: return ((rows - 1 - row) + (cols - 1 - col)) * delayPerBlock
+      case 2: return col * delayPerBlock
+      case 3: return (cols - 1 - col) * delayPerBlock
+      case 4: return row * delayPerBlock * 2
+      case 5: return (rows - 1 - row) * delayPerBlock * 2
       default: return 0
     }
   }, [rows, cols])
 
-  // Run animation loop while hovering
+  // Run animation loop continuously
   const runAnimation = useCallback(() => {
-    if (!isHoveringRef.current) return
+    if (!isActiveRef.current) return
 
     setAnimationCycle(prev => prev + 1)
     setPatternIndex(prev => (prev + 1) % SETTLED_PATTERNS.length)
     setWaveDirection(prev => prev + 1)
 
-    // Loop again after animation completes (around 4 seconds for all blocks to flip)
     setTimeout(() => {
-      if (isHoveringRef.current) {
+      if (isActiveRef.current) {
         runAnimation()
       }
     }, 5000)
   }, [])
 
-  const handleHover = useCallback(() => {
-    if (isHoveringRef.current) return
-    isHoveringRef.current = true
-    runAnimation()
+  // Auto-start animation on mount
+  useEffect(() => {
+    isActiveRef.current = true
+    const timer = setTimeout(() => runAnimation(), 500)
+    return () => {
+      isActiveRef.current = false
+      clearTimeout(timer)
+    }
   }, [runAnimation])
 
-  const handleHoverEnd = useCallback(() => {
-    isHoveringRef.current = false
+  const handleHover = useCallback(() => {
+    isActiveRef.current = true
   }, [])
 
   const getExtendedContent = (row: number, col: number) => {
@@ -2332,7 +2335,6 @@ function LargeFlapVisual() {
       className="relative cursor-pointer"
       style={{ perspective: '1000px' }}
       onMouseEnter={handleHover}
-      onMouseLeave={handleHoverEnd}
     >
       <div style={{
         padding: '0',
@@ -2364,14 +2366,12 @@ function LargeTriHelixVisual() {
   const [wingAngle, setWingAngle] = useState(0)
   const [layerRotations, setLayerRotations] = useState<number[]>([0, 0, 0, 0, 0, 0])
   const [isAnimating, setIsAnimating] = useState(false)
-  const [rotationCycle, setRotationCycle] = useState(0)
   const [contentPhase, setContentPhase] = useState(0) // 0: closed, 1: open, 2: rotating
   const layers = 6
   const layerHeight = 58
   const layerGap = 5
-  const panelWidth = 145 // Wider panels
+  const panelWidth = 145
 
-  // Content for each layer's LED screen (changes with animation phase)
   const layerContent = [
     { closed: 'UNFOLD', open: 'YOUR', rotating: 'TRI' },
     { closed: 'THE', open: 'BRAND', rotating: 'HELIX' },
@@ -2381,56 +2381,53 @@ function LargeTriHelixVisual() {
     { closed: 'TECH', open: 'SPACE', rotating: '360°' },
   ]
 
-  // Track if still hovering for loop
-  const isHoveringRef = useRef(false)
+  const isActiveRef = useRef(true) // Auto-start animation
 
-  // Animation sequence - loops while hovering (open wings -> close wings -> rotate 180°)
+  // Animation sequence - loops continuously
   const runAnimation = useCallback(() => {
-    if (!isHoveringRef.current) return
+    if (!isActiveRef.current) return
 
     setIsAnimating(true)
-
-    // Phase 1: Open wings
     setWingAngle(120)
     setContentPhase(1)
 
-    // Phase 2: Close wings
     setTimeout(() => {
-      if (!isHoveringRef.current) return
+      if (!isActiveRef.current) return
       setWingAngle(0)
       setContentPhase(2)
     }, 2500)
 
-    // Phase 3: Rotate all layers 180° (staggered timing via CSS transition delay)
     setTimeout(() => {
-      if (!isHoveringRef.current) return
+      if (!isActiveRef.current) return
       setLayerRotations([180, 180, 180, 180, 180, 180])
     }, 3500)
 
-    // Phase 4: Reset rotations and restart
     setTimeout(() => {
-      if (!isHoveringRef.current) return
+      if (!isActiveRef.current) return
       setLayerRotations([0, 0, 0, 0, 0, 0])
       setContentPhase(0)
     }, 5500)
 
-    // Phase 5: Loop again if still hovering
     setTimeout(() => {
       setIsAnimating(false)
-      if (isHoveringRef.current) {
+      if (isActiveRef.current) {
         runAnimation()
       }
     }, 7000)
   }, [])
 
-  const handleHover = useCallback(() => {
-    if (isAnimating) return
-    isHoveringRef.current = true
-    runAnimation()
-  }, [isAnimating, runAnimation])
+  // Auto-start animation on mount
+  useEffect(() => {
+    isActiveRef.current = true
+    const timer = setTimeout(() => runAnimation(), 500)
+    return () => {
+      isActiveRef.current = false
+      clearTimeout(timer)
+    }
+  }, [runAnimation])
 
-  const handleHoverEnd = useCallback(() => {
-    isHoveringRef.current = false
+  const handleHover = useCallback(() => {
+    isActiveRef.current = true
   }, [])
 
   const totalHeight = layers * (layerHeight + layerGap)
@@ -2440,7 +2437,6 @@ function LargeTriHelixVisual() {
       className="relative cursor-pointer flex items-center justify-center"
       style={{ perspective: '1200px', height: totalHeight + 120 }}
       onMouseEnter={handleHover}
-      onMouseLeave={handleHoverEnd}
     >
       {/* Column container - faces straight front */}
       <div
@@ -2674,7 +2670,7 @@ function LargeHRMSVisual() {
 
 function LargeMatrixVisual() {
   const [pattern, setPattern] = useState(0)
-  const isHoveringRef = useRef(false)
+  const isActiveRef = useRef(true) // Auto-start animation
 
   const cols = 8
   const rows = 4
@@ -2683,7 +2679,6 @@ function LargeMatrixVisual() {
   const colGap = 4
   const rowGap = 4
 
-  // Wave patterns - Y offsets for each column (screens slide up/down)
   const patterns = [
     [0, 0, 0, 0, 0, 0, 0, 0],
     [-25, -15, 0, 15, 25, 15, 0, -15],
@@ -2692,7 +2687,6 @@ function LargeMatrixVisual() {
     [15, 0, -15, -25, -15, 0, 15, 25],
   ]
 
-  // Brand orange color from palette #E17924
   const colors = {
     bg: 'rgba(225,121,36,0.9)',
     glow: 'rgba(225,121,36,0.5)',
@@ -2700,27 +2694,31 @@ function LargeMatrixVisual() {
     dot: 'rgba(255,255,255,0.9)'
   }
 
-  // Cycle through patterns while hovering
+  // Cycle through patterns continuously
   const cycleAnimation = useCallback(() => {
-    if (!isHoveringRef.current) return
+    if (!isActiveRef.current) return
 
     setPattern(prev => (prev + 1) % patterns.length)
 
     setTimeout(() => {
-      if (isHoveringRef.current) {
+      if (isActiveRef.current) {
         cycleAnimation()
       }
     }, 2000)
   }, [])
 
-  const handleHover = () => {
-    isHoveringRef.current = true
-    cycleAnimation()
-  }
+  // Auto-start animation on mount
+  useEffect(() => {
+    isActiveRef.current = true
+    const timer = setTimeout(() => cycleAnimation(), 500)
+    return () => {
+      isActiveRef.current = false
+      clearTimeout(timer)
+    }
+  }, [cycleAnimation])
 
-  const handleHoverEnd = () => {
-    isHoveringRef.current = false
-    setPattern(0)
+  const handleHover = () => {
+    isActiveRef.current = true
   }
 
   return (
@@ -2728,10 +2726,8 @@ function LargeMatrixVisual() {
       className="relative cursor-pointer"
       style={{ perspective: '1000px' }}
       onMouseEnter={handleHover}
-      onMouseLeave={handleHoverEnd}
     >
       <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(10deg) rotateY(-8deg)' }}>
-        {/* Back frame */}
         <div style={{
           padding: '20px',
           background: 'linear-gradient(180deg, #2a2a35 0%, #1a1a22 100%)',
@@ -2760,7 +2756,6 @@ function LargeMatrixVisual() {
                       overflow: 'hidden',
                     }}
                   >
-                    {/* Glow dot */}
                     <div style={{
                       width: 8,
                       height: 8,
