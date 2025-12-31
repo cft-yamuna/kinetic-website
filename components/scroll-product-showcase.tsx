@@ -561,7 +561,7 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
 
 // Mobile Telescopic Visual - Horizontal LED table with rising blocks
 function MobileTelescopicCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
-  const [patternIndex, setPatternIndex] = useState(0)
+  const [patternIndex, setPatternIndex] = useState(0) // Start with all blocks flat/static
   const rows = 4
   const cols = 6
   const cellSize = 34
@@ -570,12 +570,12 @@ function MobileTelescopicCard({ isActive, onTap }: { isActive: boolean; onTap: (
   // Brand colors - static
   const brandColors = ['#E17924', '#FECC00', '#EF9145', '#BA5617', '#994E1F', '#6C2A00']
 
-  // Height patterns (rise amounts in px) - increased for better 3D visibility
+  // Height patterns (rise amounts in px) - all blocks rise significantly
   const heightPatterns = [
     [0, 0, 0, 0, 0, 0],
-    [15, 35, 50, 50, 35, 15],
-    [50, 35, 20, 20, 35, 50],
-    [5, 30, 50, 50, 30, 5],
+    [35, 50, 65, 65, 50, 35],
+    [65, 50, 35, 35, 50, 65],
+    [30, 50, 65, 65, 50, 30],
   ]
 
   // Auto-cycle wave animation only
@@ -1125,12 +1125,26 @@ function MobileProductCard({
 
 function MobileShowcase() {
   const [activeCard, setActiveCard] = useState<string | null>(null)
+  const productIds = useMemo(() => ['triblock', 'flap', 'trihelix', 'hrms', 'telescopic', 'matrix'], [])
+  const currentIndexRef = useRef(0)
 
   const handleAnimate = useCallback((productId: string) => {
     setActiveCard(productId)
     // Reset after animation
     setTimeout(() => setActiveCard(null), 1500)
   }, [])
+
+  // Auto-loop animations continuously
+  useEffect(() => {
+    const loopInterval = setInterval(() => {
+      const productId = productIds[currentIndexRef.current]
+      setActiveCard(productId)
+      setTimeout(() => setActiveCard(null), 1500)
+      currentIndexRef.current = (currentIndexRef.current + 1) % productIds.length
+    }, 3000) // Trigger next animation every 3 seconds
+
+    return () => clearInterval(loopInterval)
+  }, [productIds])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-black to-neutral-900 px-4 py-8">
@@ -1410,8 +1424,6 @@ function FlapVisual({ isActive }: { isActive: boolean }) {
   const [flapBlocks] = useState(() => generateFlapBlocks(FLAP_ROWS, FLAP_COLS))
   const [isFlapFlipped, setIsFlapFlipped] = useState(false)
   const [flapPattern, setFlapPattern] = useState(0)
-  const [isHovered, setIsHovered] = useState(false)
-  const patternIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const getWaveDelay = useCallback((row: number, col: number, pattern: number) => {
     switch (pattern % 4) {
@@ -1423,31 +1435,26 @@ function FlapVisual({ isActive }: { isActive: boolean }) {
     }
   }, [])
 
+  // Auto-loop animation continuously
   useEffect(() => {
-    if (isActive) {
-      setTimeout(() => { setIsFlapFlipped(true); setFlapPattern(0) }, 300)
-    } else {
-      setIsFlapFlipped(false)
-      setIsHovered(false)
-      if (patternIntervalRef.current) clearInterval(patternIntervalRef.current)
-    }
-  }, [isActive])
+    // Initial flip
+    const initialTimeout = setTimeout(() => { setIsFlapFlipped(true); setFlapPattern(0) }, 300)
 
-  useEffect(() => {
-    if (isHovered && isActive) {
-      patternIntervalRef.current = setInterval(() => {
-        setIsFlapFlipped(false)
-        setTimeout(() => { setFlapPattern(prev => (prev + 1) % 4); setIsFlapFlipped(true) }, 200)
-      }, 3000)
-      return () => { if (patternIntervalRef.current) clearInterval(patternIntervalRef.current) }
+    // Continuous loop
+    const interval = setInterval(() => {
+      setIsFlapFlipped(false)
+      setTimeout(() => { setFlapPattern(prev => (prev + 1) % 4); setIsFlapFlipped(true) }, 200)
+    }, 3000)
+
+    return () => {
+      clearTimeout(initialTimeout)
+      clearInterval(interval)
     }
-  }, [isHovered, isActive])
+  }, [])
 
   return (
     <div
       className="relative scale-[0.8] lg:scale-100 origin-center"
-      onMouseEnter={() => { if (isActive) { setIsHovered(true); setFlapPattern(prev => (prev + 1) % 4); setIsFlapFlipped(true) } }}
-      onMouseLeave={() => { setIsHovered(false); if (patternIntervalRef.current) clearInterval(patternIntervalRef.current); if (isActive) setIsFlapFlipped(true) }}
       style={{ perspective: '1000px' }}
     >
       <div style={{ padding: '20px 24px', background: 'linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)', borderRadius: '12px', border: '2px solid rgba(255,255,255,0.1)', boxShadow: '0 40px 80px rgba(0,0,0,0.5)', transform: 'rotateX(5deg)', transformStyle: 'preserve-3d' }}>
@@ -1491,29 +1498,36 @@ function HRMSPillar({ towerIndex, isHovered, rotationCycle }: { towerIndex: numb
 }
 
 function HRMSVisual({ isActive }: { isActive: boolean }) {
-  const [isHovered, setIsHovered] = useState(false)
   const [movementPhase, setMovementPhase] = useState(0)
   const [rotationCycle, setRotationCycle] = useState(0)
 
+  // Auto-loop animation continuously
   useEffect(() => {
-    if (isHovered) {
+    // Start animation after initial delay
+    const startTimeout = setTimeout(() => {
       setMovementPhase(1)
       setRotationCycle(1)
-      const m = setInterval(() => setMovementPhase(prev => (prev % 2) + 1), 3000)
-      const r = setInterval(() => setRotationCycle(prev => prev + 1), 3500)
-      return () => { clearInterval(m); clearInterval(r) }
-    } else { setMovementPhase(0); setRotationCycle(0) }
-  }, [isHovered])
+    }, 500)
+
+    const m = setInterval(() => setMovementPhase(prev => (prev % 2) + 1), 3000)
+    const r = setInterval(() => setRotationCycle(prev => prev + 1), 3500)
+
+    return () => {
+      clearTimeout(startTimeout)
+      clearInterval(m)
+      clearInterval(r)
+    }
+  }, [])
 
   const getOffset = (i: number) => movementPhase === 0 ? 0 : (movementPhase === 1 ? 70 : 0) * (i === 0 ? -1 : i === 2 ? 1 : 0)
 
   return (
-    <div className="relative scale-[0.75] lg:scale-100 origin-center" onMouseEnter={() => isActive && setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+    <div className="relative scale-[0.75] lg:scale-100 origin-center">
       <div className="flex flex-col items-center">
         <div className="flex items-end justify-center gap-8 mb-4">
           {[0, 1, 2].map((i) => (
             <div key={i} style={{ transform: `translateX(${getOffset(i)}px)`, transition: 'transform 1.8s ease-in-out' }}>
-              <HRMSPillar towerIndex={i} isHovered={isHovered} rotationCycle={rotationCycle} />
+              <HRMSPillar towerIndex={i} isHovered={true} rotationCycle={rotationCycle} />
             </div>
           ))}
         </div>
@@ -1529,28 +1543,25 @@ function HRMSVisual({ isActive }: { isActive: boolean }) {
 
 // Desktop Matrix
 function MatrixVisual({ isActive }: { isActive: boolean }) {
-  const [isHovered, setIsHovered] = useState(false)
   const [wavePhase, setWavePhase] = useState(0)
   const [activatedPillars, setActivatedPillars] = useState<Map<number, number[]>>(new Map())
 
+  // Auto-loop animation continuously
   useEffect(() => {
-    if (isHovered && isActive) {
-      const i = setInterval(() => setWavePhase(prev => prev + 1), 1500)
-      return () => clearInterval(i)
-    } else setActivatedPillars(new Map())
-  }, [isHovered, isActive])
+    const i = setInterval(() => setWavePhase(prev => prev + 1), 1500)
+    return () => clearInterval(i)
+  }, [])
 
   useEffect(() => {
-    if (!isHovered || !isActive) return
     const m = wavePhase % 2 === 0 ? 1 : -1
     const dirs = [-1, 0, 1, 1, 0, -1]
     const newA = new Map<number, number[]>()
     for (let c = 0; c < MATRIX_COLS; c++) newA.set(c, [0, 1, 2].map(() => dirs[c] * m * 0.9))
     setActivatedPillars(newA)
-  }, [wavePhase, isHovered, isActive])
+  }, [wavePhase])
 
   return (
-    <div className="relative scale-[0.8] lg:scale-100 origin-center" style={{ perspective: '1000px' }} onMouseEnter={() => isActive && setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setWavePhase(0); setActivatedPillars(new Map()) }}>
+    <div className="relative scale-[0.8] lg:scale-100 origin-center" style={{ perspective: '1000px' }}>
       <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(8deg) rotateY(-12deg)' }}>
         <div style={{ display: 'flex', gap: '12px', padding: '70px 30px', background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)', borderRadius: '8px', border: '2px solid #2a2a40', boxShadow: '0 30px 60px rgba(0,0,0,0.6)', minHeight: '420px', alignItems: 'center' }}>
           {Array.from({ length: MATRIX_COLS }).map((_, colIndex) => {
@@ -1671,42 +1682,33 @@ function BentoTriblockVisual({ isActive }: { isActive: boolean }) {
   const [rotations, setRotations] = useState<number[][]>(() =>
     Array(rows).fill(null).map(() => Array(cols).fill(0))
   )
-  const isHoveringRef = useRef(false)
-  const [waveCount, setWaveCount] = useState(0)
 
-  const runWaveAnimation = useCallback(() => {
-    if (!isHoveringRef.current) return
+  // Auto-loop animation continuously
+  useEffect(() => {
+    const runWaveAnimation = () => {
+      setRotations(prev => prev.map((rowArr) =>
+        rowArr.map((rot) => rot + 120)
+      ))
+    }
 
-    setRotations(prev => prev.map((rowArr, row) =>
-      rowArr.map((rot) => rot + 120)
-    ))
-    setWaveCount(prev => prev + 1)
+    // Initial animation
+    const initialTimeout = setTimeout(runWaveAnimation, 500)
 
-    setTimeout(() => {
-      if (isHoveringRef.current) {
-        runWaveAnimation()
-      }
-    }, 3000)
-  }, [])
+    // Loop every 3 seconds
+    const interval = setInterval(runWaveAnimation, 3000)
 
-  const handleHover = useCallback(() => {
-    if (isHoveringRef.current) return
-    isHoveringRef.current = true
-    runWaveAnimation()
-  }, [runWaveAnimation])
-
-  const handleHoverEnd = useCallback(() => {
-    isHoveringRef.current = false
+    return () => {
+      clearTimeout(initialTimeout)
+      clearInterval(interval)
+    }
   }, [])
 
   const getDelay = (row: number, col: number) => row * 70 + col * 35
 
   return (
     <div
-      className="relative cursor-pointer"
+      className="relative"
       style={{ perspective: '800px' }}
-      onMouseEnter={handleHover}
-      onMouseLeave={handleHoverEnd}
     >
       <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(12deg) rotateY(-5deg)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${blockSize}px)`, gap: `${gap}px`, transformStyle: 'preserve-3d' }}>
@@ -2039,11 +2041,8 @@ function BentoFlapVisual({ isActive }: { isActive: boolean }) {
     }
   }, [rows, cols])
 
+  // Auto-loop animation continuously
   useEffect(() => {
-    if (!isActive) {
-      return
-    }
-
     const runAnimation = () => {
       // Increment cycle to trigger fresh animation
       setAnimationCycle(prev => prev + 1)
@@ -2061,7 +2060,7 @@ function BentoFlapVisual({ isActive }: { isActive: boolean }) {
       clearTimeout(initialTimeout)
       clearInterval(interval)
     }
-  }, [isActive])
+  }, [])
 
   // Extend patterns to 6x11 by repeating/tiling
   const getExtendedContent = (row: number, col: number) => {
@@ -2102,18 +2101,23 @@ function BentoHRMSVisual({ isActive }: { isActive: boolean }) {
   const [rotationCycle, setRotationCycle] = useState(0)
   const [movementPhase, setMovementPhase] = useState(0)
 
+  // Auto-loop animation continuously
   useEffect(() => {
-    if (isActive) {
+    // Start animation after initial delay
+    const startTimeout = setTimeout(() => {
       setRotationCycle(1)
       setMovementPhase(1)
-      const r = setInterval(() => setRotationCycle(prev => prev + 1), 3000)
-      const m = setInterval(() => setMovementPhase(prev => (prev % 2) + 1), 2500)
-      return () => { clearInterval(r); clearInterval(m) }
-    } else {
-      setRotationCycle(0)
-      setMovementPhase(0)
+    }, 500)
+
+    const r = setInterval(() => setRotationCycle(prev => prev + 1), 3000)
+    const m = setInterval(() => setMovementPhase(prev => (prev % 2) + 1), 2500)
+
+    return () => {
+      clearTimeout(startTimeout)
+      clearInterval(r)
+      clearInterval(m)
     }
-  }, [isActive])
+  }, [])
 
   const getRotation = (pillarIndex: number, boxIndex: number, cycle: number) => {
     if (cycle === 0) return [0, 25, -30, 35, -25][boxIndex] || 0
@@ -2185,15 +2189,13 @@ function BentoHRMSVisual({ isActive }: { isActive: boolean }) {
 function BentoMatrixVisual({ isActive }: { isActive: boolean }) {
   const [wavePhase, setWavePhase] = useState(0)
 
+  // Auto-loop animation continuously
   useEffect(() => {
-    if (isActive) {
-      const i = setInterval(() => setWavePhase(prev => prev + 1), 1200)
-      return () => clearInterval(i)
-    }
-  }, [isActive])
+    const i = setInterval(() => setWavePhase(prev => prev + 1), 1200)
+    return () => clearInterval(i)
+  }, [])
 
   const getOffset = (colIndex: number) => {
-    if (!isActive) return 0
     const dirs = [-1, 0, 1, 1, 0, -1]
     const m = wavePhase % 2 === 0 ? 1 : -1
     return dirs[colIndex % 6] * m * 0.7
@@ -2915,7 +2917,7 @@ function LargeHRMSVisual() {
 
 // Desktop Telescopic Visual - Horizontal LED table with rising blocks
 function LargeTelescopicVisual() {
-  const [patternIndex, setPatternIndex] = useState(0)
+  const [patternIndex, setPatternIndex] = useState(0) // Start with all blocks flat/static
 
   const cols = 8
   const rows = 5
@@ -2923,14 +2925,14 @@ function LargeTelescopicVisual() {
   const cellHeight = 45
   const gap = 4
 
-  // Height patterns for wave animations - increased for better 3D visibility
+  // Height patterns for wave animations - all blocks rise significantly
   const heightPatterns = [
     [0, 0, 0, 0, 0, 0, 0, 0],
-    [25, 55, 85, 100, 85, 55, 25, 10],
-    [100, 75, 50, 25, 25, 50, 75, 100],
-    [10, 50, 75, 95, 95, 75, 50, 10],
-    [70, 35, 90, 25, 70, 95, 45, 80],
-    [95, 80, 60, 35, 35, 60, 80, 95],
+    [60, 80, 100, 110, 100, 80, 60, 50],
+    [110, 90, 70, 50, 50, 70, 90, 110],
+    [50, 75, 95, 110, 110, 95, 75, 50],
+    [85, 65, 105, 55, 85, 110, 70, 95],
+    [105, 95, 80, 60, 60, 80, 95, 105],
   ]
 
   // Brand colors - static assignment based on position
