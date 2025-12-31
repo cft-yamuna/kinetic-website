@@ -132,8 +132,14 @@ export default function BookingSection() {
     return booked.length >= 1 // Only one session per day at 5 PM
   }
 
+  // Check if a day is Sunday (not available)
+  const isSunday = (day: number) => {
+    const date = new Date(BOOKING_YEAR, BOOKING_MONTH, day)
+    return date.getDay() === 0 // 0 = Sunday
+  }
+
   const handleDateSelect = (day: number) => {
-    if (isDayFullyBooked(day)) return
+    if (isDayFullyBooked(day) || isSunday(day)) return
     setSelectedDate(day)
     setSelectedSlot(null)
   }
@@ -358,30 +364,41 @@ export default function BookingSection() {
                     }
 
                     const isFullyBooked = isDayFullyBooked(day)
+                    const isSundayDate = isSunday(day)
+                    const isUnavailable = isFullyBooked || isSundayDate
                     const isSelected = selectedDate === day
 
                     return (
                       <div key={day} className="relative group">
                         <motion.button
-                          onClick={() => !isFullyBooked && handleDateSelect(day)}
-                          disabled={isFullyBooked}
+                          onClick={() => !isUnavailable && handleDateSelect(day)}
+                          disabled={isUnavailable}
                           className={`
                             aspect-square rounded-lg md:rounded-xl text-xs md:text-sm font-medium transition-all duration-200
                             flex items-center justify-center relative w-full
                             ${isSelected
                               ? "bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30"
-                              : isFullyBooked
-                                ? "bg-red-500/20 text-white/40 cursor-not-allowed border border-red-500/30"
-                                : "bg-white/5 text-white hover:bg-white/10"
+                              : isSundayDate
+                                ? "bg-white/5 text-white/30 cursor-not-allowed border border-white/10"
+                                : isFullyBooked
+                                  ? "bg-red-500/20 text-white/40 cursor-not-allowed border border-red-500/30"
+                                  : "bg-white/5 text-white hover:bg-white/10"
                             }
                           `}
-                          whileHover={!isFullyBooked ? { scale: 1.05 } : {}}
-                          whileTap={!isFullyBooked ? { scale: 0.95 } : {}}
+                          whileHover={!isUnavailable ? { scale: 1.05 } : {}}
+                          whileTap={!isUnavailable ? { scale: 0.95 } : {}}
                         >
                           {day}
                         </motion.button>
+                        {/* Tooltip for Sunday dates */}
+                        {isSundayDate && (
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-white/20 text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                            Closed on Sundays
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white/20" />
+                          </div>
+                        )}
                         {/* Tooltip for booked dates */}
-                        {isFullyBooked && (
+                        {isFullyBooked && !isSundayDate && (
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-red-500 text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
                             Already Booked
                             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-red-500" />
@@ -399,10 +416,12 @@ export default function BookingSection() {
                     <span>Selected</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded bg-white/5 relative">
-                      <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full" />
-                    </div>
-                    <span>Fully Booked</span>
+                    <div className="w-3 h-3 rounded bg-red-500/20 border border-red-500/30" />
+                    <span>Booked</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded bg-white/5 border border-white/10" />
+                    <span>Closed</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded bg-white/10" />

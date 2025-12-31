@@ -108,7 +108,7 @@ const HRMS_SECONDARY = '#BA5617'
 const products = [
   {
     id: "triblock",
-    title: "TRIBLOCK",
+    title: "TRI-BLOCK",
     subtitle: "Pixel Walls",
     gradient: "from-orange-600 via-amber-500 to-yellow-600",
     accentColor: "#E17924",
@@ -133,7 +133,7 @@ const products = [
   {
     id: "hrms",
     title: "HRMS",
-    subtitle: "HR Management",
+    subtitle: "Horizontal Rotation Movement System",
     gradient: "from-orange-500 via-amber-500 to-yellow-500",
     accentColor: "#EF9145",
     type: "hrms",
@@ -235,24 +235,51 @@ function MobileTriblockCard({ isActive, onTap }: { isActive: boolean; onTap: () 
   const [rotations, setRotations] = useState<number[][]>(() =>
     Array(rows).fill(null).map(() => Array(cols).fill(0))
   )
-  const [wavePattern, setWavePattern] = useState(0)
+  const patternRef = useRef(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isInView, setIsInView] = useState(false)
 
+  // Detect when component comes into view
   useEffect(() => {
-    if (isActive) {
-      // Trigger cascading rotation animation
-      const pattern = wavePattern % 3
+    const element = containerRef.current
+    if (!element) return
 
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting)
+      },
+      { threshold: 0.3 }
+    )
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  // Auto-loop animation only when in view
+  useEffect(() => {
+    if (!isInView) return
+
+    const runAnimation = () => {
+      const pattern = patternRef.current % 3
       setRotations(prev => prev.map((rowArr, row) =>
         rowArr.map((rot, col) => {
-          // Different rotation amounts for visual interest
           const variation = ((row + col) % 3) * 120
           return rot + 120 + (pattern === 2 ? variation : 0)
         })
       ))
-
-      setWavePattern(prev => prev + 1)
+      patternRef.current += 1
     }
-  }, [isActive])
+
+    // Initial animation
+    const initialTimeout = setTimeout(runAnimation, 500)
+    // Loop every 2.5 seconds
+    const interval = setInterval(runAnimation, 2500)
+
+    return () => {
+      clearTimeout(initialTimeout)
+      clearInterval(interval)
+    }
+  }, [isInView])
 
   // Get delay for cascading effect (top to bottom wave) - slower cascade
   const getDelay = (row: number, col: number) => {
@@ -261,6 +288,7 @@ function MobileTriblockCard({ isActive, onTap }: { isActive: boolean; onTap: () 
 
   return (
     <motion.div
+      ref={containerRef}
       className="relative w-full h-full flex items-center justify-center cursor-pointer pt-6"
       onClick={onTap}
       whileTap={{ scale: 0.98 }}
@@ -364,16 +392,50 @@ function MobileFlapBlock({ baseColor, colorPool, delay, isFlipping }: { baseColo
   )
 }
 
-// Mobile Flap Visual - Tap to flip
+// Mobile Flap Visual - Auto-loop flip
 function MobileFlapCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
   const [blocks] = useState(() => generateFlapBlocks(MOBILE_FLAP_ROWS, MOBILE_FLAP_COLS))
   const [flipCycle, setFlipCycle] = useState(0)
+  const [isFlipping, setIsFlipping] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isInView, setIsInView] = useState(false)
 
+  // Detect when component comes into view
   useEffect(() => {
-    if (isActive) {
+    const element = containerRef.current
+    if (!element) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting)
+      },
+      { threshold: 0.3 }
+    )
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  // Auto-loop animation only when in view
+  useEffect(() => {
+    if (!isInView) return
+
+    const runFlip = () => {
+      setIsFlipping(true)
       setFlipCycle(prev => prev + 1)
+      setTimeout(() => setIsFlipping(false), 2500)
     }
-  }, [isActive])
+
+    // Initial flip
+    const initialTimeout = setTimeout(runFlip, 800)
+    // Loop every 4 seconds
+    const interval = setInterval(runFlip, 4000)
+
+    return () => {
+      clearTimeout(initialTimeout)
+      clearInterval(interval)
+    }
+  }, [isInView])
 
   const getDelay = (row: number, col: number) => {
     return (row + col) * 80
@@ -381,6 +443,7 @@ function MobileFlapCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
 
   return (
     <motion.div
+      ref={containerRef}
       className="relative w-full h-full flex items-center justify-center cursor-pointer pt-8"
       onClick={onTap}
       whileTap={{ scale: 0.98 }}
@@ -392,17 +455,11 @@ function MobileFlapCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
             baseColor={block.baseColor}
             colorPool={block.colorPool}
             delay={getDelay(block.row, block.col)}
-            isFlipping={isActive}
+            isFlipping={isFlipping || isActive}
           />
         ))}
       </div>
-      <motion.div
-        className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-white/40 uppercase tracking-wider"
-        animate={{ opacity: [0.4, 0.8, 0.4] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      >
-        Tap to flip
-      </motion.div>
+    
     </motion.div>
   )
 }
@@ -411,13 +468,46 @@ function MobileFlapCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
 function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
   const [rotationPhase, setRotationPhase] = useState(0)
   const [movementPhase, setMovementPhase] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isInView, setIsInView] = useState(false)
 
+  // Detect when component comes into view
   useEffect(() => {
-    if (isActive) {
+    const element = containerRef.current
+    if (!element) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting)
+      },
+      { threshold: 0.3 }
+    )
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  // Auto-loop animation only when in view
+  useEffect(() => {
+    if (!isInView) return
+
+    // Start immediately when in view
+    setRotationPhase(1)
+    setMovementPhase(1)
+
+    const rotationInterval = setInterval(() => {
       setRotationPhase(prev => prev + 1)
+    }, 3000)
+
+    const movementInterval = setInterval(() => {
       setMovementPhase(prev => prev + 1)
+    }, 2500)
+
+    return () => {
+      clearInterval(rotationInterval)
+      clearInterval(movementInterval)
     }
-  }, [isActive])
+  }, [isInView])
 
   const getRotation = (pillarIndex: number, boxIndex: number) => {
     if (rotationPhase === 0) return 0
@@ -434,6 +524,7 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
 
   return (
     <motion.div
+      ref={containerRef}
       className="relative w-full h-full flex items-center justify-center cursor-pointer pt-6"
       onClick={onTap}
       whileTap={{ scale: 0.98 }}
@@ -449,7 +540,7 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
             {HRMS_BOXES.slice(0, 4).map((box, boxIndex) => (
               <motion.div
                 key={box.id}
-                animate={isActive ? { rotateY: getRotation(pillarIndex, boxIndex) } : {}}
+                animate={{ rotateY: getRotation(pillarIndex, boxIndex) }}
                 transition={{ duration: 1.5, delay: pillarIndex * 0.1 + boxIndex * 0.05 }}
                 style={{
                   width: 56,
@@ -566,6 +657,8 @@ function MobileTelescopicCard({ isActive, onTap }: { isActive: boolean; onTap: (
   const cols = 6
   const cellSize = 34
   const gap = 3
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isInView, setIsInView] = useState(false)
 
   // Brand colors - static
   const brandColors = ['#E17924', '#FECC00', '#EF9145', '#BA5617', '#994E1F', '#6C2A00']
@@ -578,8 +671,26 @@ function MobileTelescopicCard({ isActive, onTap }: { isActive: boolean; onTap: (
     [30, 50, 65, 65, 50, 30],
   ]
 
-  // Auto-cycle wave animation only
+  // Detect when component comes into view
   useEffect(() => {
+    const element = containerRef.current
+    if (!element) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting)
+      },
+      { threshold: 0.3 }
+    )
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  // Auto-cycle wave animation only when in view
+  useEffect(() => {
+    if (!isInView) return
+
     // Start first animation quickly
     const initialTimeout = setTimeout(() => {
       setPatternIndex(1)
@@ -593,14 +704,7 @@ function MobileTelescopicCard({ isActive, onTap }: { isActive: boolean; onTap: (
       clearTimeout(initialTimeout)
       clearInterval(patternTimer)
     }
-  }, [])
-
-  // Trigger extra animation on tap
-  useEffect(() => {
-    if (isActive) {
-      setPatternIndex(prev => (prev + 1) % heightPatterns.length)
-    }
-  }, [isActive])
+  }, [isInView])
 
   const getRiseAmount = (col: number, row: number) => {
     const base = heightPatterns[patternIndex][col]
@@ -618,6 +722,7 @@ function MobileTelescopicCard({ isActive, onTap }: { isActive: boolean; onTap: (
 
   return (
     <motion.div
+      ref={containerRef}
       className="relative w-full flex items-center justify-center cursor-pointer"
       style={{ minHeight: '220px', paddingTop: '40px', paddingBottom: '20px', perspective: '800px' }}
       onClick={onTap}
@@ -785,13 +890,36 @@ function MobileTelescopicCard({ isActive, onTap }: { isActive: boolean; onTap: (
 // Mobile Matrix Visual - Movement animation
 function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
   const [wavePhase, setWavePhase] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isInView, setIsInView] = useState(false)
 
+  // Detect when component comes into view
   useEffect(() => {
-    if (isActive) {
-      // Movement wave
+    const element = containerRef.current
+    if (!element) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting)
+      },
+      { threshold: 0.3 }
+    )
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  // Auto-loop animation only when in view
+  useEffect(() => {
+    if (!isInView) return
+
+    setWavePhase(1)
+    const interval = setInterval(() => {
       setWavePhase(prev => prev + 1)
-    }
-  }, [isActive])
+    }, 1200)
+
+    return () => clearInterval(interval)
+  }, [isInView])
 
   // Wave offsets for columns
   const getOffset = (colIndex: number) => {
@@ -811,6 +939,7 @@ function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () =>
 
   return (
     <motion.div
+      ref={containerRef}
       className="relative w-full flex items-center justify-center cursor-pointer"
       style={{ minHeight: '220px', paddingTop: '50px', paddingBottom: '20px' }}
       onClick={onTap}
@@ -833,7 +962,7 @@ function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () =>
                 {[0, 1, 2].map((rowIndex) => (
                   <motion.div
                     key={rowIndex}
-                    animate={isActive ? { y: getOffset(colIndex) } : { y: 0 }}
+                    animate={{ y: getOffset(colIndex) }}
                     transition={{ duration: 0.8, delay: colIndex * 0.05 }}
                     style={{
                       width: 46,
@@ -875,6 +1004,8 @@ function MobileTriHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () 
   const layerHeight = 30
   const layerGap = 5
   const panelWidth = 60
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isInView, setIsInView] = useState(false)
 
   // Content for each layer
   const layerContent = [
@@ -885,42 +1016,74 @@ function MobileTriHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () 
     { closed: 'LED', open: 'SPACE', rotating: 'WOW' },
   ]
 
+  // Detect when component comes into view
   useEffect(() => {
-    if (isActive) {
+    const element = containerRef.current
+    if (!element) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting)
+      },
+      { threshold: 0.3 }
+    )
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  // Auto-loop animation only when in view
+  useEffect(() => {
+    if (!isInView) return
+
+    const runAnimation = () => {
       // Open wings slowly
       setWingAngle(120)
       setContentPhase(1)
 
-      // Close wings after holding (slower)
+      // Close wings after holding
       setTimeout(() => {
         setWingAngle(0)
       }, 2500)
 
-      // Rotate each layer like DNA (180 degree flip with stagger)
+      // Rotate each layer like DNA
       setTimeout(() => {
         setContentPhase(2)
-        const nextCycle = rotationCycle + 1
-        setRotationCycle(nextCycle)
-        const baseRotation = nextCycle % 2 === 0 ? 0 : 180
-        const newRotations = [0, 1, 2, 3, 4].map((i) => {
-          const variation = ((i * 7) % 11 - 5)
-          return baseRotation + variation
+        setRotationCycle(prev => {
+          const nextCycle = prev + 1
+          const baseRotation = nextCycle % 2 === 0 ? 0 : 180
+          const newRotations = [0, 1, 2, 3, 4].map((i) => {
+            const variation = ((i * 7) % 11 - 5)
+            return baseRotation + variation
+          })
+          setLayerRotations(newRotations)
+          return nextCycle
         })
-        setLayerRotations(newRotations)
       }, 3500)
 
-      // Return to home position (all straight)
+      // Return to home position
       setTimeout(() => {
         setLayerRotations([0, 0, 0, 0, 0])
         setContentPhase(0)
       }, 5500)
     }
-  }, [isActive])
+
+    // Initial animation
+    const initialTimeout = setTimeout(runAnimation, 600)
+    // Loop every 6 seconds
+    const interval = setInterval(runAnimation, 6000)
+
+    return () => {
+      clearTimeout(initialTimeout)
+      clearInterval(interval)
+    }
+  }, [isInView])
 
   const totalHeight = layers * (layerHeight + layerGap)
 
   return (
     <motion.div
+      ref={containerRef}
       className="relative w-full h-full flex flex-col items-center justify-center cursor-pointer"
       onClick={onTap}
       whileTap={{ scale: 0.98 }}
@@ -1130,27 +1293,10 @@ function MobileProductCard({
 }
 
 function MobileShowcase() {
-  const [activeCard, setActiveCard] = useState<string | null>(null)
-  const productIds = useMemo(() => ['triblock', 'flap', 'trihelix', 'hrms', 'telescopic', 'matrix'], [])
-  const currentIndexRef = useRef(0)
-
-  const handleAnimate = useCallback((productId: string) => {
-    setActiveCard(productId)
-    // Reset after animation
-    setTimeout(() => setActiveCard(null), 1500)
+  // Each card now has its own independent auto-loop animation
+  const handleAnimate = useCallback(() => {
+    // Tap handler - cards animate on their own
   }, [])
-
-  // Auto-loop animations continuously
-  useEffect(() => {
-    const loopInterval = setInterval(() => {
-      const productId = productIds[currentIndexRef.current]
-      setActiveCard(productId)
-      setTimeout(() => setActiveCard(null), 1500)
-      currentIndexRef.current = (currentIndexRef.current + 1) % productIds.length
-    }, 3000) // Trigger next animation every 3 seconds
-
-    return () => clearInterval(loopInterval)
-  }, [productIds])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-black to-neutral-900 px-4 py-8">
@@ -1160,21 +1306,22 @@ function MobileShowcase() {
         <p className="text-sm text-white/50">Tap each product to see it in action</p>
       </div>
 
+
       {/* Single Column Layout - 1 product at a time, full width */}
       <div className="flex flex-col gap-4 max-w-lg mx-auto">
         {/* Triblock */}
         <MobileProductCard
           productId="triblock"
-          title="TRIBLOCK"
+          title="TRI-BLOCK"
           subtitle="Pixel Walls"
           gradient="from-orange-500 to-amber-400"
           bgGradient="linear-gradient(135deg, rgba(225,121,36,0.1) 0%, rgba(0,0,0,0.8) 100%)"
           borderColor="rgba(225,121,36,0.2)"
           height={300}
-          onAnimate={() => handleAnimate('triblock')}
-          isActive={activeCard === 'triblock'}
+          onAnimate={handleAnimate}
+          isActive={false}
         >
-          <MobileTriblockCard isActive={activeCard === 'triblock'} onTap={() => handleAnimate('triblock')} />
+          <MobileTriblockCard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
 
         {/* Flap */}
@@ -1186,10 +1333,10 @@ function MobileShowcase() {
           bgGradient="linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(0,0,0,0.8) 100%)"
           borderColor="rgba(245,158,11,0.2)"
           height={290}
-          onAnimate={() => handleAnimate('flap')}
-          isActive={activeCard === 'flap'}
+          onAnimate={handleAnimate}
+          isActive={false}
         >
-          <MobileFlapCard isActive={activeCard === 'flap'} onTap={() => handleAnimate('flap')} />
+          <MobileFlapCard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
 
         {/* TRI-HELIX */}
@@ -1201,25 +1348,25 @@ function MobileShowcase() {
           bgGradient="linear-gradient(135deg, rgba(254,204,0,0.1) 0%, rgba(0,0,0,0.8) 100%)"
           borderColor="rgba(254,204,0,0.2)"
           height={250}
-          onAnimate={() => handleAnimate('trihelix')}
-          isActive={activeCard === 'trihelix'}
+          onAnimate={handleAnimate}
+          isActive={false}
         >
-          <MobileTriHelixCard isActive={activeCard === 'trihelix'} onTap={() => handleAnimate('trihelix')} />
+          <MobileTriHelixCard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
 
         {/* HRMS */}
         <MobileProductCard
           productId="hrms"
           title="HRMS"
-          subtitle="HR Management System"
+          subtitle="Horizontal Rotation Movement System"
           gradient="from-orange-500 to-amber-400"
           bgGradient="linear-gradient(135deg, rgba(239,145,69,0.1) 0%, rgba(0,0,0,0.8) 100%)"
           borderColor="rgba(239,145,69,0.2)"
           height={220}
-          onAnimate={() => handleAnimate('hrms')}
-          isActive={activeCard === 'hrms'}
+          onAnimate={handleAnimate}
+          isActive={false}
         >
-          <MobileHRMSCard isActive={activeCard === 'hrms'} onTap={() => handleAnimate('hrms')} />
+          <MobileHRMSCard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
 
         {/* Telescopic */}
@@ -1231,10 +1378,10 @@ function MobileShowcase() {
           bgGradient="linear-gradient(135deg, rgba(225,121,36,0.1) 0%, rgba(0,0,0,0.8) 100%)"
           borderColor="rgba(225,121,36,0.2)"
           height={230}
-          onAnimate={() => handleAnimate('telescopic')}
-          isActive={activeCard === 'telescopic'}
+          onAnimate={handleAnimate}
+          isActive={false}
         >
-          <MobileTelescopicCard isActive={activeCard === 'telescopic'} onTap={() => handleAnimate('telescopic')} />
+          <MobileTelescopicCard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
 
         {/* Matrix */}
@@ -1246,10 +1393,10 @@ function MobileShowcase() {
           bgGradient="linear-gradient(135deg, rgba(245,166,35,0.1) 0%, rgba(0,0,0,0.8) 100%)"
           borderColor="rgba(245,166,35,0.2)"
           height={230}
-          onAnimate={() => handleAnimate('matrix')}
-          isActive={activeCard === 'matrix'}
+          onAnimate={handleAnimate}
+          isActive={false}
         >
-          <MobileMatrixCard isActive={activeCard === 'matrix'} onTap={() => handleAnimate('matrix')} />
+          <MobileMatrixCard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
       </div>
 
@@ -2236,47 +2383,61 @@ function BentoMatrixVisual({ isActive }: { isActive: boolean }) {
 const productDescriptions: Record<string, { tagline: string; description: string; features: string[] }> = {
   triblock: {
     tagline: "Transform Any Surface",
-    description: "Revolutionary pixel wall technology that brings static surfaces to life with dynamic, responsive displays.",
-    features: ["360° Rotation", "Interactive Touch", "Modular Design"],
+    description: "Revolutionary pixel wall technology with customizable colors. Integrates with kinetic camera to follow movement, creating dynamic responsive displays.",
+    features: ["Kinetic Camera Integration", "Customizable Colors"],
   },
   flap: {
-    tagline: "Retro Meets Modern",
-    description: "Classic split-flap aesthetics reimagined with cutting-edge mechanics for mesmerizing visual storytelling.",
-    features: ["Multi-layer Flip", "Wave Patterns", "Custom Content"],
+    tagline: "Visual Storytelling",
+    description: "Paper-like split-flap displays that form complete structures with user images. Perfect for storytelling with multi-pattern configurations.",
+    features: ["Structure Formation", "Multi-Pattern Display"],
   },
   trihelix: {
-    tagline: "Unfold The Future",
-    description: "Triangular prism towers that dramatically unfold into panoramic LED walls, creating breathtaking reveals.",
-    features: ["Unfolding Panels", "LED Displays", "Stacked Layers"],
+    tagline: "Wave Like Motion",
+    description: "Panoramic display system with fluid wave-like motion. Supports any kind of content including videos and images for immersive experiences.",
+    features: ["Video & Image Support", "Wave Motion"],
   },
   hrms: {
-    tagline: "Intelligent Movement",
-    description: "Synchronized pillar systems that create stunning 3D kinetic sculptures for corporate and retail spaces.",
-    features: ["3D Rotation", "Pillar Movement", "Brand Integration"],
+    tagline: "Synchronized Rotation",
+    description: "Horizontal rotation movement system where content syncs with the rotating display. LEDs move and rotate simultaneously for stunning visual effects.",
+    features: ["Content Sync Display", "LED Movement & Rotation"],
   },
   telescopic: {
     tagline: "Rising LED Surface",
     description: "Horizontal LED table display with individually rising blocks that create mesmerizing 3D wave patterns and dynamic landscapes.",
-    features: ["Vertical Motion", "Wave Patterns", "Surface Display"],
+    features: ["Vertical Motion", "Wave Patterns"],
   },
   matrix: {
-    tagline: "Fluid Motion Displays",
-    description: "Wave-motion LED panels that create hypnotic patterns, perfect for immersive environments.",
-    features: ["Wave Motion", "Color Sync", "Ambient Sensing"],
+    tagline: "Flexible LED Patterns",
+    description: "Versatile kinetic screens that display any content. Fully customizable LED patterns with any number of LEDs to match your requirements.",
+    features: ["Any Content Display", "Custom LED Patterns"],
   },
 }
 
 // Animation variants for smooth transitions (from night commit)
-const contentVariants = {
+// Vertical variants - fade in from bottom/top (for products 1-2, 5-6)
+const contentVariantsVertical = {
   enter: (d: number) => ({ y: d > 0 ? 80 : -80, opacity: 0 }),
   center: { y: 0, opacity: 1 },
   exit: (d: number) => ({ y: d < 0 ? 80 : -80, opacity: 0 }),
 }
 
-const visualVariants = {
+const visualVariantsVertical = {
   enter: (d: number) => ({ scale: 0.85, opacity: 0, rotateY: d > 0 ? 20 : -20 }),
   center: { scale: 1, opacity: 1, rotateY: 0 },
   exit: (d: number) => ({ scale: 0.85, opacity: 0, rotateY: d < 0 ? 20 : -20 }),
+}
+
+// Horizontal variants - slide in from left/right (for products 3-4)
+const contentVariantsHorizontal = {
+  enter: (d: number) => ({ x: d > 0 ? 120 : -120, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (d: number) => ({ x: d < 0 ? 120 : -120, opacity: 0 }),
+}
+
+const visualVariantsHorizontal = {
+  enter: (d: number) => ({ x: d > 0 ? 150 : -150, scale: 0.9, opacity: 0 }),
+  center: { x: 0, scale: 1, opacity: 1 },
+  exit: (d: number) => ({ x: d < 0 ? 150 : -150, scale: 0.9, opacity: 0 }),
 }
 
 // Consistent visual container size target: ~550px width, ~380px height
@@ -3327,73 +3488,142 @@ function DesktopShowcase() {
   return (
     <div ref={containerRef} className="relative bg-black" style={{ height: `${products.length * 100}vh` }}>
       <div className="sticky top-0 h-screen overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-neutral-900" />
+        {/* Background - solid black */}
+        <div className="absolute inset-0 bg-black" />
 
-        {/* Animated background glows */}
-        <motion.div
-          className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-[180px] opacity-20"
-          animate={{ background: `radial-gradient(circle, ${product.accentColor}, transparent)` }}
-          transition={{ duration: 0.8 }}
-        />
-        <motion.div
-          className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full blur-[150px] opacity-15"
-          animate={{ background: `radial-gradient(circle, ${product.accentColor}, transparent)` }}
-          transition={{ duration: 0.8 }}
+        {/* Grid pattern overlay - small boxes, subtle and fading */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px)
+            `,
+            backgroundSize: '24px 24px',
+            maskImage: 'radial-gradient(ellipse 80% 60% at 30% 70%, black 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 80% 30%, black 0%, transparent 60%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 80% 60% at 30% 70%, black 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 80% 30%, black 0%, transparent 60%)'
+          }}
         />
 
-        {/* Content - Full Width Split Layout */}
-        <div className="relative h-full flex w-full">
+        {/* Gradient blurs - animated on scroll */}
+        {/* Orange/amber glow - moves around */}
+        <motion.div
+          className="absolute w-[500px] h-[500px] rounded-full blur-[120px] opacity-40"
+          style={{ background: 'radial-gradient(circle, #E17924 0%, #D97706 40%, transparent 70%)' }}
+          animate={{
+            left: activeIndex % 2 === 0 ? '-5%' : '60%',
+            top: activeIndex < 3 ? '50%' : '10%',
+          }}
+          transition={{ duration: 1.2, ease: [0.25, 0.1, 0.25, 1] }}
+        />
+        {/* Teal glow - moves opposite */}
+        <motion.div
+          className="absolute w-[350px] h-[350px] rounded-full blur-[100px] opacity-30"
+          style={{ background: 'radial-gradient(circle, #0D9488 0%, #14B8A6 40%, transparent 70%)' }}
+          animate={{
+            left: activeIndex % 2 === 0 ? '10%' : '70%',
+            bottom: activeIndex < 3 ? '5%' : '40%',
+          }}
+          transition={{ duration: 1.4, ease: [0.25, 0.1, 0.25, 1] }}
+        />
+        {/* Top orange glow */}
+        <motion.div
+          className="absolute w-[450px] h-[450px] rounded-full blur-[120px] opacity-35"
+          style={{ background: 'radial-gradient(circle, #F59E0B 0%, #D97706 50%, transparent 70%)' }}
+          animate={{
+            right: activeIndex % 3 === 0 ? '10%' : activeIndex % 3 === 1 ? '40%' : '60%',
+            top: activeIndex % 2 === 0 ? '-5%' : '20%',
+          }}
+          transition={{ duration: 1.3, ease: [0.25, 0.1, 0.25, 1] }}
+        />
+        {/* Teal accent - drifts */}
+        <motion.div
+          className="absolute w-[300px] h-[300px] rounded-full blur-[100px] opacity-25"
+          style={{ background: 'radial-gradient(circle, #14B8A6 0%, #0D9488 40%, transparent 70%)' }}
+          animate={{
+            right: activeIndex % 2 === 0 ? '5%' : '30%',
+            top: activeIndex < 2 ? '5%' : activeIndex < 4 ? '60%' : '30%',
+          }}
+          transition={{ duration: 1.5, ease: [0.25, 0.1, 0.25, 1] }}
+        />
+        {/* Subtle orange - center drift */}
+        <motion.div
+          className="absolute w-[250px] h-[250px] rounded-full blur-[80px] opacity-20"
+          style={{ background: 'radial-gradient(circle, #E17924 0%, transparent 60%)' }}
+          animate={{
+            right: activeIndex % 2 === 0 ? '15%' : '50%',
+            top: activeIndex % 3 === 0 ? '30%' : activeIndex % 3 === 1 ? '50%' : '70%',
+          }}
+          transition={{ duration: 1.1, ease: [0.25, 0.1, 0.25, 1] }}
+        />
+
+        {/* Content - Constrained Width Split Layout */}
+        <div className="relative h-full w-full flex justify-center">
+          <div className="container mx-auto px-4 h-full flex">
           {/* Left Side - Product Info (40%) */}
-          <div className="w-[40%] h-full flex flex-col justify-center px-12 lg:px-20 relative z-10">
+          <div className="w-[40%] h-full flex flex-col justify-center relative z-10">
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
                 key={product.id}
                 custom={direction}
-                variants={contentVariants}
+                variants={activeIndex >= 2 && activeIndex <= 3 ? contentVariantsHorizontal : contentVariantsVertical}
                 initial="enter"
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
                 className="w-full"
               >
-                {/* Accent line */}
-                <div className="h-1 w-16 rounded-full mb-6" style={{ background: product.accentColor }} />
-
-                {/* Title */}
-                <h2 className="text-5xl lg:text-6xl font-bold text-white mb-2">
+                {/* Title with staggered animation */}
+                <motion.h2
+                  className="text-5xl lg:text-6xl font-bold text-white mb-6"
+                  initial={activeIndex >= 2 && activeIndex <= 3 ? { opacity: 0, x: -40 } : { opacity: 0, y: 30 }}
+                  animate={activeIndex >= 2 && activeIndex <= 3 ? { opacity: 1, x: 0 } : { opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+                >
                   {product.title}
-                </h2>
-                <p className="text-lg text-white/60 font-medium mb-4 uppercase tracking-wider">{product.subtitle}</p>
-
-                {/* Tagline */}
-                <p className="text-xl lg:text-2xl text-white font-light mb-3 leading-snug">{desc.tagline}</p>
+                </motion.h2>
 
                 {/* Description */}
-                <p className="text-sm lg:text-base text-white/50 leading-relaxed mb-6 max-w-md">
+                <motion.p
+                  className="text-base lg:text-lg text-white/70 leading-relaxed mb-8 max-w-md"
+                  initial={activeIndex >= 2 && activeIndex <= 3 ? { opacity: 0, x: -40 } : { opacity: 0, y: 30 }}
+                  animate={activeIndex >= 2 && activeIndex <= 3 ? { opacity: 1, x: 0 } : { opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                >
                   {desc.description}
-                </p>
+                </motion.p>
 
-                {/* Features */}
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {desc.features.map((feature, i) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1.5 rounded-full text-xs font-medium uppercase tracking-wide bg-white/10 border border-white/20 text-white/80"
-                    >
-                      {feature}
-                    </span>
+                {/* 2 Main Features */}
+                <motion.div
+                  className="flex flex-col gap-3 mb-8"
+                  initial={activeIndex >= 2 && activeIndex <= 3 ? { opacity: 0, x: -40 } : { opacity: 0, y: 30 }}
+                  animate={activeIndex >= 2 && activeIndex <= 3 ? { opacity: 1, x: 0 } : { opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                >
+                  {desc.features.slice(0, 2).map((feature, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full" style={{ background: product.accentColor }} />
+                      <span className="text-sm lg:text-base text-white/80 font-medium">
+                        {feature}
+                      </span>
+                    </div>
                   ))}
-                </div>
+                </motion.div>
 
                 {/* CTA Button */}
-                <Link
-                  href="#booking"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:scale-105 transition-transform shadow-lg"
+                <motion.div
+                  initial={activeIndex >= 2 && activeIndex <= 3 ? { opacity: 0, x: -40 } : { opacity: 0, y: 30 }}
+                  animate={activeIndex >= 2 && activeIndex <= 3 ? { opacity: 1, x: 0 } : { opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
                 >
-                  <span>Explore Product</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+                  <Link
+                    href="#booking"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:scale-105 transition-transform shadow-lg"
+                  >
+                    <span>Explore Product</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </motion.div>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -3404,7 +3634,7 @@ function DesktopShowcase() {
               <motion.div
                 key={product.id}
                 custom={direction}
-                variants={visualVariants}
+                variants={activeIndex >= 2 && activeIndex <= 3 ? visualVariantsHorizontal : visualVariantsVertical}
                 initial="enter"
                 animate="center"
                 exit="exit"
@@ -3415,6 +3645,7 @@ function DesktopShowcase() {
                 {renderVisual()}
               </motion.div>
             </AnimatePresence>
+          </div>
           </div>
         </div>
 

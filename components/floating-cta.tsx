@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Sparkles } from "lucide-react"
+import { CalendarPlus } from "lucide-react"
 import Link from "next/link"
 
 export default function FloatingCTA() {
@@ -76,7 +76,7 @@ export default function FloatingCTA() {
                   className="relative flex items-center justify-center bg-gradient-to-r from-sunbeam via-amber to-solar text-black font-bold p-4 rounded-full shadow-lg"
                   style={{ boxShadow: '0 0 25px rgba(255, 193, 7, 0.5)' }}
                 >
-                  <Sparkles className="h-5 w-5" />
+                  <CalendarPlus className="h-5 w-5" />
                 </button>
               </div>
             </Link>
@@ -198,7 +198,7 @@ export default function FloatingCTA() {
                   animate={{ rotate: [0, 15, -15, 0] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <Sparkles className="h-5 w-5" />
+                  <CalendarPlus className="h-5 w-5" />
                 </motion.div>
                 <span className="relative">Book Now</span>
 
