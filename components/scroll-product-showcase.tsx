@@ -1033,22 +1033,23 @@ function MobileTriHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () 
   }, [])
 
   // Auto-loop animation only when in view
+  // Auto-loop animation only when in view
   useEffect(() => {
     if (!isInView) return
 
     const runAnimation = () => {
-      // Open wings slowly
+      // Phase 1: Open wings slowly
       setWingAngle(120)
       setContentPhase(1)
 
-      // Close wings after holding
+      // Phase 2: Close wings after holding
       setTimeout(() => {
         setWingAngle(0)
+        setContentPhase(2)
       }, 2500)
 
-      // Rotate each layer like DNA
+      // Phase 3: Rotate each layer like DNA
       setTimeout(() => {
-        setContentPhase(2)
         setRotationCycle(prev => {
           const nextCycle = prev + 1
           const baseRotation = nextCycle % 2 === 0 ? 0 : 180
@@ -1061,7 +1062,7 @@ function MobileTriHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () 
         })
       }, 3500)
 
-      // Return to home position
+      // Phase 4: Return to home position
       setTimeout(() => {
         setLayerRotations([0, 0, 0, 0, 0])
         setContentPhase(0)
@@ -1070,8 +1071,8 @@ function MobileTriHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () 
 
     // Initial animation
     const initialTimeout = setTimeout(runAnimation, 600)
-    // Loop every 6 seconds
-    const interval = setInterval(runAnimation, 6000)
+    // Loop every 8 seconds (increased from 6 to allow time for home rotation)
+    const interval = setInterval(runAnimation, 8000)
 
     return () => {
       clearTimeout(initialTimeout)
