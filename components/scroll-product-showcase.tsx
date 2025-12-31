@@ -580,11 +580,17 @@ function MobileTelescopicCard({ isActive, onTap }: { isActive: boolean; onTap: (
 
   // Auto-cycle wave animation only
   useEffect(() => {
+    // Start first animation quickly
+    const initialTimeout = setTimeout(() => {
+      setPatternIndex(1)
+    }, 300)
+
     const patternTimer = setInterval(() => {
       setPatternIndex(prev => (prev + 1) % heightPatterns.length)
     }, 1800)
 
     return () => {
+      clearTimeout(initialTimeout)
       clearInterval(patternTimer)
     }
   }, [])
@@ -1813,7 +1819,7 @@ const FLAP_CONTENTS = [
   { type: 'text', value: '2', bg: '#1a1a1a', color: '#E17924' },
   { type: 'text', value: '0', bg: '#1a1a1a', color: '#F59E0B' },
   { type: 'text', value: '2', bg: '#1a1a1a', color: '#D97706' },
-  { type: 'text', value: '4', bg: '#1a1a1a', color: '#FBBF24' },
+  { type: 'text', value: '6', bg: '#1a1a1a', color: '#FBBF24' },
   // Letters for "KINETIC" (31-37)
   { type: 'text', value: 'K', bg: '#E17924', color: '#fff' },
   { type: 'text', value: 'I', bg: '#D97706', color: '#fff' },
@@ -1969,7 +1975,6 @@ function BentoFlapBlock({
               fontWeight: 900,
               color: finalContentData.color,
               textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-              fontFamily: 'system-ui, sans-serif',
             }}>
               {finalContentData.value}
             </span>
@@ -2002,7 +2007,6 @@ function BentoFlapBlock({
               fontWeight: 900,
               color: finalContentData.color,
               textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-              fontFamily: 'system-ui, sans-serif',
             }}>
               {finalContentData.value}
             </span>
@@ -2098,22 +2102,15 @@ function BentoFlapVisual({ isActive }: { isActive: boolean }) {
 }
 
 function BentoHRMSVisual({ isActive }: { isActive: boolean }) {
-  const [rotationCycle, setRotationCycle] = useState(0)
-  const [movementPhase, setMovementPhase] = useState(0)
+  const [rotationCycle, setRotationCycle] = useState(1)
+  const [movementPhase, setMovementPhase] = useState(1)
 
   // Auto-loop animation continuously
   useEffect(() => {
-    // Start animation after initial delay
-    const startTimeout = setTimeout(() => {
-      setRotationCycle(1)
-      setMovementPhase(1)
-    }, 500)
-
     const r = setInterval(() => setRotationCycle(prev => prev + 1), 3000)
     const m = setInterval(() => setMovementPhase(prev => (prev % 2) + 1), 2500)
 
     return () => {
-      clearTimeout(startTimeout)
       clearInterval(r)
       clearInterval(m)
     }
@@ -2376,12 +2373,12 @@ function LargeTriblockVisual() {
   // Determine which blocks to animate based on pattern
   const shouldAnimate = useCallback((row: number, col: number, pattern: number): boolean => {
     switch (pattern % 8) {
-      case 0: // Middle rows, center columns
-        return row >= 2 && row <= 5 && col >= 4 && col <= 9
+      case 0: // Diagonal stripe
+        return (row + col) % 3 === 0
       case 1: // Top and bottom edges
         return (row <= 1 || row >= 6) && col >= 2 && col <= 11
-      case 2: // Diagonal stripe
-        return (row + col) % 3 === 0
+      case 2: // Middle rows, center columns
+        return row >= 2 && row <= 5 && col >= 4 && col <= 9
       case 3: // Left half middle
         return row >= 2 && row <= 5 && col < 7
       case 4: // Right half middle
@@ -2950,11 +2947,17 @@ function LargeTelescopicVisual() {
   }
 
   useEffect(() => {
+    // Start first animation quickly
+    const initialTimeout = setTimeout(() => {
+      setPatternIndex(1)
+    }, 300)
+
     const patternTimer = setInterval(() => {
       setPatternIndex(prev => (prev + 1) % heightPatterns.length)
     }, 2000)
 
     return () => {
+      clearTimeout(initialTimeout)
       clearInterval(patternTimer)
     }
   }, [])
@@ -3353,7 +3356,6 @@ function DesktopShowcase() {
                 exit="exit"
                 transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
                 className="w-full"
-                style={{ fontFamily: 'Helvetica, "Polysans", Arial, sans-serif' }}
               >
                 {/* Accent line */}
                 <div className="h-1 w-16 rounded-full mb-6" style={{ background: product.accentColor }} />

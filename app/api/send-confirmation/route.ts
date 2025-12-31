@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const { data, error } = await resend.emails.send({
       from: 'Craftech360 <bookings@craftech360.com>',
       to: email,
-      subject: `Your Demo Booking is Confirmed - ${date}`,
+      subject: `Demo Confirmed - ${date} at ${time}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -33,97 +33,86 @@ export async function POST(request: Request) {
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0a0a0a;">
-          <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #ffffff;">
+
+          <!-- Main Container with subtle pattern background -->
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; background-image: radial-gradient(circle at 20% 20%, rgba(225, 121, 36, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(225, 121, 36, 0.04) 0%, transparent 40%);">
 
             <!-- Header -->
-            <div style="text-align: center; margin-bottom: 40px;">
-              <h1 style="color: #E17924; font-size: 28px; margin: 0;">Craftech360</h1>
-              <p style="color: #666; font-size: 14px; margin-top: 8px;">Kinetic Display Solutions</p>
+            <div style="padding: 40px 32px 24px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.08);">
+              <img src="https://ozkbnimjuhaweigscdby.supabase.co/storage/v1/object/public/cheekoimages/layer-202.png" alt="Craftech360" style="height: 48px; width: auto;" />
+              <p style="color: rgba(0,0,0,0.5); font-size: 11px; margin: 12px 0 0 0; letter-spacing: 1px;">KINETIC DISPLAY SOLUTIONS</p>
             </div>
 
-            <!-- Main Card -->
-            <div style="background: linear-gradient(145deg, #1a1a1a 0%, #111 100%); border-radius: 16px; padding: 32px; border: 1px solid #333;">
+            <!-- Content -->
+            <div style="padding: 40px 32px;">
 
-              <!-- Confirmation Badge -->
-              <div style="text-align: center; margin-bottom: 24px;">
-                <span style="background-color: #22c55e; color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
-                  Booking Confirmed
-                </span>
+              <!-- Greeting -->
+              <div style="margin-bottom: 32px;">
+                <p style="color: rgba(0,0,0,0.5); font-size: 14px; margin: 0 0 4px 0;">Hello,</p>
+                <h2 style="color: #000000; font-size: 28px; margin: 0; font-weight: 600;">${name}</h2>
               </div>
 
-              <h2 style="color: #ffffff !important; font-size: 24px; text-align: center; margin: 0 0 8px 0;">
-                Hi <span style="color: #E17924 !important;">${name}</span>!
-              </h2>
-              <p style="color: #e0e0e0 !important; text-align: center; margin: 0 0 32px 0; font-size: 16px;">
-                Your demo session has been scheduled successfully.
+              <!-- Confirmation Message -->
+              <p style="color: rgba(0,0,0,0.7); font-size: 15px; line-height: 1.6; margin: 0 0 32px 0;">
+                Your demo session has been confirmed. We look forward to showing you our kinetic display technology.
               </p>
 
-              <!-- Booking Details -->
-              <div style="background-color: #2a1f15; border: 1px solid #E17924; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-                <h3 style="color: #E17924 !important; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 16px 0;">
-                  Appointment Details
-                </h3>
-                <table style="width: 100%; border-collapse: collapse;">
+              <!-- Appointment Details Box -->
+              <div style="background: rgba(225, 121, 36, 0.08); border-left: 3px solid #E17924; padding: 24px; margin-bottom: 32px;">
+                <table style="width: 100%;">
                   <tr>
-                    <td style="color: #e0e0e0 !important; padding: 8px 0; font-size: 14px;">Date</td>
-                    <td style="color: #ffffff !important; padding: 8px 0; font-size: 14px; text-align: right; font-weight: 700;">${date}</td>
+                    <td style="padding: 8px 0;">
+                      <span style="color: rgba(0,0,0,0.5); font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Date</span>
+                    </td>
+                    <td style="padding: 8px 0; text-align: right;">
+                      <span style="color: #000000; font-size: 15px; font-weight: 600;">${date}</span>
+                    </td>
                   </tr>
                   <tr>
-                    <td style="color: #e0e0e0 !important; padding: 8px 0; font-size: 14px;">Time</td>
-                    <td style="color: #ffffff !important; padding: 8px 0; font-size: 14px; text-align: right; font-weight: 700;">${time}</td>
+                    <td style="padding: 8px 0;">
+                      <span style="color: rgba(0,0,0,0.5); font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Time</span>
+                    </td>
+                    <td style="padding: 8px 0; text-align: right;">
+                      <span style="color: #000000; font-size: 15px; font-weight: 600;">${time}</span>
+                    </td>
                   </tr>
                   <tr>
-                    <td style="color: #e0e0e0 !important; padding: 8px 0; font-size: 14px;">Company</td>
-                    <td style="color: #ffffff !important; padding: 8px 0; font-size: 14px; text-align: right; font-weight: 700;">${company}</td>
+                    <td style="padding: 8px 0;">
+                      <span style="color: rgba(0,0,0,0.5); font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Location</span>
+                    </td>
+                    <td style="padding: 8px 0; text-align: right;">
+                      <span style="color: #000000; font-size: 15px; font-weight: 600;">${locationInfo.company}</span>
+                    </td>
                   </tr>
                 </table>
               </div>
 
-              <!-- Location Details -->
-              <div style="background-color: #1a1a1a; border: 1px solid #444444; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-                <h3 style="color: #E17924 !important; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 16px 0;">
-                  Showroom Location
-                </h3>
-                <p style="color: #ffffff !important; font-size: 16px; font-weight: 700; margin: 0 0 8px 0;">
-                  ${locationInfo.company}
-                </p>
-                <p style="color: #e0e0e0 !important; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">
+              <!-- Address -->
+              <div style="margin-bottom: 32px;">
+                <p style="color: rgba(0,0,0,0.5); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px 0;">Address</p>
+                <p style="color: rgba(0,0,0,0.8); font-size: 14px; line-height: 1.6; margin: 0;">
                   ${locationInfo.address}<br>
                   ${locationInfo.city}
-                </p>
-                <p style="color: #ffffff !important; font-size: 14px; margin: 0;">
-                  <strong style="color: #E17924 !important;">Call:</strong> ${locationInfo.phone}
                 </p>
               </div>
 
               <!-- Get Directions Button -->
-              <div style="text-align: center;">
-                <a href="${locationInfo.mapUrl}" target="_blank" style="display: inline-block; background-color: #E17924; color: #000; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+              <div style="text-align: left; margin-bottom: 16px;">
+                <a href="${locationInfo.mapUrl}" target="_blank" style="display: inline-block; background: #E17924; color: #ffffff; text-decoration: none; padding: 14px 36px; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">
                   Get Directions
                 </a>
               </div>
 
             </div>
 
-            <!-- What to Expect -->
-            <div style="margin-top: 32px; padding: 24px; background-color: rgba(255, 255, 255, 0.02); border-radius: 12px; border: 1px solid #222;">
-              <h4 style="color: #fff; font-size: 14px; margin: 0 0 16px 0;">What to Expect:</h4>
-              <ul style="color: #888; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
-                <li>Live demonstrations of all kinetic displays</li>
-                <li>1-on-1 consultation with our experts</li>
-                <li>Discussion of custom solutions for your needs</li>
-                <li>No obligations - just experience the technology</li>
-              </ul>
-            </div>
-
             <!-- Footer -->
-            <div style="text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid #222;">
-              <p style="color: #666; font-size: 12px; margin: 0;">
-                Questions? Call us at ${locationInfo.phone}
+            <div style="padding: 24px 32px; border-top: 1px solid rgba(0,0,0,0.08); text-align: center;">
+              <p style="color: rgba(0,0,0,0.5); font-size: 13px; margin: 0 0 8px 0;">
+                Questions? Call us at <a href="tel:${locationInfo.phone}" style="color: #E17924; text-decoration: none;">${locationInfo.phone}</a>
               </p>
-              <p style="color: #444; font-size: 11px; margin-top: 16px;">
-                &copy; ${new Date().getFullYear()} Craftech360. All rights reserved.
+              <p style="color: rgba(0,0,0,0.4); font-size: 11px; margin: 0;">
+                &copy; ${new Date().getFullYear()} Craftech360
               </p>
             </div>
 

@@ -418,7 +418,7 @@ export default function BookingSection() {
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.3 }}
-                      className="mt-5 pt-5 border-t border-white/10"
+                      className="mt-5 pt-5 pb-4 border-t border-white/10"
                     >
                       <h4 className="text-sm font-medium text-white/70 mb-3 flex items-center gap-2">
                         <Clock className="h-4 w-4 text-orange-500" />
@@ -435,20 +435,30 @@ export default function BookingSection() {
                               onClick={() => handleSlotSelect(slot.id)}
                               disabled={isBooked}
                               className={`
-                                p-3 md:p-4 rounded-xl text-left transition-all duration-200
+                                p-3 md:p-4 rounded-xl text-left transition-all duration-200 relative overflow-hidden
                                 ${isSelectedSlot
                                   ? "bg-gradient-to-br from-orange-500 to-amber-500 text-white"
                                   : isBooked
                                     ? "bg-white/5 text-white/30 cursor-not-allowed"
-                                    : "bg-white/5 text-white hover:bg-white/10 border border-transparent hover:border-orange-500/30"
+                                    : "bg-white/5 text-white hover:bg-white/10 border border-orange-500/40"
                                 }
                               `}
-                              whileHover={!isBooked ? { scale: 1.02 } : {}}
-                              whileTap={!isBooked ? { scale: 0.98 } : {}}
+                              whileHover={!isBooked && !isSelectedSlot ? { scale: 1.02 } : {}}
+                              whileTap={!isBooked && !isSelectedSlot ? { scale: 0.98 } : {}}
                             >
-                              <div className="text-base md:text-lg font-semibold">{slot.time}</div>
-                              <div className={`text-xs ${isSelectedSlot ? "text-white/80" : "text-white/50"}`}>
-                                {isBooked ? "Booked" : slot.label}
+                              {/* Subtle fade animation for unselected available slot */}
+                              {!isBooked && !isSelectedSlot && (
+                                <motion.div
+                                  className="absolute inset-0 bg-orange-500/20 rounded-xl"
+                                  animate={{ opacity: [0.4, 0.8, 0.4] }}
+                                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                                />
+                              )}
+                              <div className="relative z-10">
+                                <div className="text-base md:text-lg font-semibold">{slot.time}</div>
+                                <div className={`text-xs ${isSelectedSlot ? "text-white/80" : "text-white/50"}`}>
+                                  {isBooked ? "Booked" : slot.label}
+                                </div>
                               </div>
                             </motion.button>
                           )

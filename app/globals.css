@@ -103,7 +103,10 @@
 }
 
 @theme inline {
-  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
+  /* Custom font families */
+  --font-heading: 'PolySans Bulky', sans-serif;
+  --font-subheading: 'PolySans Median', sans-serif;
+  --font-body: 'Helvetica', Arial, sans-serif;
   --color-sunbeam: #fecc00;
   --color-amber: #f6a508;
   --color-solar: #e17824;
