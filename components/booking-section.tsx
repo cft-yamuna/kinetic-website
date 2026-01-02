@@ -71,65 +71,18 @@ export default function BookingSection() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [phoneError, setPhoneError] = useState("")
-  const [bookedSlots, setBookedSlots] = useState<Record<string, string[]>>({})
   const isMobile = useIsMobile()
 
   const calendarDays = useMemo(() => generateCalendarDays(), [])
 
-  // Fetch existing bookings from Supabase on mount
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("kinetic-data")
-          .select("work")
-          .like("work", `Booking: ${MONTH_NAME}%${BOOKING_YEAR}%`)
-
-        if (error) {
-          console.error("Error fetching bookings:", error)
-          return
-        }
-
-        if (data) {
-          const bookedDates: Record<string, string[]> = {}
-
-          data.forEach((booking) => {
-            // Parse the booking string to extract date
-            // Format: "Booking: January 15, 2026 at 5:00 PM | Company: ..."
-            const match = booking.work.match(/Booking: \w+ (\d+), (\d+) at/)
-            if (match) {
-              const day = parseInt(match[1], 10)
-              const dateKey = `${BOOKING_YEAR}-${String(BOOKING_MONTH + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-              if (!bookedDates[dateKey]) {
-                bookedDates[dateKey] = []
-              }
-              bookedDates[dateKey].push("evening")
-            }
-          })
-
-          setBookedSlots(bookedDates)
-        }
-      } catch (err) {
-        console.error("Error fetching bookings:", err)
-      }
-    }
-
-    fetchBookings()
-  }, [])
-
-  const formatDateKey = (day: number) => {
-    return `${BOOKING_YEAR}-${String(BOOKING_MONTH + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+  const isSlotBooked = (_day: number, _slotId: string) => {
+    // Always return false to allow multiple bookings on the same slot
+    return false
   }
 
-  const isSlotBooked = (day: number, slotId: string) => {
-    const dateKey = formatDateKey(day)
-    return bookedSlots[dateKey]?.includes(slotId) || false
-  }
-
-  const isDayFullyBooked = (day: number) => {
-    const dateKey = formatDateKey(day)
-    const booked = bookedSlots[dateKey] || []
-    return booked.length >= 1 // Only one session per day at 5 PM
+  const isDayFullyBooked = (_day: number) => {
+    // Always return false to allow multiple bookings on the same day
+    return false
   }
 
   // Check if a day is Sunday (not available)
@@ -183,7 +136,6 @@ export default function BookingSection() {
     setIsSubmitting(true)
 
     try {
-      const dateKey = formatDateKey(selectedDate)
       const slotDetails = TIME_SLOTS.find(s => s.id === selectedSlot)
 
       const { error } = await supabase
@@ -201,12 +153,6 @@ export default function BookingSection() {
         setIsSubmitting(false)
         return
       }
-
-      // Add to booked slots locally
-      setBookedSlots((prev) => ({
-        ...prev,
-        [dateKey]: [...(prev[dateKey] || []), selectedSlot],
-      }))
 
       // Send confirmation email
       try {
