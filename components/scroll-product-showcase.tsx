@@ -1091,7 +1091,7 @@ function MobileTriHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () 
     >
       <div style={{ perspective: '500px', marginTop: '10px', marginLeft: '25px' }}>
         {/* Column container - faces straight front */}
-        <div
+        <div 
           style={{
             transformStyle: 'preserve-3d',
             transform: 'rotateX(5deg)',
