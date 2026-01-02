@@ -11,9 +11,11 @@ const locationInfo = {
   mapUrl: "https://www.google.com/maps/search/?api=1&query=WGWP%2BWV6%2C+Deepanjali+Nagar%2C+Bengaluru%2C+Karnataka+560026"
 }
 
+const ADMIN_EMAILS = ['ravi@craftech360.com', 'abilash@craftech360.com', 'yamuna@craftech360.com']
+
 export async function POST(request: Request) {
   try {
-    const { name, email, company, date, time } = await request.json()
+    const { name, email, phone, company, date, time } = await request.json()
 
     if (!name || !email || !date || !time) {
       return NextResponse.json(
@@ -22,6 +24,7 @@ export async function POST(request: Request) {
       )
     }
 
+    // Send confirmation email to user
     const { data, error } = await resend.emails.send({
       from: 'Craftech360 <bookings@craftech360.com>',
       to: email,
@@ -125,6 +128,82 @@ export async function POST(request: Request) {
     if (error) {
       console.error('Resend error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Send notification email to admins with booking details
+    try {
+      await resend.emails.send({
+        from: 'Craftech360 <bookings@craftech360.com>',
+        to: ADMIN_EMAILS,
+        subject: `New Demo Booking - ${name} on ${date}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 32px;">
+
+              <!-- Header -->
+              <div style="border-bottom: 2px solid #E17924; padding-bottom: 16px; margin-bottom: 24px;">
+                <h1 style="color: #E17924; margin: 0; font-size: 24px;">New Demo Booking</h1>
+              </div>
+
+              <!-- Booking Details -->
+              <div style="background: #f9f9f9; border-left: 4px solid #E17924; padding: 20px; margin-bottom: 24px;">
+                <h2 style="color: #333; margin: 0 0 16px 0; font-size: 18px;">Booking Information</h2>
+
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: 600; width: 120px;">Name:</td>
+                    <td style="padding: 8px 0; color: #333;">${name}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: 600;">Email:</td>
+                    <td style="padding: 8px 0; color: #333;"><a href="mailto:${email}" style="color: #E17924;">${email}</a></td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: 600;">Phone:</td>
+                    <td style="padding: 8px 0; color: #333;"><a href="tel:${phone || 'N/A'}" style="color: #E17924;">${phone || 'N/A'}</a></td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: 600;">Company:</td>
+                    <td style="padding: 8px 0; color: #333;">${company || 'N/A'}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Schedule Details -->
+              <div style="background: #fff8f0; border-left: 4px solid #E17924; padding: 20px; margin-bottom: 24px;">
+                <h2 style="color: #333; margin: 0 0 16px 0; font-size: 18px;">Schedule</h2>
+
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: 600; width: 120px;">Date:</td>
+                    <td style="padding: 8px 0; color: #333; font-weight: 600;">${date}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: 600;">Time:</td>
+                    <td style="padding: 8px 0; color: #333; font-weight: 600;">${time}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Footer -->
+              <div style="text-align: center; color: #999; font-size: 12px; padding-top: 16px; border-top: 1px solid #eee;">
+                <p style="margin: 0;">This is an automated notification from the Kinetic Display booking system.</p>
+              </div>
+
+            </div>
+          </body>
+          </html>
+        `,
+      })
+    } catch (adminEmailError) {
+      // Log admin email error but don't fail the request since user confirmation was sent
+      console.error('Admin notification email error:', adminEmailError)
     }
 
     return NextResponse.json({ success: true, data })

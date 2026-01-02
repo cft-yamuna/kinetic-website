@@ -208,6 +208,7 @@ export default function BookingSection() {
           body: JSON.stringify({
             name: formData.name,
             email: formData.email,
+            phone: formData.phone,
             company: formData.company,
             date: `${MONTH_NAME} ${selectedDate}, ${BOOKING_YEAR}`,
             time: slotDetails?.time
