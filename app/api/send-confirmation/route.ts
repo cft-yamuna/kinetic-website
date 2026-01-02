@@ -85,7 +85,7 @@ const locationInfo = {
   mapUrl: "https://www.google.com/maps/search/?api=1&query=WGWP%2BWV6%2C+Deepanjali+Nagar%2C+Bengaluru%2C+Karnataka+560026"
 }
 
-const ADMIN_EMAILS = ['yamuna@craftech360.com']
+const ADMIN_EMAILS = ['ravi@craftech360.com','yamuna@craftech360.com']
 
 export async function POST(request: Request) {
   try {
