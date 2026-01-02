@@ -81,11 +81,11 @@ const locationInfo = {
   company: "Craftech360",
   address: "WGWP+WV6, Ranganathan Colony, Deepanjali Nagar",
   city: "Bengaluru, Karnataka 560026",
-  phone: "+91 9739076766",
+  phone: "+91 9964299111",
   mapUrl: "https://www.google.com/maps/search/?api=1&query=WGWP%2BWV6%2C+Deepanjali+Nagar%2C+Bengaluru%2C+Karnataka+560026"
 }
 
-const ADMIN_EMAILS = ['ravi@craftech360.com','yamuna@craftech360.com']
+const ADMIN_EMAILS = ['ravi@craftech360.com','pradeep@craftech360.com','yamuna@craftech360.com']
 
 export async function POST(request: Request) {
   try {

@@ -16,7 +16,7 @@ const locationInfo = {
   company: "Craftech360",
   address: "WGWP+WV6, Ranganathan Colony, Deepanjali Nagar",
   city: "Bengaluru, Karnataka 560026",
-  phone: "9739076766",
+  phone: "9964299111",
   mapUrl: "https://www.google.com/maps/search/?api=1&query=WGWP%2BWV6%2C+Deepanjali+Nagar%2C+Bengaluru"
 }
 
