@@ -138,8 +138,16 @@ export default function BookingSection() {
     return date.getDay() === 0 // 0 = Sunday
   }
 
+  // Check if a day is in the past
+  const isPastDate = (day: number) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // Reset time to start of day
+    const dateToCheck = new Date(BOOKING_YEAR, BOOKING_MONTH, day)
+    return dateToCheck < today
+  }
+
   const handleDateSelect = (day: number) => {
-    if (isDayFullyBooked(day) || isSunday(day)) return
+    if (isDayFullyBooked(day) || isSunday(day) || isPastDate(day)) return
     setSelectedDate(day)
     setSelectedSlot(null)
   }
@@ -366,7 +374,8 @@ export default function BookingSection() {
 
                     const isFullyBooked = isDayFullyBooked(day)
                     const isSundayDate = isSunday(day)
-                    const isUnavailable = isFullyBooked || isSundayDate
+                    const isPast = isPastDate(day)
+                    const isUnavailable = isFullyBooked || isSundayDate || isPast
                     const isSelected = selectedDate === day
 
                     return (
@@ -379,11 +388,13 @@ export default function BookingSection() {
                             flex items-center justify-center relative w-full
                             ${isSelected
                               ? "bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30"
-                              : isSundayDate
-                                ? "bg-white/5 text-white/30 cursor-not-allowed border border-white/10"
-                                : isFullyBooked
-                                  ? "bg-red-500/20 text-white/40 cursor-not-allowed border border-red-500/30"
-                                  : "bg-white/5 text-white hover:bg-white/10"
+                              : isPast
+                                ? "bg-white/5 text-white/20 cursor-not-allowed border border-white/5"
+                                : isSundayDate
+                                  ? "bg-white/5 text-white/30 cursor-not-allowed border border-white/10"
+                                  : isFullyBooked
+                                    ? "bg-red-500/20 text-white/40 cursor-not-allowed border border-red-500/30"
+                                    : "bg-white/5 text-white hover:bg-white/10"
                             }
                           `}
                           whileHover={!isUnavailable ? { scale: 1.05 } : {}}
@@ -398,8 +409,15 @@ export default function BookingSection() {
                             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white/20" />
                           </div>
                         )}
+                        {/* Tooltip for past dates */}
+                        {isPast && !isSundayDate && (
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-white/20 text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                            Date Passed
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white/20" />
+                          </div>
+                        )}
                         {/* Tooltip for booked dates */}
-                        {isFullyBooked && !isSundayDate && (
+                        {isFullyBooked && !isSundayDate && !isPast && (
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-red-500 text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
                             Already Booked
                             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-red-500" />
