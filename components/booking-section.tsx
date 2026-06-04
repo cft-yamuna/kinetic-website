@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -27,16 +27,64 @@ function useIsMobile() {
   return hasMounted && isMobile
 }
 
-const availableSlots = [
-  { date: "2025-01-15", time: "10:00 AM", available: true, popular: false },
-  { date: "2025-01-15", time: "2:00 PM", available: true, popular: false },
-  { date: "2025-01-16", time: "9:00 AM", available: false, popular: false },
-  { date: "2025-01-16", time: "11:00 AM", available: true, popular: false },
-  { date: "2025-01-16", time: "3:00 PM", available: true, popular: false },
-  { date: "2025-01-17", time: "10:00 AM", available: true, popular: false },
-  { date: "2025-01-17", time: "1:00 PM", available: true, popular: false },
-  { date: "2025-01-17", time: "4:00 PM", available: false, popular: false },
+type AvailableSlot = {
+  date: string
+  time: string
+  available: boolean
+  popular: boolean
+}
+
+const slotPatterns = [
+  [
+    { time: "10:00 AM", available: true, popular: false },
+    { time: "2:00 PM", available: true, popular: false },
+  ],
+  [
+    { time: "9:00 AM", available: false, popular: false },
+    { time: "11:00 AM", available: true, popular: false },
+    { time: "3:00 PM", available: true, popular: false },
+  ],
+  [
+    { time: "10:00 AM", available: true, popular: false },
+    { time: "1:00 PM", available: true, popular: false },
+    { time: "4:00 PM", available: false, popular: false },
+  ],
 ]
+
+function formatSlotDate(date: Date) {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date)
+}
+
+function getCurrentMonthSlots(referenceDate = new Date()): AvailableSlot[] {
+  const year = referenceDate.getFullYear()
+  const month = referenceDate.getMonth()
+  const lastDayOfMonth = new Date(year, month + 1, 0).getDate()
+  const slotDates: Date[] = []
+
+  for (
+    let day = referenceDate.getDate();
+    day <= lastDayOfMonth && slotDates.length < slotPatterns.length;
+    day += 1
+  ) {
+    const date = new Date(year, month, day)
+    const isWeekday = date.getDay() !== 0 && date.getDay() !== 6
+
+    if (isWeekday) {
+      slotDates.push(date)
+    }
+  }
+
+  return slotDates.flatMap((date, index) =>
+    slotPatterns[index].map((slot) => ({
+      ...slot,
+      date: formatSlotDate(date),
+    })),
+  )
+}
 
 export default function BookingSection() {
   const [step, setStep] = useState<"select" | "form" | "confirmation">("select")
@@ -45,6 +93,7 @@ export default function BookingSection() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [phoneError, setPhoneError] = useState("")
   const isMobile = useIsMobile()
+  const availableSlots = useMemo(() => getCurrentMonthSlots(), [])
 
   const handleSlotSelect = (date: string, time: string) => {
     setSelectedSlot({ date, time })
