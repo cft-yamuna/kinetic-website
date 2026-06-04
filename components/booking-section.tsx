@@ -20,15 +20,29 @@ const locationInfo = {
   mapUrl: "https://www.google.com/maps/search/?api=1&query=WGWP%2BWV6%2C+Deepanjali+Nagar%2C+Bengaluru"
 }
 
-// Booking month configuration
-const BOOKING_YEAR = 2026
-const BOOKING_MONTH = 0 // January (0-indexed)
-const MONTH_NAME = "January"
+type BookingMonth = {
+  year: number
+  month: number
+  name: string
+}
 
-// Generate days for January 2026
-function generateCalendarDays() {
-  const firstDay = new Date(BOOKING_YEAR, BOOKING_MONTH, 1)
-  const lastDay = new Date(BOOKING_YEAR, BOOKING_MONTH + 1, 0)
+function getCurrentBookingMonth(): BookingMonth {
+  const today = new Date()
+
+  return {
+    year: today.getFullYear(),
+    month: today.getMonth(),
+    name: today.toLocaleString(undefined, { month: "long" }),
+  }
+}
+
+function formatBookingDate(bookingMonth: BookingMonth, day: number) {
+  return `${bookingMonth.name} ${day}, ${bookingMonth.year}`
+}
+
+function generateCalendarDays(bookingMonth: BookingMonth) {
+  const firstDay = new Date(bookingMonth.year, bookingMonth.month, 1)
+  const lastDay = new Date(bookingMonth.year, bookingMonth.month + 1, 0)
   const daysInMonth = lastDay.getDate()
   const startingDayOfWeek = firstDay.getDay() // 0 = Sunday
 
@@ -73,7 +87,8 @@ export default function BookingSection() {
   const [phoneError, setPhoneError] = useState("")
   const isMobile = useIsMobile()
 
-  const calendarDays = useMemo(() => generateCalendarDays(), [])
+  const bookingMonth = useMemo(() => getCurrentBookingMonth(), [])
+  const calendarDays = useMemo(() => generateCalendarDays(bookingMonth), [bookingMonth])
 
   const isSlotBooked = (_day: number, _slotId: string) => {
     // Always return false to allow multiple bookings on the same slot
@@ -87,7 +102,7 @@ export default function BookingSection() {
 
   // Check if a day is Sunday (not available)
   const isSunday = (day: number) => {
-    const date = new Date(BOOKING_YEAR, BOOKING_MONTH, day)
+    const date = new Date(bookingMonth.year, bookingMonth.month, day)
     return date.getDay() === 0 // 0 = Sunday
   }
 
@@ -95,7 +110,7 @@ export default function BookingSection() {
   const isPastDate = (day: number) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0) // Reset time to start of day
-    const dateToCheck = new Date(BOOKING_YEAR, BOOKING_MONTH, day)
+    const dateToCheck = new Date(bookingMonth.year, bookingMonth.month, day)
     return dateToCheck < today
   }
 
@@ -144,7 +159,7 @@ export default function BookingSection() {
           name: formData.name,
           phone_num: parseInt(formData.phone, 10),
           email: formData.email,
-          work: `Booking: ${MONTH_NAME} ${selectedDate}, ${BOOKING_YEAR} at ${slotDetails?.time} | Company: ${formData.company}`
+          work: `Booking: ${formatBookingDate(bookingMonth, selectedDate)} at ${slotDetails?.time} | Company: ${formData.company}`
         })
 
       if (error) {
@@ -164,7 +179,7 @@ export default function BookingSection() {
             email: formData.email,
             phone: formData.phone,
             company: formData.company,
-            date: `${MONTH_NAME} ${selectedDate}, ${BOOKING_YEAR}`,
+            date: formatBookingDate(bookingMonth, selectedDate),
             time: slotDetails?.time
           })
         })
@@ -190,6 +205,7 @@ export default function BookingSection() {
   }
 
   const selectedSlotDetails = TIME_SLOTS.find((s) => s.id === selectedSlot)
+  const selectedBookingDate = selectedDate ? formatBookingDate(bookingMonth, selectedDate) : ""
 
   return (
     <section id="booking" className="relative py-16 md:py-24 px-4 lg:px-12 bg-gradient-to-b from-black via-neutral-900 to-black overflow-hidden">
@@ -250,7 +266,7 @@ export default function BookingSection() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-white/50">Date:</span>
-                      <span className="font-semibold text-white">{MONTH_NAME} {selectedDate}, {BOOKING_YEAR}</span>
+                      <span className="font-semibold text-white">{selectedBookingDate}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-white/50">Time:</span>
@@ -297,7 +313,7 @@ export default function BookingSection() {
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="text-lg md:text-xl font-semibold text-white flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-orange-500" />
-                    {MONTH_NAME} {BOOKING_YEAR}
+                    {bookingMonth.name} {bookingMonth.year}
                   </h3>
                   <span className="text-xs md:text-sm text-white/50">Select a date</span>
                 </div>
@@ -406,7 +422,7 @@ export default function BookingSection() {
                     >
                       <h4 className="text-sm font-medium text-white/70 mb-3 flex items-center gap-2">
                         <Clock className="h-4 w-4 text-orange-500" />
-                        Session Time for {MONTH_NAME} {selectedDate}
+                        Session Time for {bookingMonth.name} {selectedDate}
                       </h4>
                       <div className="grid grid-cols-1 gap-3">
                         {TIME_SLOTS.map((slot) => {
@@ -468,7 +484,7 @@ export default function BookingSection() {
                   <div className="mb-5 p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-500/10 border border-orange-500/20">
                     <div className="text-sm text-white/50 mb-1">Selected Appointment</div>
                     <div className="text-white font-semibold">
-                      {MONTH_NAME} {selectedDate}, {BOOKING_YEAR} at {selectedSlotDetails?.time}
+                      {selectedBookingDate} at {selectedSlotDetails?.time}
                     </div>
                   </div>
                 )}

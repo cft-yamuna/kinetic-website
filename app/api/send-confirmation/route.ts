@@ -1,7 +1,7 @@
 import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const RESEND_API_KEY = process.env.RESEND_API_KEY
 
 // WATI WhatsApp API configuration
 const WATI_API_ENDPOINT = 'https://live-mt-server.wati.io/445322'
@@ -98,8 +98,14 @@ export async function POST(request: Request) {
       )
     }
 
-    // Send confirmation email to user
-    const { data, error } = await resend.emails.send({
+    const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null
+    let data = null
+
+    if (!resend) {
+      console.warn('RESEND_API_KEY not configured, skipping confirmation emails')
+    } else {
+      // Send confirmation email to user
+      const result = await resend.emails.send({
       from: 'Craftech360 <bookings@craftech360.com>',
       to: email,
       subject: `Demo Confirmed - ${date} at ${time}`,
@@ -203,16 +209,18 @@ export async function POST(request: Request) {
         </body>
         </html>
       `,
-    })
+      })
 
-    if (error) {
-      console.error('Resend error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
+      data = result.data
 
-    // Send notification email to admins with booking details
-    try {
-      await resend.emails.send({
+      if (result.error) {
+        console.error('Resend error:', result.error)
+        return NextResponse.json({ error: result.error.message }, { status: 500 })
+      }
+
+      // Send notification email to admins with booking details
+      try {
+        await resend.emails.send({
         from: 'Craftech360 <bookings@craftech360.com>',
         to: ADMIN_EMAILS,
         subject: `New Demo Booking - ${name} on ${date}`,
@@ -259,9 +267,10 @@ export async function POST(request: Request) {
           </body>
           </html>
         `,
-      })
-    } catch (adminEmailError) {
-      console.error('Admin notification email error:', adminEmailError)
+        })
+      } catch (adminEmailError) {
+        console.error('Admin notification email error:', adminEmailError)
+      }
     }
 
     // Send WhatsApp confirmation to user via WATI

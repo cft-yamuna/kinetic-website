@@ -352,7 +352,7 @@ function MobileBoxTower() {
           {boxes.map((box, index) => (
             <div
               key={box.id}
-              className={`relative mobile-box ${getAnimationClass(box.isBase, box.boxIndex)}`}
+              className={`relative mobile-box ${getAnimationClass(box.isBase ?? false, box.boxIndex)}`}
               style={{
                 marginTop: box.isBase ? 0 : -1,
                 zIndex: boxes.length - index,
@@ -893,13 +893,13 @@ function RotatingBoxTower({ scrollProgress }: { scrollProgress?: any }) {
                               : (box.text.length > 10 ? '11px' : '14px'),
                             textTransform: 'uppercase',
                             letterSpacing: isMobileView ? '0.08em' : '0.1em',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
                           }}
                           animate={{
                             background: isHovered
                               ? 'linear-gradient(90deg, #E17924 0%, #BA5617 50%, #E17924 100%)'
                               : 'linear-gradient(90deg, #E17924 0%, #994E1F 50%, #E17924 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
                             filter: isHovered
                               ? 'drop-shadow(0 0 15px rgba(225, 121, 36, 1)) drop-shadow(0 0 30px rgba(186, 86, 23, 0.8))'
                               : 'drop-shadow(0 0 6px rgba(225, 121, 36, 0.5))',
@@ -1067,7 +1067,11 @@ function RotatingBoxTower({ scrollProgress }: { scrollProgress?: any }) {
             <motion.div
               key={i}
               className="absolute w-2 h-2 rounded-full"
-              style={{ backgroundColor: 'rgba(225, 121, 36, 0.6)' }}
+              style={{
+                backgroundColor: 'rgba(225, 121, 36, 0.6)',
+                left: `calc(50% + ${(Math.random() - 0.5) * 100}px)`,
+                bottom: '35%',
+              }}
               initial={{
                 opacity: 0,
                 x: 0,
@@ -1083,10 +1087,6 @@ function RotatingBoxTower({ scrollProgress }: { scrollProgress?: any }) {
                 delay: i * 0.25,
                 repeat: Infinity,
                 repeatDelay: 0.5,
-              }}
-              style={{
-                left: `calc(50% + ${(Math.random() - 0.5) * 100}px)`,
-                bottom: '35%',
               }}
             />
           ))}
