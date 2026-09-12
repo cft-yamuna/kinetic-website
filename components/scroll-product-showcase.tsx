@@ -1689,34 +1689,19 @@ function MobileShowcase() {
 
       {/* Single Column Layout - 1 product at a time, full width */}
       <div className="flex flex-col gap-4 max-w-lg mx-auto">
-        {/* Triblock */}
+        {/* The Orbit */}
         <MobileProductCard
-          productId="triblock"
-          title="TRI-BLOCK"
-          subtitle="Pixel Walls"
-          gradient="from-orange-500 to-amber-400"
+          productId="orbit"
+          title="THE ORBIT"
+          subtitle="Gyroscopic LED Rings"
+          gradient="from-amber-500 to-orange-500"
           bgGradient="linear-gradient(135deg, rgba(225,121,36,0.1) 0%, rgba(0,0,0,0.8) 100%)"
           borderColor="rgba(225,121,36,0.2)"
-          height={300}
+          height={280}
           onAnimate={handleAnimate}
           isActive={false}
         >
-          <MobileTriblockCard isActive={false} onTap={handleAnimate} />
-        </MobileProductCard>
-
-        {/* Flap */}
-        <MobileProductCard
-          productId="flap"
-          title="FLAP"
-          subtitle="Split Flap Display"
-          gradient="from-orange-500 to-yellow-400"
-          bgGradient="linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(0,0,0,0.8) 100%)"
-          borderColor="rgba(245,158,11,0.2)"
-          height={290}
-          onAnimate={handleAnimate}
-          isActive={false}
-        >
-          <MobileFlapCard isActive={false} onTap={handleAnimate} />
+          <MobileOrbitCard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
 
         {/* TRI-HELIX */}
@@ -1732,6 +1717,21 @@ function MobileShowcase() {
           isActive={false}
         >
           <MobileTriHelixCard isActive={false} onTap={handleAnimate} />
+        </MobileProductCard>
+
+        {/* Triblock */}
+        <MobileProductCard
+          productId="triblock"
+          title="TRI-BLOCK"
+          subtitle="Pixel Walls"
+          gradient="from-orange-500 to-amber-400"
+          bgGradient="linear-gradient(135deg, rgba(225,121,36,0.1) 0%, rgba(0,0,0,0.8) 100%)"
+          borderColor="rgba(225,121,36,0.2)"
+          height={300}
+          onAnimate={handleAnimate}
+          isActive={false}
+        >
+          <MobileTriblockCard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
 
         {/* HRMS */}
@@ -1779,19 +1779,19 @@ function MobileShowcase() {
           <MobileMatrixCard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
 
-        {/* The Orbit */}
+        {/* Flap */}
         <MobileProductCard
-          productId="orbit"
-          title="THE ORBIT"
-          subtitle="Gyroscopic LED Rings"
-          gradient="from-amber-500 to-orange-500"
-          bgGradient="linear-gradient(135deg, rgba(225,121,36,0.1) 0%, rgba(0,0,0,0.8) 100%)"
-          borderColor="rgba(225,121,36,0.2)"
-          height={280}
+          productId="flap"
+          title="FLAP"
+          subtitle="Split Flap Display"
+          gradient="from-orange-500 to-yellow-400"
+          bgGradient="linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(0,0,0,0.8) 100%)"
+          borderColor="rgba(245,158,11,0.2)"
+          height={290}
           onAnimate={handleAnimate}
           isActive={false}
         >
-          <MobileOrbitCard isActive={false} onTap={handleAnimate} />
+          <MobileFlapCard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
       </div>
 
