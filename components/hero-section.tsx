@@ -893,13 +893,9 @@ function RotatingBoxTower({ scrollProgress }: { scrollProgress?: any }) {
                               : (box.text.length > 10 ? '11px' : '14px'),
                             textTransform: 'uppercase',
                             letterSpacing: isMobileView ? '0.08em' : '0.1em',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
+                            color: '#E17924',
                           }}
                           animate={{
-                            background: isHovered
-                              ? 'linear-gradient(90deg, #E17924 0%, #BA5617 50%, #E17924 100%)'
-                              : 'linear-gradient(90deg, #E17924 0%, #994E1F 50%, #E17924 100%)',
                             filter: isHovered
                               ? 'drop-shadow(0 0 15px rgba(225, 121, 36, 1)) drop-shadow(0 0 30px rgba(186, 86, 23, 0.8))'
                               : 'drop-shadow(0 0 6px rgba(225, 121, 36, 0.5))',

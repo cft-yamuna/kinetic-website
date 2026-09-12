@@ -9,20 +9,7 @@ export const metadata: Metadata = {
     "We create living experiences through kinetic installations, holograms, and immersive displays. From museums to corporate spaces, transforming spaces into unforgettable stories. 950+ experiences across 17 cities in 5 countries.",
   generator: "v0.app",
   icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
+    icon: "/apple-icon.png",
     apple: "/apple-icon.png",
   },
 }

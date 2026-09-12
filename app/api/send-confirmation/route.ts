@@ -88,7 +88,7 @@ const locationInfo = {
 // Comma-separated list of admin recipients, e.g. "a@x.com,b@x.com"
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? 'ravi@craftech360.com,pradeep@craftech360.com,yamuna@craftech360.com')
   .split(',')
-  .map((e) => e.trim())
+  .map((e) => e.trim().replace(/^["']|["']$/g, ''))
   .filter(Boolean)
 
 // Verified Resend sender
@@ -105,6 +105,18 @@ export async function POST(request: Request) {
       )
     }
 
+    // Resend is stricter than the browser's type="email" check, which accepts
+    // addresses like "foo@bar" with no TLD. Catch those here instead of 500ing.
+    const recipient = String(email).trim()
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(recipient)) {
+      console.error('Rejected invalid recipient:', JSON.stringify(email))
+      return NextResponse.json(
+        { error: 'Please enter a valid email address.' },
+        { status: 400 }
+      )
+    }
+
     const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null
     let data = null
 
@@ -113,13 +125,13 @@ export async function POST(request: Request) {
     } else {
       console.log('=== Resend Email Debug ===')
       console.log('From:', FROM_EMAIL)
-      console.log('Confirmation to user:', email)
+      console.log('Confirmation to user:', JSON.stringify(recipient))
       console.log('Admin notification to:', ADMIN_EMAILS.join(', '))
 
       // Send confirmation email to user
       const result = await resend.emails.send({
       from: FROM_EMAIL,
-      to: email,
+      to: recipient,
       subject: `Demo Confirmed - ${date} at ${time}`,
       html: `
         <!DOCTYPE html>
@@ -226,11 +238,11 @@ export async function POST(request: Request) {
       data = result.data
 
       if (result.error) {
-        console.error('Confirmation email failed for', email, '-', result.error)
+        console.error('Confirmation email failed for', JSON.stringify(recipient), '-', result.error)
         return NextResponse.json({ error: result.error.message }, { status: 500 })
       }
 
-      console.log('Confirmation email sent to', email, '- id:', result.data?.id)
+      console.log('Confirmation email sent to', recipient, '- id:', result.data?.id)
 
       // Send notification email to admins with booking details
       try {

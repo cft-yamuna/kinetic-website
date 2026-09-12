@@ -107,20 +107,12 @@ const HRMS_SECONDARY = '#BA5617'
 // Product data
 const products = [
   {
-    id: "triblock",
-    title: "TRI-BLOCK",
-    subtitle: "Pixel Walls",
-    gradient: "from-orange-600 via-amber-500 to-yellow-600",
+    id: "orbit",
+    title: "THE ORBIT",
+    subtitle: "Gyroscopic LED Rings",
+    gradient: "from-amber-500 via-orange-500 to-amber-600",
     accentColor: "#E17924",
-    type: "triblock",
-  },
-  {
-    id: "flap",
-    title: "FLAP",
-    subtitle: "Split Flap Display",
-    gradient: "from-orange-600 via-amber-500 to-yellow-400",
-    accentColor: "#f59e0b",
-    type: "flap",
+    type: "orbit",
   },
   {
     id: "trihelix",
@@ -129,6 +121,14 @@ const products = [
     gradient: "from-orange-500 via-amber-500 to-orange-600",
     accentColor: "#E17924",
     type: "trihelix",
+  },
+  {
+    id: "triblock",
+    title: "TRI-BLOCK",
+    subtitle: "Pixel Walls",
+    gradient: "from-orange-600 via-amber-500 to-yellow-600",
+    accentColor: "#E17924",
+    type: "triblock",
   },
   {
     id: "hrms",
@@ -153,6 +153,338 @@ const products = [
     gradient: "from-amber-500 via-yellow-400 to-orange-400",
     accentColor: "#F5A623",
     type: "matrix",
+  },
+  {
+    id: "flap",
+    title: "FLAP",
+    subtitle: "Split Flap Display",
+    gradient: "from-orange-600 via-amber-500 to-yellow-400",
+    accentColor: "#f59e0b",
+    type: "flap",
+  },
+]
+
+// ============ THE ORBIT ============
+// Concentric LED hoops held in a gyroscopic frame. Each hoop is a solid band:
+// the running surface carries the text, and the polished sides show its
+// thickness as the hoop turns edge-on. Every hoop turns on a different axis.
+
+const ORBIT_PRIMARY = '#E17924'
+const ORBIT_SECONDARY = '#F5A623'
+// The lit panel itself carries the brand colour - the glyphs are cut out of it
+const ORBIT_SCREEN = 'linear-gradient(180deg, #F0A017 0%, #E07820 48%, #B85A16 100%)'
+const ORBIT_SCREEN_DIM = 'linear-gradient(180deg, #6b3d10 0%, #3f2207 100%)'
+const ORBIT_INK = '#140A02'
+const ORBIT_GLOW = 'rgba(225, 121, 36, 0.45)'
+
+// Sheen that sweeps around a machined ring rather than across it
+const ORBIT_METAL =
+  'conic-gradient(from 200deg, #574e44 0deg, #1d1a17 50deg, #786d5e 105deg, #2b2621 165deg, #675d4f 220deg, #181512 285deg, #574e44 360deg)'
+
+type OrbitRingConfig = {
+  // Radius out to the running surface
+  radius: number
+  // Height of the band, measured along the hoop's axle
+  band: number
+  // Radial thickness - what you see on the sides when the hoop turns edge-on
+  thickness: number
+  fontSize: number
+  text: string
+  // How many times the phrase wraps around the hoop - the segment count is
+  // derived from this so the text always meets itself seamlessly.
+  repeat: number
+  // How the hoop is posed before it starts rolling. Whatever turn this applies
+  // is what brings the running surface into view: square-on to the viewer the
+  // band goes edge-on and vanishes, so every pose is turned off that.
+  stand: string
+  spinDuration: number
+  spinDirection: 1 | -1
+  // Leave the tumble off and the hoop is held straight, as a fixed frame
+  tilt?: { rotateX?: number | number[]; rotateY?: number | number[]; rotateZ?: number | number[] }
+  tiltDuration?: number
+  tiltEase?: 'linear' | 'easeInOut'
+}
+
+// One LED hoop, built as a solid band. The running surface is a drum of panels
+// stood up around a circle so their faces point radially, with the letters
+// standing up along the axle - so the text reads along the top and bottom of the
+// hoop and rolls away at the sides, like LED tape wrapped around a wheel rather
+// than lettering painted on the wheel's flat side. Two machined discs close the
+// band off, and they are what catches the light when the hoop swings edge-on.
+function OrbitRing({ config }: { config: OrbitRingConfig }) {
+  const { radius, band, thickness, fontSize, text, repeat, stand, spinDuration, spinDirection, tilt, tiltDuration, tiltEase } = config
+
+  const chars = useMemo(() => {
+    const unit = text + ' • '
+    return unit.repeat(repeat).split('')
+  }, [text, repeat])
+
+  const segments = chars.length
+  const step = 360 / segments
+  const inner = radius - thickness
+
+  // `inward` builds the bore of the hoop - the surface you see through the far
+  // side. Each panel is turned about its own upright, so the letters stay the
+  // right way up and never mirror however the hoop is tumbling.
+  const wall = (inward: boolean) => {
+    const r = inward ? inner : radius
+    // Chord between neighbours, plus a hair so the panels butt rather than gap
+    const panelWidth = 2 * r * Math.tan(Math.PI / segments) + 1
+
+    return chars.map((char, i) => (
+      <div
+        key={i}
+        style={{
+          position: 'absolute',
+          width: panelWidth,
+          height: band,
+          left: -panelWidth / 2,
+          top: -band / 2,
+          transform: `rotateY(${i * step}deg) translateZ(${r}px)${inward ? ' rotateY(180deg)' : ''}`,
+          backfaceVisibility: 'hidden',
+          // The panel IS the screen - no bezel, no inset, so neighbours butt into
+          // one unbroken lit band rather than reading as a row of tiles. The only
+          // shading runs along the band's length, which never breaks the surface.
+          background: inward ? ORBIT_SCREEN_DIM : ORBIT_SCREEN,
+          boxShadow: inward
+            ? undefined
+            : 'inset 0 1px 0 rgba(255, 199, 121, 0.5), inset 0 -1px 0 rgba(72, 30, 3, 0.6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+        }}
+      >
+        <span
+          style={{
+            color: inward ? 'rgba(20, 10, 2, 0.55)' : ORBIT_INK,
+            fontSize,
+            fontWeight: 700,
+            lineHeight: 1,
+            textShadow: inward ? undefined : '0 1px 0 rgba(255, 195, 118, 0.4)',
+          }}
+        >
+          {char}
+        </span>
+      </div>
+    ))
+  }
+
+  // A machined disc closing one side of the band. The hole is punched with a
+  // mask so the sheen can run around the metal as a conic sweep.
+  const side = (offset: number) => (
+    <div
+      className="absolute"
+      style={{
+        width: radius * 2,
+        height: radius * 2,
+        left: -radius,
+        top: -radius,
+        transform: `translateY(${offset}px) rotateX(90deg)`,
+        borderRadius: '50%',
+        background: ORBIT_METAL,
+        WebkitMaskImage: `radial-gradient(circle, transparent ${inner}px, #000 ${inner + 0.5}px)`,
+        maskImage: `radial-gradient(circle, transparent ${inner}px, #000 ${inner + 0.5}px)`,
+      }}
+    />
+  )
+
+  // Glowing rails along the two edges of the running surface
+  const rail = (offset: number) => (
+    <div
+      className="absolute rounded-full"
+      style={{
+        width: radius * 2,
+        height: radius * 2,
+        left: -radius,
+        top: -radius,
+        transform: `translateY(${offset}px) rotateX(90deg)`,
+        border: '1px solid rgba(225, 121, 36, 0.45)',
+        boxShadow: `0 0 10px ${ORBIT_GLOW}`,
+      }}
+    />
+  )
+
+  return (
+    <motion.div
+      className="absolute"
+      style={{ left: '50%', top: '50%', transformStyle: 'preserve-3d' }}
+      animate={tilt ?? {}}
+      transition={{ duration: tiltDuration ?? 0, repeat: Infinity, ease: tiltEase ?? 'linear' }}
+    >
+      {/* Pose the hoop. This is static, so one with no tumble stays put. */}
+      <div style={{ transformStyle: 'preserve-3d', transform: stand }}>
+        {/* Roll about the axle - this is what runs the text around the band */}
+        <motion.div
+          style={{ transformStyle: 'preserve-3d' }}
+          animate={{ rotateY: 360 * spinDirection }}
+          transition={{ duration: spinDuration, repeat: Infinity, ease: 'linear' }}
+        >
+          {side(-band / 2)}
+          {side(band / 2)}
+          {rail(-band / 2)}
+          {rail(band / 2)}
+          {wall(true)}
+          {wall(false)}
+        </motion.div>
+      </div>
+    </motion.div>
+  )
+}
+
+// Glowing core the rings orbit around
+function OrbitCore({ size }: { size: number }) {
+  return (
+    <motion.div
+      className="absolute rounded-full"
+      style={{
+        left: '50%',
+        top: '50%',
+        width: size,
+        height: size,
+        marginLeft: -size / 2,
+        marginTop: -size / 2,
+        background: `radial-gradient(circle at 34% 30%, #FFE0B5 0%, ${ORBIT_SECONDARY} 38%, ${ORBIT_PRIMARY} 64%, #5c2c0d 100%)`,
+        boxShadow: `0 0 ${Math.round(size * 0.7)}px ${ORBIT_GLOW}, inset -4px -6px 14px rgba(0, 0, 0, 0.55)`,
+      }}
+      animate={{ scale: [1, 1.09, 1], opacity: [0.88, 1, 0.88] }}
+      transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+    />
+  )
+}
+
+// Pedestal the assembly stands on - fixed, does not rotate
+function OrbitBase({ width }: { width: number }) {
+  const capHeight = Math.round(width * 0.17)
+  const bodyHeight = Math.round(width * 0.14)
+
+  return (
+    <div className="relative" style={{ width, height: capHeight + bodyHeight }}>
+      {/* Cylinder body */}
+      <div
+        className="absolute"
+        style={{
+          left: 0,
+          top: capHeight / 2,
+          width,
+          height: bodyHeight,
+          background: 'linear-gradient(90deg, #050505 0%, #201d1a 28%, #2c2825 50%, #191715 74%, #040404 100%)',
+        }}
+      />
+      {/* Bottom cap */}
+      <div
+        className="absolute rounded-[50%]"
+        style={{
+          left: 0,
+          top: bodyHeight,
+          width,
+          height: capHeight,
+          background: 'linear-gradient(180deg, #131110 0%, #040404 100%)',
+        }}
+      />
+      {/* Top disc */}
+      <div
+        className="absolute rounded-[50%]"
+        style={{
+          left: 0,
+          top: 0,
+          width,
+          height: capHeight,
+          background: 'radial-gradient(ellipse at 50% 32%, #3a342e 0%, #1b1917 58%, #0b0a09 100%)',
+          border: '1px solid rgba(225, 121, 36, 0.45)',
+          boxShadow: `0 0 26px ${ORBIT_GLOW}`,
+        }}
+      />
+    </div>
+  )
+}
+
+// An armillary arrangement: the outer hoop is held straight as the fixed frame
+// and only runs its text, while the two inside it tumble on axes of their own -
+// the middle end over end, the inner precessing in the picture plane.
+const ORBIT_RINGS_DESKTOP: OrbitRingConfig[] = [
+  {
+    radius: 192,
+    band: 62,
+    thickness: 24,
+    fontSize: 19,
+    text: 'INNOVATIVE INTERACTIVE IMMERSIVE',
+    repeat: 1,
+    // Stood upright and turned across the viewer, so the band reads down the
+    // near and far edges rather than along the top and bottom
+    stand: 'rotateY(60deg) rotateZ(90deg)',
+    spinDuration: 18,
+    spinDirection: 1,
+  },
+  {
+    radius: 132,
+    band: 54,
+    thickness: 22,
+    fontSize: 17,
+    text: 'KINETIC ORBITAL LED DISPLAY',
+    repeat: 1,
+    stand: 'rotateX(58deg)',
+    spinDuration: 12,
+    spinDirection: -1,
+    tilt: { rotateX: 360 },
+    tiltDuration: 14,
+    tiltEase: 'linear',
+  },
+  {
+    radius: 78,
+    band: 46,
+    thickness: 18,
+    fontSize: 16,
+    text: 'THE ORBIT 360',
+    repeat: 1,
+    stand: 'rotateX(58deg)',
+    spinDuration: 8,
+    spinDirection: 1,
+    tilt: { rotateZ: 360 },
+    tiltDuration: 9,
+    tiltEase: 'linear',
+  },
+]
+
+const ORBIT_RINGS_MOBILE: OrbitRingConfig[] = [
+  {
+    radius: 78,
+    band: 29,
+    thickness: 11,
+    fontSize: 10,
+    text: 'INNOVATIVE INTERACTIVE IMMERSIVE',
+    repeat: 1,
+    stand: 'rotateY(60deg) rotateZ(90deg)',
+    spinDuration: 15,
+    spinDirection: 1,
+  },
+  {
+    radius: 53,
+    band: 25,
+    thickness: 9,
+    fontSize: 10,
+    text: 'ORBITAL LED',
+    repeat: 1,
+    stand: 'rotateX(58deg)',
+    spinDuration: 10,
+    spinDirection: -1,
+    tilt: { rotateX: 360 },
+    tiltDuration: 12,
+    tiltEase: 'linear',
+  },
+  {
+    radius: 31,
+    band: 21,
+    thickness: 8,
+    fontSize: 9,
+    text: 'ORBIT 360',
+    repeat: 1,
+    stand: 'rotateX(58deg)',
+    spinDuration: 7,
+    spinDirection: 1,
+    tilt: { rotateZ: 360 },
+    tiltDuration: 8,
+    tiltEase: 'linear',
   },
 ]
 
@@ -1211,6 +1543,53 @@ function MobileTriHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () 
   )
 }
 
+// Mobile THE ORBIT Visual - gyroscopic LED rings, each turning on its own axis
+function MobileOrbitCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [hasEntered, setHasEntered] = useState(false)
+
+  // Only start the rings once the card has scrolled into view
+  useEffect(() => {
+    const element = containerRef.current
+    if (!element) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setHasEntered(true)
+      },
+      { threshold: 0.3 }
+    )
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <motion.div
+      ref={containerRef}
+      className="relative w-full h-full flex flex-col items-center justify-center cursor-pointer"
+      onClick={onTap}
+      whileTap={{ scale: 0.98 }}
+    >
+      <div className="flex flex-col items-center" style={{ perspective: '780px', marginTop: 14 }}>
+        {/* Ring assembly */}
+        <div
+          className="relative"
+          style={{ width: 190, height: 190, transformStyle: 'preserve-3d', transform: 'rotateX(9deg) rotateY(-24deg)' }}
+        >
+          {hasEntered && ORBIT_RINGS_MOBILE.map((ring, i) => <OrbitRing key={i} config={ring} />)}
+          <OrbitCore size={25} />
+        </div>
+
+        {/* Base - fixed */}
+        <div style={{ marginTop: -9 }}>
+          <OrbitBase width={125} />
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
 // Hook to detect when element is in view (once only)
 function useInViewOnce(threshold = 0.5) {
   const ref = useRef<HTMLDivElement>(null)
@@ -1398,6 +1777,21 @@ function MobileShowcase() {
           isActive={false}
         >
           <MobileMatrixCard isActive={false} onTap={handleAnimate} />
+        </MobileProductCard>
+
+        {/* The Orbit */}
+        <MobileProductCard
+          productId="orbit"
+          title="THE ORBIT"
+          subtitle="Gyroscopic LED Rings"
+          gradient="from-amber-500 to-orange-500"
+          bgGradient="linear-gradient(135deg, rgba(225,121,36,0.1) 0%, rgba(0,0,0,0.8) 100%)"
+          borderColor="rgba(225,121,36,0.2)"
+          height={280}
+          onAnimate={handleAnimate}
+          isActive={false}
+        >
+          <MobileOrbitCard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
       </div>
 
@@ -2412,6 +2806,11 @@ const productDescriptions: Record<string, { tagline: string; description: string
     description: "Versatile kinetic screens that display any content. Fully customizable LED patterns with any number of LEDs to match your requirements.",
     features: ["Any Content Display", "Custom LED Patterns"],
   },
+  orbit: {
+    tagline: "Motion In Every Axis",
+    description: "Concentric LED rings suspended in a gyroscopic frame. Each ring scrolls its own message while turning on a separate axis, wrapping your brand around a slow, hypnotic orbit.",
+    features: ["Independent Ring Rotation", "360° Scrolling Content"],
+  },
 }
 
 // Animation variants for smooth transitions (from night commit)
@@ -3407,6 +3806,45 @@ function LargeMatrixVisual() {
 }
 
 // Desktop Scroll-Based Showcase - Sticky with AnimatePresence swap
+// Desktop THE ORBIT Visual
+function LargeOrbitVisual() {
+  return (
+    <div
+      className="relative flex flex-col items-center justify-center"
+      style={{ perspective: '1750px', width: 566, height: 566 }}
+    >
+      {/* Ambient glow behind the assembly */}
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          left: '50%',
+          top: 40,
+          width: 432,
+          height: 432,
+          marginLeft: -216,
+          background: `radial-gradient(circle, ${ORBIT_GLOW} 0%, transparent 62%)`,
+          filter: 'blur(40px)',
+          opacity: 0.55,
+        }}
+      />
+
+      {/* Ring assembly */}
+      <div
+        className="relative"
+        style={{ width: 432, height: 432, transformStyle: 'preserve-3d', transform: 'rotateX(9deg) rotateY(-24deg)' }}
+      >
+        {ORBIT_RINGS_DESKTOP.map((ring, i) => <OrbitRing key={i} config={ring} />)}
+        <OrbitCore size={62} />
+      </div>
+
+      {/* Base platform - FIXED, does not rotate */}
+      <div style={{ marginTop: -24 }}>
+        <OrbitBase width={284} />
+      </div>
+    </div>
+  )
+}
+
 function DesktopShowcase() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -3482,6 +3920,7 @@ function DesktopShowcase() {
       case 'hrms': return <LargeHRMSVisual />
       case 'telescopic': return <LargeTelescopicVisual />
       case 'matrix': return <LargeMatrixVisual />
+      case 'orbit': return <LargeOrbitVisual />
       default: return null
     }
   }

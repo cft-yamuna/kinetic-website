@@ -200,18 +200,23 @@ export default function BookingSection() {
 
       // Send confirmation email
       try {
-        await fetch('/api/send-confirmation', {
+        const res = await fetch('/api/send-confirmation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: formData.name,
-            email: formData.email,
+            email: formData.email.trim(),
             phone: formData.phone,
             company: formData.company,
             date: formatBookingDate(bookingMonth, selectedDate),
             time: slotDetails?.time
           })
         })
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => null)
+          console.error("Confirmation email failed:", res.status, body?.error ?? "(no details)")
+        }
       } catch (emailError) {
         // Don't fail the booking if email fails, just log it
         console.error("Email send error:", emailError)
