@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useMemo, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Calendar, Clock, CheckCircle2, Loader2, User, Mail, Phone, Building2, MapPin, Navigation } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { getSupabase } from "@/lib/supabase"
 
 // Single time slot per day at 5 PM
 const TIME_SLOTS = [
@@ -173,6 +173,14 @@ export default function BookingSection() {
 
     try {
       const slotDetails = TIME_SLOTS.find(s => s.id === selectedSlot)
+
+      const supabase = getSupabase()
+      if (!supabase) {
+        console.error("Supabase is not configured: NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY are missing")
+        alert("Bookings are temporarily unavailable. Please call us on 9964299111.")
+        setIsSubmitting(false)
+        return
+      }
 
       const { error } = await supabase
         .from("kinetic-data")

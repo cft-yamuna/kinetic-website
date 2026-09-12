@@ -85,7 +85,14 @@ const locationInfo = {
   mapUrl: "https://www.google.com/maps/search/?api=1&query=WGWP%2BWV6%2C+Deepanjali+Nagar%2C+Bengaluru%2C+Karnataka+560026"
 }
 
-const ADMIN_EMAILS = ['ravi@craftech360.com','pradeep@craftech360.com','yamuna@craftech360.com']
+// Comma-separated list of admin recipients, e.g. "a@x.com,b@x.com"
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? 'ravi@craftech360.com,pradeep@craftech360.com,yamuna@craftech360.com')
+  .split(',')
+  .map((e) => e.trim())
+  .filter(Boolean)
+
+// Verified Resend sender
+const FROM_EMAIL = 'Craftech360 <bookings@craftech360.com>'
 
 export async function POST(request: Request) {
   try {
@@ -104,9 +111,14 @@ export async function POST(request: Request) {
     if (!resend) {
       console.warn('RESEND_API_KEY not configured, skipping confirmation emails')
     } else {
+      console.log('=== Resend Email Debug ===')
+      console.log('From:', FROM_EMAIL)
+      console.log('Confirmation to user:', email)
+      console.log('Admin notification to:', ADMIN_EMAILS.join(', '))
+
       // Send confirmation email to user
       const result = await resend.emails.send({
-      from: 'Craftech360 <bookings@craftech360.com>',
+      from: FROM_EMAIL,
       to: email,
       subject: `Demo Confirmed - ${date} at ${time}`,
       html: `
@@ -214,14 +226,16 @@ export async function POST(request: Request) {
       data = result.data
 
       if (result.error) {
-        console.error('Resend error:', result.error)
+        console.error('Confirmation email failed for', email, '-', result.error)
         return NextResponse.json({ error: result.error.message }, { status: 500 })
       }
 
+      console.log('Confirmation email sent to', email, '- id:', result.data?.id)
+
       // Send notification email to admins with booking details
       try {
-        await resend.emails.send({
-        from: 'Craftech360 <bookings@craftech360.com>',
+        const adminResult = await resend.emails.send({
+        from: FROM_EMAIL,
         to: ADMIN_EMAILS,
         subject: `New Demo Booking - ${name} on ${date}`,
         html: `
@@ -268,6 +282,12 @@ export async function POST(request: Request) {
           </html>
         `,
         })
+
+        if (adminResult.error) {
+          console.error('Admin notification failed for', ADMIN_EMAILS.join(', '), '-', adminResult.error)
+        } else {
+          console.log('Admin notification sent to', ADMIN_EMAILS.join(', '), '- id:', adminResult.data?.id)
+        }
       } catch (adminEmailError) {
         console.error('Admin notification email error:', adminEmailError)
       }
