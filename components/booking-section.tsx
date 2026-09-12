@@ -26,13 +26,18 @@ type BookingMonth = {
   name: string
 }
 
-function getCurrentBookingMonth(): BookingMonth {
-  const today = new Date()
+// Fixed names rather than toLocaleString(): the server and the visitor's browser
+// can resolve different default locales, which breaks hydration.
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+]
 
+function getCurrentBookingMonth(today: Date): BookingMonth {
   return {
     year: today.getFullYear(),
     month: today.getMonth(),
-    name: today.toLocaleString(undefined, { month: "long" }),
+    name: MONTH_NAMES[today.getMonth()],
   }
 }
 
@@ -78,6 +83,19 @@ function useIsMobile() {
   return hasMounted && isMobile
 }
 
+// The calendar depends on "now", which the server (UTC) and the visitor's
+// timezone disagree about. Stay null until mounted so the server render and the
+// first client render are identical.
+function useCurrentDate() {
+  const [now, setNow] = useState<Date | null>(null)
+
+  useEffect(() => {
+    setNow(new Date())
+  }, [])
+
+  return now
+}
+
 export default function BookingSection() {
   const [selectedDate, setSelectedDate] = useState<number | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
@@ -87,8 +105,9 @@ export default function BookingSection() {
   const [phoneError, setPhoneError] = useState("")
   const isMobile = useIsMobile()
 
-  const bookingMonth = useMemo(() => getCurrentBookingMonth(), [])
-  const calendarDays = useMemo(() => generateCalendarDays(bookingMonth), [bookingMonth])
+  const now = useCurrentDate()
+  const bookingMonth = useMemo(() => (now ? getCurrentBookingMonth(now) : null), [now])
+  const calendarDays = useMemo(() => (bookingMonth ? generateCalendarDays(bookingMonth) : []), [bookingMonth])
 
   const isSlotBooked = (_day: number, _slotId: string) => {
     // Always return false to allow multiple bookings on the same slot
@@ -102,13 +121,15 @@ export default function BookingSection() {
 
   // Check if a day is Sunday (not available)
   const isSunday = (day: number) => {
+    if (!bookingMonth) return false
     const date = new Date(bookingMonth.year, bookingMonth.month, day)
     return date.getDay() === 0 // 0 = Sunday
   }
 
   // Check if a day is in the past
   const isPastDate = (day: number) => {
-    const today = new Date()
+    if (!bookingMonth || !now) return false
+    const today = new Date(now)
     today.setHours(0, 0, 0, 0) // Reset time to start of day
     const dateToCheck = new Date(bookingMonth.year, bookingMonth.month, day)
     return dateToCheck < today
@@ -141,7 +162,7 @@ export default function BookingSection() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedDate || !selectedSlot) return
+    if (!selectedDate || !selectedSlot || !bookingMonth) return
 
     if (formData.phone.length !== 10) {
       setPhoneError("Phone number must be 10 digits")
@@ -205,7 +226,7 @@ export default function BookingSection() {
   }
 
   const selectedSlotDetails = TIME_SLOTS.find((s) => s.id === selectedSlot)
-  const selectedBookingDate = selectedDate ? formatBookingDate(bookingMonth, selectedDate) : ""
+  const selectedBookingDate = selectedDate && bookingMonth ? formatBookingDate(bookingMonth, selectedDate) : ""
 
   return (
     <section id="booking" className="relative py-16 md:py-24 px-4 lg:px-12 bg-gradient-to-b from-black via-neutral-900 to-black overflow-hidden">
@@ -313,7 +334,7 @@ export default function BookingSection() {
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="text-lg md:text-xl font-semibold text-white flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-orange-500" />
-                    {bookingMonth.name} {bookingMonth.year}
+                    {bookingMonth ? `${bookingMonth.name} ${bookingMonth.year}` : " "}
                   </h3>
                   <span className="text-xs md:text-sm text-white/50">Select a date</span>
                 </div>
@@ -422,7 +443,7 @@ export default function BookingSection() {
                     >
                       <h4 className="text-sm font-medium text-white/70 mb-3 flex items-center gap-2">
                         <Clock className="h-4 w-4 text-orange-500" />
-                        Session Time for {bookingMonth.name} {selectedDate}
+                        Session Time for {bookingMonth?.name} {selectedDate}
                       </h4>
                       <div className="grid grid-cols-1 gap-3">
                         {TIME_SLOTS.map((slot) => {
