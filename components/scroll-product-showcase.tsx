@@ -163,6 +163,14 @@ const products = [
     type: "matrix",
   },
   {
+    id: "novaspin",
+    title: "NOVA SPIN",
+    subtitle: "Kinetic Spinning Fascia",
+    gradient: "from-amber-500 via-orange-500 to-yellow-500",
+    accentColor: "#F5A623",
+    type: "novaspin",
+  },
+  {
     id: "flap",
     title: "FLAP",
     subtitle: "Split Flap Display",
@@ -825,8 +833,8 @@ const HRMS_BACK_ART = [
   'linear-gradient(165deg, #06201d 0%, #07100f 60%, #030606 100%)',
 ]
 
-// Steps through the loop: 0 joined wall -> 1 slide apart -> 2 turn -> 3 turn home (still apart)
-function useHRMSStep(active: boolean) {
+// Counts animation steps while active
+function useLoopStep(active: boolean, stepMs: number) {
   const [step, setStep] = useState(0)
   useEffect(() => {
     if (!active) return
@@ -834,12 +842,15 @@ function useHRMSStep(active: boolean) {
     // Start moving almost straight away, then settle into the regular rhythm
     const start = setTimeout(() => {
       setStep(prev => prev + 1)
-      id = setInterval(() => setStep(prev => prev + 1), HRMS_STEP_MS)
+      id = setInterval(() => setStep(prev => prev + 1), stepMs)
     }, HRMS_FIRST_STEP_MS)
     return () => { clearTimeout(start); clearInterval(id) }
-  }, [active])
+  }, [active, stepMs])
   return step
 }
+
+// Steps through the loop: 0 joined wall -> 1 slide apart -> 2 turn -> 3 turn home (still apart)
+const useHRMSStep = (active: boolean) => useLoopStep(active, HRMS_STEP_MS)
 
 function CurvedHRMSWall({
   step,
@@ -1020,6 +1031,249 @@ function LargeHRMSVisual() {
     <div className="relative" style={{ perspective: '1100px' }}>
       <div style={{ transform: 'rotateX(-6deg)', transformStyle: 'preserve-3d' }}>
         <CurvedHRMSWall step={step} panelWidth={72} panelHeight={300} depth={12} spread={24} radius={700} plinthHeight={26} />
+      </div>
+    </div>
+  )
+}
+
+// ============ NOVA SPIN ============
+// Single-sided LED panels hung edge to edge under a floating booth canopy,
+// wrapping its corner. A message scrolls along the whole fascia while the
+// panels move in two patterns: a spin wave that travels round the canopy
+// (showing the bare metal backs), and a staggered tilt into a staircase
+// before they settle flat into one seamless screen again.
+
+// Loop: 0 flat -> 1 spin wave -> 2 staircase tilt (then back to flat)
+const NOVA_PHASE_MS = [1600, 3400, 2600]
+const NOVA_TILT = 48
+const NOVA_MESSAGES = ['CRAFTECH 360', 'TRANSFORMING BRANDS']
+// Tiles seamlessly along the fascia, so it can scroll with the message
+const NOVA_SCREEN_ART =
+  'radial-gradient(ellipse 22% 70% at 15% 70%, rgba(245,166,35,0.55) 0%, transparent 70%), ' +
+  'radial-gradient(ellipse 30% 55% at 55% 30%, rgba(225,121,36,0.6) 0%, transparent 72%), ' +
+  'radial-gradient(ellipse 18% 60% at 85% 65%, rgba(255,200,120,0.4) 0%, transparent 70%), ' +
+  'linear-gradient(180deg, #4a2408 0%, #2a1405 55%, #160a02 100%)'
+const NOVA_PANEL_BACK = 'linear-gradient(90deg, #474c53 0%, #9aa0a7 45%, #6b7077 70%, #3c4046 100%)'
+
+function useNovaStep(active: boolean) {
+  const [step, setStep] = useState(0)
+  const stepRef = useRef(0)
+  useEffect(() => {
+    if (!active) return
+    let timer: ReturnType<typeof setTimeout>
+    // Each phase holds for its own length before the next begins
+    const schedule = (wait: number) => {
+      timer = setTimeout(() => {
+        stepRef.current += 1
+        setStep(stepRef.current)
+        schedule(NOVA_PHASE_MS[stepRef.current % NOVA_PHASE_MS.length])
+      }, wait)
+    }
+    schedule(HRMS_FIRST_STEP_MS)
+    return () => clearTimeout(timer)
+  }, [active])
+  return step
+}
+
+function NovaSpinCanopy({
+  step,
+  frontCount,
+  sideCount,
+  panelWidth,
+  panelHeight,
+  gap,
+  depth,
+  bandHeight,
+  fontSize,
+  scrollSeconds,
+}: {
+  step: number
+  // Panels along the front of the canopy, and round the corner down its side
+  frontCount: number
+  sideCount: number
+  panelWidth: number
+  panelHeight: number
+  gap: number
+  depth: number
+  bandHeight: number
+  fontSize: number
+  // Time for the content to travel two fascia lengths
+  scrollSeconds: number
+}) {
+  const pitch = panelWidth + gap
+  const frontLength = frontCount * pitch
+  const sideLength = sideCount * pitch
+  const fasciaLength = frontLength + sideLength
+
+  const phase = step % 3
+  const cycle = Math.floor(step / 3)
+  // Keep counting upward so the spin always runs the same way; the tilt
+  // unwinds on the way back to flat
+  const rotation = cycle * 360 + (phase === 1 ? 360 : phase === 2 ? 360 + NOVA_TILT : 0)
+  const duration = phase === 1 ? 1.4 : 0.9
+  const stagger = phase === 1 ? 0.07 : 0.035
+
+  const renderBand = (length: number) => (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: length,
+        height: bandHeight,
+        background: 'linear-gradient(180deg, #202023 0%, #0d0d0f 100%)',
+        borderTop: `2px solid ${ORBIT_SECONDARY}`,
+        borderBottom: `2px solid ${ORBIT_SECONDARY}`,
+        boxShadow: '0 0 14px rgba(245,166,35,0.35)',
+      }}
+    />
+  )
+
+  // `index` is the panel's place along the whole fascia, `x` its place within its run
+  const renderPanel = (index: number, x: number) => (
+    <motion.div
+      key={index}
+      initial={false}
+      animate={{ rotateY: rotation }}
+      transition={{ duration, ease: 'easeInOut', delay: index * stagger }}
+      style={{ position: 'absolute', top: bandHeight + 3, left: x, width: panelWidth, height: panelHeight, transformStyle: 'preserve-3d' }}
+    >
+      {/* LED screen - shows its slice of the scrolling content */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          overflow: 'hidden',
+          backfaceVisibility: 'hidden',
+          transform: `translateZ(${depth / 2}px)`,
+          boxShadow: '0 0 10px rgba(245,166,35,0.35)',
+        }}
+      >
+        <motion.div
+          initial={{ x: 0 }}
+          animate={{ x: -2 * fasciaLength }}
+          transition={{ duration: scrollSeconds, ease: 'linear', repeat: Infinity }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: -index * pitch,
+            width: 3 * fasciaLength,
+            height: '100%',
+            display: 'flex',
+            background: NOVA_SCREEN_ART,
+            backgroundSize: `${fasciaLength}px 100%`,
+          }}
+        >
+          {[0, 1, 2].map((k) => (
+            <div
+              key={k}
+              style={{
+                width: fasciaLength,
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#FFFFFF',
+                fontSize,
+                fontWeight: 900,
+                letterSpacing: fontSize * 0.06,
+                whiteSpace: 'nowrap',
+                textShadow: '0 0 12px rgba(255,190,100,0.6)',
+              }}
+            >
+              {NOVA_MESSAGES[k % NOVA_MESSAGES.length]}
+            </div>
+          ))}
+        </motion.div>
+      </div>
+      {/* Bare metal back */}
+      <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', transform: `rotateY(180deg) translateZ(${depth / 2}px)`, background: NOVA_PANEL_BACK }} />
+      {/* Edges */}
+      <div style={{ position: 'absolute', top: 0, bottom: 0, left: -depth / 2, width: depth, transform: 'rotateY(-90deg)', background: '#1c1d20' }} />
+      <div style={{ position: 'absolute', top: 0, bottom: 0, left: panelWidth - depth / 2, width: depth, transform: 'rotateY(90deg)', background: '#1c1d20' }} />
+    </motion.div>
+  )
+
+  return (
+    <div style={{ position: 'relative', width: frontLength, height: bandHeight + panelHeight + 3, transformStyle: 'preserve-3d' }}>
+      {/* Canopy underside */}
+      <div
+        style={{
+          position: 'absolute',
+          top: bandHeight,
+          left: 0,
+          width: frontLength,
+          height: sideLength,
+          transformOrigin: 'top center',
+          transform: 'rotateX(-90deg)',
+          background: 'radial-gradient(ellipse 60% 60% at 50% 40%, #1e1e22 0%, #0a0a0c 100%)',
+        }}
+      />
+
+      {/* Front run */}
+      <div style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d' }}>
+        {renderBand(frontLength)}
+        {Array.from({ length: frontCount }).map((_, i) => renderPanel(i, i * pitch + gap / 2))}
+      </div>
+
+      {/* Side run - turns the corner and runs back along the canopy's side */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: frontLength,
+          width: sideLength,
+          height: '100%',
+          transformOrigin: 'left center',
+          transform: 'rotateY(90deg)',
+          transformStyle: 'preserve-3d',
+        }}
+      >
+        {renderBand(sideLength)}
+        {Array.from({ length: sideCount }).map((_, j) => renderPanel(frontCount + j, j * pitch + gap / 2))}
+      </div>
+    </div>
+  )
+}
+
+// Mobile Nova Spin Visual
+function MobileNovaSpinCard({ onTap }: { onTap: () => void }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isInView, setIsInView] = useState(false)
+
+  useEffect(() => {
+    const element = containerRef.current
+    if (!element) return
+    const observer = new IntersectionObserver(([entry]) => setIsInView(entry.isIntersecting), { threshold: 0.3 })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  const step = useNovaStep(isInView)
+
+  return (
+    <motion.div
+      ref={containerRef}
+      className="relative w-full h-full flex items-center justify-center cursor-pointer pt-10"
+      onClick={onTap}
+      whileTap={{ scale: 0.98 }}
+      style={{ perspective: '700px' }}
+    >
+      <div style={{ transform: 'translateX(-45px) rotateX(14deg) rotateY(-30deg)', transformStyle: 'preserve-3d' }}>
+        <NovaSpinCanopy step={step} frontCount={12} sideCount={6} panelWidth={21} panelHeight={70} gap={2} depth={4} bandHeight={32} fontSize={30} scrollSeconds={12} />
+      </div>
+    </motion.div>
+  )
+}
+
+// Desktop Nova Spin Visual
+function LargeNovaSpinVisual() {
+  const step = useNovaStep(true)
+
+  return (
+    <div className="relative" style={{ perspective: '1200px' }}>
+      <div style={{ transform: 'translateX(-35px) rotateX(14deg) rotateY(-30deg)', transformStyle: 'preserve-3d' }}>
+        <NovaSpinCanopy step={step} frontCount={12} sideCount={6} panelWidth={46} panelHeight={140} gap={4} depth={8} bandHeight={66} fontSize={66} scrollSeconds={16} />
       </div>
     </div>
   )
@@ -2021,6 +2275,21 @@ function MobileShowcase() {
           isActive={false}
         >
           <MobileMatrixCard isActive={false} onTap={handleAnimate} />
+        </MobileProductCard>
+
+        {/* Nova Spin */}
+        <MobileProductCard
+          productId="novaspin"
+          title="NOVA SPIN"
+          subtitle="Kinetic Spinning Fascia"
+          gradient="from-amber-500 to-orange-400"
+          bgGradient="linear-gradient(135deg, rgba(245,166,35,0.1) 0%, rgba(0,0,0,0.8) 100%)"
+          borderColor="rgba(245,166,35,0.2)"
+          height={250}
+          onAnimate={handleAnimate}
+          isActive={false}
+        >
+          <MobileNovaSpinCard onTap={handleAnimate} />
         </MobileProductCard>
 
         {/* Flap */}
@@ -3054,6 +3323,11 @@ const productDescriptions: Record<string, { tagline: string; description: string
     tagline: "Flexible LED Patterns",
     description: "Versatile kinetic screens that display any content. Fully customizable LED patterns with any number of LEDs to match your requirements.",
     features: ["Any Content Display", "Custom LED Patterns"],
+  },
+  novaspin: {
+    tagline: "Your Booth Fascia, Moving",
+    description: "A kinetic spinning mechanism that transforms static booth structures into dynamic, eye-catching brand canvases. The content syncs perfectly with every rotation, so your message is always in frame and always on brand.",
+    features: ["Kinetic Fascia Element", "Sync'd Content Display", "Seamless Brand Storytelling in Motion"],
   },
   orbit: {
     tagline: "Motion In Every Axis",
@@ -4170,6 +4444,7 @@ function DesktopShowcase() {
       case 'slidingdna': return <LargeSlidingDNAVisual />
       case 'telescopic': return <LargeTelescopicVisual />
       case 'matrix': return <LargeMatrixVisual />
+      case 'novaspin': return <LargeNovaSpinVisual />
       case 'orbit': return <LargeOrbitVisual />
       default: return null
     }
