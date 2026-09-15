@@ -75,11 +75,11 @@ export default function TargetAudience() {
                 transition={{ duration: 0.6, delay: 0.3 }}
               >
                 {/* Large number display - slightly smaller */}
-                <div className="relative">
+                <div className="flex flex-col items-center">
                   <span className="text-[80px] md:text-[100px] lg:text-[120px] font-black text-transparent bg-clip-text bg-gradient-to-b from-sunbeam via-amber to-sunbeam/30 leading-none">
                     6+
                   </span>
-                  <div className="absolute -bottom-1 left-0 right-0 text-center">
+                  <div className="mt-2 text-center whitespace-nowrap">
                     <span className="text-white/60 text-[10px] md:text-xs tracking-widest uppercase">
                       Products on Display
                     </span>
