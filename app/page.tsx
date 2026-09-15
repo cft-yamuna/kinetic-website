@@ -1,6 +1,8 @@
 import HeroSection from "@/components/hero-section"
 import TargetAudience from "@/components/target-audience"
 import ScrollProductShowcase from "@/components/scroll-product-showcase"
+import ProductGallery from "@/components/product-gallery"
+import { getGalleryImages } from "@/lib/gallery-images"
 import SocialProof from "@/components/social-proof"
 import BookingSection from "@/components/booking-section"
 import Footer from "@/components/footer"
@@ -22,6 +24,7 @@ export default function HomePage() {
         <main>
           <HeroSection />
           <ScrollProductShowcase />
+          <ProductGallery images={getGalleryImages()} />
           <TargetAudience />
           <SocialProof />
           <BookingSection />

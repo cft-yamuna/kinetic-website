@@ -22,6 +22,8 @@ export default function TargetAudience() {
       ref={sectionRef}
       className="relative py-0 overflow-hidden bg-black"
     >
+      {/* Section divider - runs the full width and meets the vertical divider in the middle */}
+      <div className="absolute top-0 inset-x-0 z-10 h-px bg-gradient-to-r from-transparent via-sunbeam/50 to-transparent" />
       {/* Full-width cinematic layout - reduced height */}
       <div className="grid lg:grid-cols-2 min-h-[500px] lg:min-h-[600px]">
 
@@ -242,7 +244,6 @@ export default function TargetAudience() {
         >
           {/* Background accent */}
           <div className="absolute inset-0 bg-gradient-to-br from-sunbeam/5 via-transparent to-transparent" />
-          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-sunbeam/50 via-sunbeam/20 to-transparent" />
           <div className="absolute top-0 left-0 w-px h-full bg-gradient-to-b from-sunbeam/50 via-sunbeam/10 to-transparent hidden lg:block" />
 
           <div className="relative px-6 py-16 md:px-12 lg:px-16 lg:py-0 w-full">

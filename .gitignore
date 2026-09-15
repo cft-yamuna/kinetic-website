@@ -29,5 +29,13 @@ next-env.d.ts
 # keep the env template committed
 !.env.example
 
-# local reference videos - keep out of the repo
+# local reference media - keep out of the repo
+# (images the site actually uses live in public/, which is not affected)
+/images/
 /*.mp4
+/*.mov
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp
+/*.gif
