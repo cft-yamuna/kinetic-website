@@ -28,3 +28,6 @@ next-env.d.ts
 
 # keep the env template committed
 !.env.example
+
+# local reference videos - keep out of the repo
+/*.mp4

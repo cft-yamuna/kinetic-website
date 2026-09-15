@@ -89,20 +89,20 @@ function generateFlapBlocks(rows: number, cols: number) {
   return blocks
 }
 
-// HRMS Configuration
-const HRMS_BOXES = [
+// Sliding DNA Configuration - stacked blocks that twist one by one
+const DNA_BOXES = [
   { id: 1, text: 'PAYROLL', backText: 'AUTO' },
   { id: 2, text: 'ATTENDANCE', backText: 'TRACK' },
   { id: 3, text: 'LEAVE', backText: 'MANAGE' },
   { id: 4, text: 'REPORTS', backText: 'DATA' },
-  { id: 5, text: 'HRMS', backText: 'SYSTEM' },
+  { id: 5, text: 'DNA', backText: 'SLIDING' },
 ]
 
-// HRMS uses warm amber from brand palette
-const HRMS_PRIMARY = '#EF9145'
-const HRMS_GLOW = 'rgba(239, 145, 69, 0.4)'
-const HRMS_DARK = '#994E1F'
-const HRMS_SECONDARY = '#BA5617'
+// Sliding DNA uses warm amber from brand palette
+const DNA_PRIMARY = '#EF9145'
+const DNA_GLOW = 'rgba(239, 145, 69, 0.4)'
+const DNA_DARK = '#994E1F'
+const DNA_SECONDARY = '#BA5617'
 
 // Product data
 const products = [
@@ -115,12 +115,12 @@ const products = [
     type: "orbit",
   },
   {
-    id: "trihelix",
-    title: "TRI-HELIX",
+    id: "helix",
+    title: "HELIX",
     subtitle: "Panoramic Display",
     gradient: "from-orange-500 via-amber-500 to-orange-600",
     accentColor: "#E17924",
-    type: "trihelix",
+    type: "helix",
   },
   {
     id: "triblock",
@@ -137,6 +137,14 @@ const products = [
     gradient: "from-orange-500 via-amber-500 to-yellow-500",
     accentColor: "#EF9145",
     type: "hrms",
+  },
+  {
+    id: "slidingdna",
+    title: "SLIDING DNA",
+    subtitle: "Twisting Modular LED Wall",
+    gradient: "from-orange-500 via-amber-500 to-yellow-500",
+    accentColor: "#EF9145",
+    type: "slidingdna",
   },
   {
     id: "telescopic",
@@ -796,8 +804,229 @@ function MobileFlapCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
   )
 }
 
-// Mobile HRMS Visual - All 3 pillars visible with rotation and movement
-function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
+// ============ HRMS ============
+// Tall LED columns on a curved plinth. Each column is one solid panel that
+// slides and turns on its own; lined up, they read as a single curved screen.
+
+const HRMS_COLUMN_COUNT = 6
+const HRMS_STEP_MS = 2400
+const HRMS_FIRST_STEP_MS = 400
+
+// Artwork is laid across the whole wall, so each column shows its own slice
+const HRMS_FRONT_ART = [
+  'radial-gradient(ellipse 22% 55% at 18% 38%, rgba(255,196,110,0.95) 0%, rgba(239,145,69,0.55) 45%, transparent 75%)',
+  'radial-gradient(ellipse 26% 45% at 52% 70%, rgba(225,121,36,0.9) 0%, rgba(186,86,23,0.45) 50%, transparent 78%)',
+  'radial-gradient(ellipse 20% 50% at 84% 30%, rgba(245,166,35,0.9) 0%, rgba(153,78,31,0.4) 55%, transparent 80%)',
+  'linear-gradient(165deg, #3b1f0b 0%, #1a0d05 55%, #0b0603 100%)',
+]
+const HRMS_BACK_ART = [
+  'radial-gradient(ellipse 30% 60% at 30% 55%, rgba(20,184,166,0.85) 0%, rgba(13,148,136,0.4) 50%, transparent 78%)',
+  'radial-gradient(ellipse 24% 45% at 72% 35%, rgba(245,166,35,0.8) 0%, rgba(225,121,36,0.35) 50%, transparent 78%)',
+  'linear-gradient(165deg, #06201d 0%, #07100f 60%, #030606 100%)',
+]
+
+// Steps through the loop: 0 joined wall -> 1 slide apart -> 2 turn -> 3 turn home (still apart)
+function useHRMSStep(active: boolean) {
+  const [step, setStep] = useState(0)
+  useEffect(() => {
+    if (!active) return
+    let id: ReturnType<typeof setInterval> | undefined
+    // Start moving almost straight away, then settle into the regular rhythm
+    const start = setTimeout(() => {
+      setStep(prev => prev + 1)
+      id = setInterval(() => setStep(prev => prev + 1), HRMS_STEP_MS)
+    }, HRMS_FIRST_STEP_MS)
+    return () => { clearTimeout(start); clearInterval(id) }
+  }, [active])
+  return step
+}
+
+function CurvedHRMSWall({
+  step,
+  panelWidth,
+  panelHeight,
+  depth,
+  spread,
+  radius,
+  plinthHeight,
+}: {
+  step: number
+  panelWidth: number
+  panelHeight: number
+  depth: number
+  // Extra space between neighbouring columns when they slide apart
+  spread: number
+  // Radius of the arc the columns and plinth sit on - its centre is in front,
+  // so the wall wraps toward the viewer
+  radius: number
+  plinthHeight: number
+}) {
+  const phase = step % 4
+  const cycle = Math.floor(step / 4)
+  const center = (HRMS_COLUMN_COUNT - 1) / 2
+  const wallWidth = panelWidth * HRMS_COLUMN_COUNT
+  // Keep counting upward so a column never unwinds back through its turn
+  const spin = cycle * 360 + (phase === 2 ? 180 : phase === 3 ? 360 : 0)
+
+  // Angle between neighbouring column centres on the arc, joined and apart
+  // A hairline stays between columns even when joined, as on the real wall
+  const joinGap = Math.max(1, panelWidth * 0.03)
+  const joinedStep = 2 * Math.asin((panelWidth + joinGap) / 2 / radius)
+  const apartStep = 2 * Math.asin((panelWidth + spread) / 2 / radius)
+  const columnStep = phase === 0 ? joinedStep : apartStep
+  // Stand something on the arc at `angle`, `distance` from the arc's centre
+  const onArc = (angle: number, distance: number) =>
+    `translateZ(${radius}px) rotateY(${angle}rad) translateZ(${-distance}px)`
+
+  // One continuous plinth built from thin slices, long enough for the spread wall
+  const plinthHalfAngle = (center + 0.5) * apartStep + apartStep * 0.15
+  const plinthSlices = 48
+  const sliceAngle = (plinthHalfAngle * 2) / plinthSlices
+  const plinthFront = radius - depth * 1.5
+  const sliceWidth = (distance: number) => 2 * distance * Math.sin(sliceAngle / 2) + 1
+
+  return (
+    <div style={{ position: 'relative', width: wallWidth, height: panelHeight + plinthHeight, transformStyle: 'preserve-3d' }}>
+      {/* Plinth */}
+      {Array.from({ length: plinthSlices }).map((_, k) => {
+        const angle = -plinthHalfAngle + sliceAngle * (k + 0.5)
+        return (
+          <div key={`plinth-${k}`} style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d' }}>
+            <div
+              style={{
+                position: 'absolute',
+                top: panelHeight,
+                left: (wallWidth - sliceWidth(plinthFront)) / 2,
+                width: sliceWidth(plinthFront),
+                height: plinthHeight,
+                transform: onArc(angle, plinthFront),
+                background: 'linear-gradient(180deg, #2a2a2a 0%, #121212 100%)',
+                borderTop: `1px solid ${DNA_PRIMARY}`,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: panelHeight - depth * 1.5,
+                left: (wallWidth - sliceWidth(radius + depth * 1.5)) / 2,
+                width: sliceWidth(radius + depth * 1.5),
+                height: depth * 3,
+                transform: `${onArc(angle, radius)} rotateX(90deg)`,
+                background: '#1b1b1b',
+              }}
+            />
+          </div>
+        )
+      })}
+
+      {Array.from({ length: HRMS_COLUMN_COUNT }).map((_, i) => {
+        const offset = i - center
+        const turnDelay = (phase === 3 ? HRMS_COLUMN_COUNT - 1 - i : i) * 0.1
+        const faceBase = {
+          position: 'absolute' as const,
+          inset: 0,
+          backfaceVisibility: 'hidden' as const,
+          backgroundSize: `${wallWidth}px 100%`,
+          backgroundPosition: `${-i * panelWidth}px 0`,
+        }
+
+        return (
+          // Slides along the arc
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: (wallWidth - panelWidth) / 2,
+              width: panelWidth,
+              height: panelHeight,
+              transformStyle: 'preserve-3d',
+              transform: onArc(-offset * columnStep, radius),
+              transition: 'transform 1.1s ease-in-out',
+            }}
+          >
+            {/* Column - one solid panel that turns as a unit */}
+            <motion.div
+              initial={false}
+              animate={{ rotateY: spin }}
+              transition={{ duration: 1.3, ease: 'easeInOut', delay: phase === 2 || phase === 3 ? turnDelay : 0 }}
+              style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d' }}
+            >
+              {/* Front screen */}
+              <div
+                style={{
+                  ...faceBase,
+                  transform: `translateZ(${depth / 2}px)`,
+                  backgroundImage: HRMS_FRONT_ART.join(', '),
+                  boxShadow: '0 0 18px rgba(239,145,69,0.25)',
+                }}
+              />
+              {/* Back screen */}
+              <div
+                style={{
+                  ...faceBase,
+                  transform: `rotateY(180deg) translateZ(${depth / 2}px)`,
+                  backgroundImage: HRMS_BACK_ART.join(', '),
+                  boxShadow: '0 0 18px rgba(20,184,166,0.2)',
+                }}
+              />
+              {/* Side frames - the column's thickness shows as it turns */}
+              <div style={{ position: 'absolute', top: 0, bottom: 0, left: -depth / 2, width: depth, transform: 'rotateY(-90deg)', background: 'linear-gradient(180deg, #3a3a3a 0%, #151515 100%)' }} />
+              <div style={{ position: 'absolute', top: 0, bottom: 0, left: panelWidth - depth / 2, width: depth, transform: 'rotateY(90deg)', background: 'linear-gradient(180deg, #3a3a3a 0%, #151515 100%)' }} />
+              <div style={{ position: 'absolute', left: 0, right: 0, top: -depth / 2, height: depth, transform: 'rotateX(90deg)', background: '#2c2c2c' }} />
+            </motion.div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// Mobile HRMS Visual - curved wall of independently moving columns
+function MobileHRMSCard({ onTap }: { isActive: boolean; onTap: () => void }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isInView, setIsInView] = useState(false)
+
+  useEffect(() => {
+    const element = containerRef.current
+    if (!element) return
+    const observer = new IntersectionObserver(([entry]) => setIsInView(entry.isIntersecting), { threshold: 0.3 })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  const step = useHRMSStep(isInView)
+
+  return (
+    <motion.div
+      ref={containerRef}
+      className="relative w-full h-full flex items-center justify-center cursor-pointer pt-10"
+      onClick={onTap}
+      whileTap={{ scale: 0.98 }}
+      style={{ perspective: '700px' }}
+    >
+      <div style={{ transform: 'rotateX(-6deg)', transformStyle: 'preserve-3d' }}>
+        <CurvedHRMSWall step={step} panelWidth={34} panelHeight={118} depth={6} spread={10} radius={330} plinthHeight={12} />
+      </div>
+    </motion.div>
+  )
+}
+
+// Desktop HRMS Visual
+function LargeHRMSVisual() {
+  const step = useHRMSStep(true)
+
+  return (
+    <div className="relative" style={{ perspective: '1100px' }}>
+      <div style={{ transform: 'rotateX(-6deg)', transformStyle: 'preserve-3d' }}>
+        <CurvedHRMSWall step={step} panelWidth={72} panelHeight={300} depth={12} spread={24} radius={700} plinthHeight={26} />
+      </div>
+    </div>
+  )
+}
+
+// Mobile Sliding DNA Visual - All 3 pillars visible with rotation and movement
+function MobileSlidingDNACard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
   const [rotationPhase, setRotationPhase] = useState(0)
   const [movementPhase, setMovementPhase] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -869,7 +1098,7 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
             animate={{ x: getOffset(pillarIndex) }}
             transition={{ duration: 1, ease: 'easeInOut' }}
           >
-            {HRMS_BOXES.slice(0, 4).map((box, boxIndex) => (
+            {DNA_BOXES.slice(0, 4).map((box, boxIndex) => (
               <motion.div
                 key={box.id}
                 animate={{ rotateY: getRotation(pillarIndex, boxIndex) }}
@@ -886,32 +1115,32 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
                   position: 'absolute',
                   inset: 0,
                   background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)',
-                  border: `1.5px solid ${HRMS_PRIMARY}`,
+                  border: `1.5px solid ${DNA_PRIMARY}`,
                   borderRadius: '3px',
-                  boxShadow: `0 0 10px ${HRMS_GLOW}`,
+                  boxShadow: `0 0 10px ${DNA_GLOW}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transform: 'translateZ(6px)',
                   backfaceVisibility: 'hidden',
                 }}>
-                  <span style={{ fontSize: 6, fontWeight: 800, color: HRMS_PRIMARY, letterSpacing: '0.3px' }}>{box.text}</span>
+                  <span style={{ fontSize: 6, fontWeight: 800, color: DNA_PRIMARY, letterSpacing: '0.3px' }}>{box.text}</span>
                 </div>
                 {/* Back face */}
                 <div style={{
                   position: 'absolute',
                   inset: 0,
                   background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)',
-                  border: `1.5px solid ${HRMS_PRIMARY}`,
+                  border: `1.5px solid ${DNA_PRIMARY}`,
                   borderRadius: '3px',
-                  boxShadow: `0 0 10px ${HRMS_GLOW}`,
+                  boxShadow: `0 0 10px ${DNA_GLOW}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transform: 'translateZ(-6px) rotateY(180deg)',
                   backfaceVisibility: 'hidden',
                 }}>
-                  <span style={{ fontSize: 6, fontWeight: 800, color: HRMS_PRIMARY }}>{box.backText}</span>
+                  <span style={{ fontSize: 6, fontWeight: 800, color: DNA_PRIMARY }}>{box.backText}</span>
                 </div>
                 {/* Left edge */}
                 <div style={{
@@ -922,7 +1151,7 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
                   width: '12px',
                   transform: 'rotateY(-90deg)',
                   transformOrigin: 'left center',
-                  background: `linear-gradient(to right, ${HRMS_DARK}, ${HRMS_SECONDARY})`,
+                  background: `linear-gradient(to right, ${DNA_DARK}, ${DNA_SECONDARY})`,
                   backfaceVisibility: 'hidden',
                 }} />
                 {/* Right edge */}
@@ -934,7 +1163,7 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
                   width: '12px',
                   transform: 'rotateY(90deg)',
                   transformOrigin: 'right center',
-                  background: `linear-gradient(to left, ${HRMS_DARK}, ${HRMS_SECONDARY})`,
+                  background: `linear-gradient(to left, ${DNA_DARK}, ${DNA_SECONDARY})`,
                   backfaceVisibility: 'hidden',
                 }} />
                 {/* Top edge */}
@@ -946,7 +1175,7 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
                   height: '12px',
                   transform: 'rotateX(90deg)',
                   transformOrigin: 'top center',
-                  background: HRMS_PRIMARY,
+                  background: DNA_PRIMARY,
                   backfaceVisibility: 'hidden',
                 }} />
                 {/* Bottom edge */}
@@ -958,7 +1187,7 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
                   height: '12px',
                   transform: 'rotateX(-90deg)',
                   transformOrigin: 'bottom center',
-                  background: HRMS_DARK,
+                  background: DNA_DARK,
                   backfaceVisibility: 'hidden',
                 }} />
               </motion.div>
@@ -973,9 +1202,9 @@ function MobileHRMSCard({ isActive, onTap }: { isActive: boolean; onTap: () => v
           width: 200,
           height: 14,
           background: 'linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%)',
-          border: `1.5px solid ${HRMS_PRIMARY}`,
+          border: `1.5px solid ${DNA_PRIMARY}`,
           borderRadius: '3px',
-          boxShadow: `0 0 15px ${HRMS_GLOW}`,
+          boxShadow: `0 0 15px ${DNA_GLOW}`,
         }}
       />
     </motion.div>
@@ -1326,8 +1555,8 @@ function MobileMatrixCard({ isActive, onTap }: { isActive: boolean; onTap: () =>
   )
 }
 
-// Mobile TRI-HELIX Visual - Wings open/close, 360 rotation, fixed base
-function MobileTriHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
+// Mobile HELIX Visual - Wings open/close, 360 rotation, fixed base
+function MobileHelixCard({ isActive, onTap }: { isActive: boolean; onTap: () => void }) {
   const [wingAngle, setWingAngle] = useState(0)
   const [layerRotations, setLayerRotations] = useState<number[]>([0, 0, 0, 0, 0])
   const [rotationCycle, setRotationCycle] = useState(0)
@@ -1704,10 +1933,10 @@ function MobileShowcase() {
           <MobileOrbitCard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
 
-        {/* TRI-HELIX */}
+        {/* HELIX */}
         <MobileProductCard
-          productId="trihelix"
-          title="TRI-HELIX"
+          productId="helix"
+          title="HELIX"
           subtitle="Panoramic Display"
           gradient="from-yellow-400 to-amber-500"
           bgGradient="linear-gradient(135deg, rgba(254,204,0,0.1) 0%, rgba(0,0,0,0.8) 100%)"
@@ -1716,7 +1945,7 @@ function MobileShowcase() {
           onAnimate={handleAnimate}
           isActive={false}
         >
-          <MobileTriHelixCard isActive={false} onTap={handleAnimate} />
+          <MobileHelixCard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
 
         {/* Triblock */}
@@ -1747,6 +1976,21 @@ function MobileShowcase() {
           isActive={false}
         >
           <MobileHRMSCard isActive={false} onTap={handleAnimate} />
+        </MobileProductCard>
+
+        {/* Sliding DNA */}
+        <MobileProductCard
+          productId="slidingdna"
+          title="SLIDING DNA"
+          subtitle="Twisting Modular LED Wall"
+          gradient="from-orange-500 to-amber-400"
+          bgGradient="linear-gradient(135deg, rgba(239,145,69,0.1) 0%, rgba(0,0,0,0.8) 100%)"
+          borderColor="rgba(239,145,69,0.2)"
+          height={220}
+          onAnimate={handleAnimate}
+          isActive={false}
+        >
+          <MobileSlidingDNACard isActive={false} onTap={handleAnimate} />
         </MobileProductCard>
 
         {/* Telescopic */}
@@ -2025,19 +2269,19 @@ function HRMSPillar({ towerIndex, isHovered, rotationCycle }: { towerIndex: numb
 
   return (
     <div className="flex flex-col-reverse items-center" style={{ perspective: '1000px', transformStyle: 'preserve-3d' }}>
-      {HRMS_BOXES.map((box, index) => (
-        <div key={box.id} style={{ marginTop: index === 0 ? 0 : -2, zIndex: HRMS_BOXES.length - index, transformStyle: 'preserve-3d', transform: `rotateY(${getRotation(index + 1, rotationCycle)}deg)`, transition: `transform ${isHovered ? 2.5 : 2}s ease-in-out` }}>
+      {DNA_BOXES.map((box, index) => (
+        <div key={box.id} style={{ marginTop: index === 0 ? 0 : -2, zIndex: DNA_BOXES.length - index, transformStyle: 'preserve-3d', transform: `rotateY(${getRotation(index + 1, rotationCycle)}deg)`, transition: `transform ${isHovered ? 2.5 : 2}s ease-in-out` }}>
           <div className="w-[130px] h-[46px]" style={{ transformStyle: 'preserve-3d' }}>
-            <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(10px)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 15px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
-              <span className="font-black text-[10px] tracking-wider" style={{ color: HRMS_PRIMARY }}>{box.text}</span>
+            <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(10px)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${DNA_PRIMARY}`, boxShadow: `0 0 15px ${DNA_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
+              <span className="font-black text-[10px] tracking-wider" style={{ color: DNA_PRIMARY }}>{box.text}</span>
             </div>
-            <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(-12px) rotateY(180deg)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 15px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
-              <span className="font-black text-[10px]" style={{ color: HRMS_PRIMARY }}>{box.backText}</span>
+            <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(-12px) rotateY(180deg)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${DNA_PRIMARY}`, boxShadow: `0 0 15px ${DNA_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
+              <span className="font-black text-[10px]" style={{ color: DNA_PRIMARY }}>{box.backText}</span>
             </div>
-            <div className="absolute top-0 bottom-0" style={{ left: 0, width: '24px', transform: 'rotateY(-90deg)', transformOrigin: 'left center', background: `linear-gradient(to right, ${HRMS_DARK}, ${HRMS_SECONDARY})`, backfaceVisibility: 'hidden' }} />
-            <div className="absolute top-0 bottom-0" style={{ right: 0, width: '24px', transform: 'rotateY(90deg)', transformOrigin: 'right center', background: `linear-gradient(to left, ${HRMS_DARK}, ${HRMS_SECONDARY})`, backfaceVisibility: 'hidden' }} />
-            <div className="absolute left-0 right-0" style={{ top: 0, height: '24px', transform: 'rotateX(90deg)', transformOrigin: 'top center', background: HRMS_PRIMARY, backfaceVisibility: 'hidden' }} />
-            <div className="absolute left-0 right-0" style={{ bottom: 0, height: '24px', transform: 'rotateX(-90deg)', transformOrigin: 'bottom center', background: HRMS_DARK, backfaceVisibility: 'hidden' }} />
+            <div className="absolute top-0 bottom-0" style={{ left: 0, width: '24px', transform: 'rotateY(-90deg)', transformOrigin: 'left center', background: `linear-gradient(to right, ${DNA_DARK}, ${DNA_SECONDARY})`, backfaceVisibility: 'hidden' }} />
+            <div className="absolute top-0 bottom-0" style={{ right: 0, width: '24px', transform: 'rotateY(90deg)', transformOrigin: 'right center', background: `linear-gradient(to left, ${DNA_DARK}, ${DNA_SECONDARY})`, backfaceVisibility: 'hidden' }} />
+            <div className="absolute left-0 right-0" style={{ top: 0, height: '24px', transform: 'rotateX(90deg)', transformOrigin: 'top center', background: DNA_PRIMARY, backfaceVisibility: 'hidden' }} />
+            <div className="absolute left-0 right-0" style={{ bottom: 0, height: '24px', transform: 'rotateX(-90deg)', transformOrigin: 'bottom center', background: DNA_DARK, backfaceVisibility: 'hidden' }} />
           </div>
         </div>
       ))}
@@ -2080,8 +2324,8 @@ function HRMSVisual({ isActive }: { isActive: boolean }) {
           ))}
         </div>
         <div className="w-[560px] h-[42px]" style={{ transform: 'rotateX(5deg)', transformStyle: 'preserve-3d' }}>
-          <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(12px)', background: 'linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 50%, #0d0d15 100%)', border: `2px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 25px ${HRMS_GLOW}` }}>
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[5px]" style={{ background: HRMS_PRIMARY }} />
+          <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(12px)', background: 'linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 50%, #0d0d15 100%)', border: `2px solid ${DNA_PRIMARY}`, boxShadow: `0 0 25px ${DNA_GLOW}` }}>
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[5px]" style={{ background: DNA_PRIMARY }} />
           </div>
         </div>
       </div>
@@ -2685,7 +2929,7 @@ function BentoHRMSVisual({ isActive }: { isActive: boolean }) {
               transition: 'transform 1.5s ease-in-out',
             }}
           >
-            {HRMS_BOXES.slice(0, 4).map((box, boxIndex) => (
+            {DNA_BOXES.slice(0, 4).map((box, boxIndex) => (
               <div
                 key={box.id}
                 style={{
@@ -2698,21 +2942,21 @@ function BentoHRMSVisual({ isActive }: { isActive: boolean }) {
               >
                 <div className="w-[90px] h-[32px]" style={{ transformStyle: 'preserve-3d' }}>
                   {/* Front face */}
-                  <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(8px)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `1.5px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 12px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
-                    <span className="font-black text-[8px] tracking-wider" style={{ color: HRMS_PRIMARY }}>{box.text}</span>
+                  <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(8px)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `1.5px solid ${DNA_PRIMARY}`, boxShadow: `0 0 12px ${DNA_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
+                    <span className="font-black text-[8px] tracking-wider" style={{ color: DNA_PRIMARY }}>{box.text}</span>
                   </div>
                   {/* Back face */}
-                  <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(-8px) rotateY(180deg)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `1.5px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 12px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
-                    <span className="font-black text-[8px]" style={{ color: HRMS_PRIMARY }}>{box.backText}</span>
+                  <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(-8px) rotateY(180deg)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `1.5px solid ${DNA_PRIMARY}`, boxShadow: `0 0 12px ${DNA_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
+                    <span className="font-black text-[8px]" style={{ color: DNA_PRIMARY }}>{box.backText}</span>
                   </div>
                   {/* Left edge */}
-                  <div className="absolute top-0 bottom-0" style={{ left: 0, width: '16px', transform: 'rotateY(-90deg)', transformOrigin: 'left center', background: `linear-gradient(to right, ${HRMS_DARK}, ${HRMS_SECONDARY})`, backfaceVisibility: 'hidden' }} />
+                  <div className="absolute top-0 bottom-0" style={{ left: 0, width: '16px', transform: 'rotateY(-90deg)', transformOrigin: 'left center', background: `linear-gradient(to right, ${DNA_DARK}, ${DNA_SECONDARY})`, backfaceVisibility: 'hidden' }} />
                   {/* Right edge */}
-                  <div className="absolute top-0 bottom-0" style={{ right: 0, width: '16px', transform: 'rotateY(90deg)', transformOrigin: 'right center', background: `linear-gradient(to left, ${HRMS_DARK}, ${HRMS_SECONDARY})`, backfaceVisibility: 'hidden' }} />
+                  <div className="absolute top-0 bottom-0" style={{ right: 0, width: '16px', transform: 'rotateY(90deg)', transformOrigin: 'right center', background: `linear-gradient(to left, ${DNA_DARK}, ${DNA_SECONDARY})`, backfaceVisibility: 'hidden' }} />
                   {/* Top edge */}
-                  <div className="absolute left-0 right-0" style={{ top: 0, height: '16px', transform: 'rotateX(90deg)', transformOrigin: 'top center', background: HRMS_PRIMARY, backfaceVisibility: 'hidden' }} />
+                  <div className="absolute left-0 right-0" style={{ top: 0, height: '16px', transform: 'rotateX(90deg)', transformOrigin: 'top center', background: DNA_PRIMARY, backfaceVisibility: 'hidden' }} />
                   {/* Bottom edge */}
-                  <div className="absolute left-0 right-0" style={{ bottom: 0, height: '16px', transform: 'rotateX(-90deg)', transformOrigin: 'bottom center', background: HRMS_DARK, backfaceVisibility: 'hidden' }} />
+                  <div className="absolute left-0 right-0" style={{ bottom: 0, height: '16px', transform: 'rotateX(-90deg)', transformOrigin: 'bottom center', background: DNA_DARK, backfaceVisibility: 'hidden' }} />
                 </div>
               </div>
             ))}
@@ -2720,7 +2964,7 @@ function BentoHRMSVisual({ isActive }: { isActive: boolean }) {
         ))}
       </div>
       {/* Base */}
-      <div className="mt-3 mx-auto w-[340px] h-[24px]" style={{ background: 'linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%)', border: `1.5px solid ${HRMS_PRIMARY}`, borderRadius: '4px', boxShadow: `0 0 20px ${HRMS_GLOW}` }} />
+      <div className="mt-3 mx-auto w-[340px] h-[24px]" style={{ background: 'linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%)', border: `1.5px solid ${DNA_PRIMARY}`, borderRadius: '4px', boxShadow: `0 0 20px ${DNA_GLOW}` }} />
     </div>
   )
 }
@@ -2786,15 +3030,20 @@ const productDescriptions: Record<string, { tagline: string; description: string
     description: "Paper-like split-flap displays that form complete structures with user images. Perfect for storytelling with multi-pattern configurations.",
     features: ["Structure Formation", "Multi-Pattern Display"],
   },
-  trihelix: {
+  helix: {
     tagline: "Wave Like Motion",
     description: "Panoramic display system with fluid wave-like motion. Supports any kind of content including videos and images for immersive experiences.",
     features: ["Video & Image Support", "Wave Motion"],
   },
   hrms: {
-    tagline: "Synchronized Rotation",
-    description: "Horizontal rotation movement system where content syncs with the rotating display. LEDs move and rotate simultaneously for stunning visual effects.",
-    features: ["Content Sync Display", "LED Movement & Rotation"],
+    tagline: "Columns In Motion",
+    description: "Tall LED columns set along a curved base, each moving on its own. The columns slide apart and turn independently, then lock back together into one seamless curved video wall.",
+    features: ["Independently Rotating Columns", "Seamless Curved Video Wall"],
+  },
+  slidingdna: {
+    tagline: "Twist, Slide, Merge",
+    description: "Stacked LED blocks on a sliding rail that twist one after another like a strand of DNA. Columns glide along the track to split apart or merge into a single seamless screen.",
+    features: ["Helix Twist Block Rotation", "Sliding Split & Merge Screen"],
   },
   telescopic: {
     tagline: "Rising LED Surface",
@@ -3166,8 +3415,8 @@ function LargeFlapVisual() {
   )
 }
 
-// TRI-HELIX: Triangular LED column - wings open, then 360 rotation, base stays fixed
-function LargeTriHelixVisual() {
+// HELIX: Triangular LED column - wings open, then 360 rotation, base stays fixed
+function LargeHelixVisual() {
   const [wingAngle, setWingAngle] = useState(0)
   const [layerRotations, setLayerRotations] = useState<number[]>([0, 0, 0, 0, 0, 0])
   const [isAnimating, setIsAnimating] = useState(false)
@@ -3397,7 +3646,7 @@ function LargeTriHelixVisual() {
   )
 }
 
-function LargeHRMSVisual() {
+function LargeSlidingDNAVisual() {
   const [rotationCycle, setRotationCycle] = useState(0)
   const [movementPhase, setMovementPhase] = useState(0)
   const boxWidth = 150
@@ -3439,7 +3688,7 @@ function LargeHRMSVisual() {
                 transition: 'transform 1.5s ease-in-out',
               }}
             >
-              {HRMS_BOXES.map((box, boxIndex) => (
+              {DNA_BOXES.map((box, boxIndex) => (
                 <div
                   key={box.id}
                   style={{
@@ -3451,23 +3700,23 @@ function LargeHRMSVisual() {
                   }}
                 >
                   <div style={{ width: boxWidth, height: boxHeight, transformStyle: 'preserve-3d' }}>
-                    <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(12px)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 18px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
-                      <span className="font-black text-[11px] tracking-wider" style={{ color: HRMS_PRIMARY }}>{box.text}</span>
+                    <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(12px)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${DNA_PRIMARY}`, boxShadow: `0 0 18px ${DNA_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
+                      <span className="font-black text-[11px] tracking-wider" style={{ color: DNA_PRIMARY }}>{box.text}</span>
                     </div>
-                    <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(-12px) rotateY(180deg)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${HRMS_PRIMARY}`, boxShadow: `0 0 18px ${HRMS_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
-                      <span className="font-black text-[11px]" style={{ color: HRMS_PRIMARY }}>{box.backText}</span>
+                    <div className="absolute inset-0 rounded" style={{ transform: 'translateZ(-12px) rotateY(180deg)', background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)', border: `2px solid ${DNA_PRIMARY}`, boxShadow: `0 0 18px ${DNA_GLOW}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' }}>
+                      <span className="font-black text-[11px]" style={{ color: DNA_PRIMARY }}>{box.backText}</span>
                     </div>
-                    <div className="absolute top-0 bottom-0" style={{ left: 0, width: '24px', transform: 'rotateY(-90deg)', transformOrigin: 'left center', background: `linear-gradient(to right, ${HRMS_DARK}, ${HRMS_SECONDARY})`, backfaceVisibility: 'hidden' }} />
-                    <div className="absolute top-0 bottom-0" style={{ right: 0, width: '24px', transform: 'rotateY(90deg)', transformOrigin: 'right center', background: `linear-gradient(to left, ${HRMS_DARK}, ${HRMS_SECONDARY})`, backfaceVisibility: 'hidden' }} />
-                    <div className="absolute left-0 right-0" style={{ top: 0, height: '24px', transform: 'rotateX(90deg)', transformOrigin: 'top center', background: HRMS_PRIMARY, backfaceVisibility: 'hidden' }} />
-                    <div className="absolute left-0 right-0" style={{ bottom: 0, height: '24px', transform: 'rotateX(-90deg)', transformOrigin: 'bottom center', background: HRMS_DARK, backfaceVisibility: 'hidden' }} />
+                    <div className="absolute top-0 bottom-0" style={{ left: 0, width: '24px', transform: 'rotateY(-90deg)', transformOrigin: 'left center', background: `linear-gradient(to right, ${DNA_DARK}, ${DNA_SECONDARY})`, backfaceVisibility: 'hidden' }} />
+                    <div className="absolute top-0 bottom-0" style={{ right: 0, width: '24px', transform: 'rotateY(90deg)', transformOrigin: 'right center', background: `linear-gradient(to left, ${DNA_DARK}, ${DNA_SECONDARY})`, backfaceVisibility: 'hidden' }} />
+                    <div className="absolute left-0 right-0" style={{ top: 0, height: '24px', transform: 'rotateX(90deg)', transformOrigin: 'top center', background: DNA_PRIMARY, backfaceVisibility: 'hidden' }} />
+                    <div className="absolute left-0 right-0" style={{ bottom: 0, height: '24px', transform: 'rotateX(-90deg)', transformOrigin: 'bottom center', background: DNA_DARK, backfaceVisibility: 'hidden' }} />
                   </div>
                 </div>
               ))}
             </div>
           ))}
         </div>
-        <div className="mt-4 mx-auto h-[35px]" style={{ width: `${boxWidth * 3 + pillarGap * 2 + 40}px`, background: 'linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%)', border: `2px solid ${HRMS_PRIMARY}`, borderRadius: '6px', boxShadow: `0 0 30px ${HRMS_GLOW}` }} />
+        <div className="mt-4 mx-auto h-[35px]" style={{ width: `${boxWidth * 3 + pillarGap * 2 + 40}px`, background: 'linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%)', border: `2px solid ${DNA_PRIMARY}`, borderRadius: '6px', boxShadow: `0 0 30px ${DNA_GLOW}` }} />
       </div>
     </div>
   )
@@ -3916,8 +4165,9 @@ function DesktopShowcase() {
     switch (product.type) {
       case 'triblock': return <LargeTriblockVisual />
       case 'flap': return <LargeFlapVisual />
-      case 'trihelix': return <LargeTriHelixVisual />
+      case 'helix': return <LargeHelixVisual />
       case 'hrms': return <LargeHRMSVisual />
+      case 'slidingdna': return <LargeSlidingDNAVisual />
       case 'telescopic': return <LargeTelescopicVisual />
       case 'matrix': return <LargeMatrixVisual />
       case 'orbit': return <LargeOrbitVisual />
