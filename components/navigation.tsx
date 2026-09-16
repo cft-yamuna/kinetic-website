@@ -6,6 +6,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Menu, X, Zap } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import DownloadCatalogueButton from "@/components/download-catalogue-button"
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false)
@@ -126,6 +127,14 @@ export default function Navigation() {
                     {link.label}
                   </Link>
                 ))}
+                <DownloadCatalogueButton
+                  size="lg"
+                  className={
+                    isScrolled
+                      ? "border-border text-foreground hover:bg-muted"
+                      : "bg-white/5 backdrop-blur-sm border-white/20 text-white hover:bg-white/10 hover:border-white/40"
+                  }
+                />
                 <Link href="#booking">
                   <Button size="lg" className="rounded-full bg-sunbeam text-black hover:bg-amber relative overflow-hidden group">
                     <span className="relative z-10">Book a Visit</span>
@@ -169,6 +178,12 @@ export default function Navigation() {
                 </Button>
               </Link>
             </div>
+            <div>
+              <DownloadCatalogueButton
+                size="lg"
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -201,6 +216,9 @@ export default function Navigation() {
                     </Link>
                   </motion.div>
                 ))}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+                  <DownloadCatalogueButton size="lg" onClick={() => setIsMobileMenuOpen(false)} />
+                </motion.div>
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
                   <Link href="#booking" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button

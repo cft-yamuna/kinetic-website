@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight, Play, Sparkles } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import DownloadCatalogueButton from "@/components/download-catalogue-button"
 
 // CSS styles for mobile box animation - optimized for performance
 // Initial rotations for staggered look (like desktop)
@@ -1263,11 +1264,11 @@ export default function HeroSection() {
 
             {/* CTA Buttons */}
             {useMobileOptimizations ? (
-              <div className="flex flex-row items-center justify-center lg:justify-start gap-3 mobile-text-animate mobile-text-delay-5 -translate-y-[10px]">
+              <div className="flex flex-row flex-wrap items-center justify-center lg:justify-start gap-2 mobile-text-animate mobile-text-delay-5 -translate-y-[10px]">
                 <Link href="#booking">
                   <Button
                     size="sm"
-                    className="rounded-full text-sm px-5 h-10 bg-gradient-to-r from-sunbeam to-amber text-black font-bold"
+                    className="rounded-full text-sm px-4 h-10 bg-gradient-to-r from-sunbeam to-amber text-black font-bold whitespace-nowrap"
                   >
                     <span className="flex items-center">
                       Book Demo
@@ -1279,12 +1280,17 @@ export default function HeroSection() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="rounded-full text-sm px-5 h-10 bg-white/5 border-white/20 text-white"
+                    className="rounded-full text-sm px-4 h-10 bg-white/5 border-white/20 text-white whitespace-nowrap"
                   >
                     <Play className="mr-1.5 h-4 w-4" />
                     Products
                   </Button>
                 </Link>
+                <DownloadCatalogueButton
+                  size="sm"
+                  label="Catalogue"
+                  className="text-sm px-4 h-10 bg-white/5 border-white/20 text-white whitespace-nowrap"
+                />
               </div>
             ) : (
               <motion.div
@@ -1319,6 +1325,10 @@ export default function HeroSection() {
                     See Products
                   </Button>
                 </Link>
+                <DownloadCatalogueButton
+                  size="lg"
+                  className="text-base px-8 h-14 bg-white/5 backdrop-blur-sm border-white/20 text-white hover:bg-white/10 hover:border-white/40"
+                />
               </motion.div>
             )}
           </div>
